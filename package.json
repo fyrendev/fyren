@@ -1,0 +1,19 @@
+{
+  "name": "fyren",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "db:generate": "turbo run db:generate --filter=@fyrendev/db",
+    "db:migrate": "turbo run db:migrate --filter=@fyrendev/db",
+    "db:push": "turbo run db:push --filter=@fyrendev/db",
+    "db:studio": "turbo run db:studio --filter=@fyrendev/db"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  },
+  "packageManager": "bun@1.1.38"
+}
