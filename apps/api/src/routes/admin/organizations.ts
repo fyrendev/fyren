@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../../lib/db";
-import { organizations, apiKeys, eq } from "@fyrendev/db";
+import { organizations, apiKeys, userOrganizations, eq } from "@fyrendev/db";
 import { generateApiKey } from "../../lib/api-key";
 import {
   NotFoundError,
@@ -9,8 +9,13 @@ import {
   errorResponse,
 } from "../../lib/errors";
 import type { AuthContext } from "../../middleware/auth";
+import type { AuthUser } from "../../lib/auth";
 
-type Variables = { auth?: AuthContext };
+type Variables = {
+  auth?: AuthContext;
+  user?: AuthUser;
+  authMethod?: "session" | "api_key" | null;
+};
 
 const adminOrganizations = new Hono<{ Variables: Variables }>();
 
@@ -39,12 +44,13 @@ const updateOrganizationSchema = z.object({
   customDomain: z.string().max(255).nullable().optional(),
 });
 
-// POST /organizations - Create organization (no auth required)
-// This is used to bootstrap the first organization
+// POST /organizations - Create organization
+// If user is logged in, they become the owner. Otherwise, creates an org without owner (for bootstrap).
 adminOrganizations.post("/", async (c) => {
   try {
     const body = await c.req.json();
     const data = createOrganizationSchema.parse(body);
+    const user = c.get("user");
 
     // Create organization
     const [org] = await db
@@ -55,6 +61,15 @@ adminOrganizations.post("/", async (c) => {
         timezone: data.timezone,
       })
       .returning();
+
+    // If user is logged in, add them as owner
+    if (user) {
+      await db.insert(userOrganizations).values({
+        userId: user.id,
+        organizationId: org.id,
+        role: "owner",
+      });
+    }
 
     // Generate API key for the new organization
     const apiKeyData = await generateApiKey();

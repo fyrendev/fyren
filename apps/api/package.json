@@ -14,6 +14,7 @@
   "dependencies": {
     "@fyrendev/db": "workspace:*",
     "@fyrendev/shared": "workspace:*",
+    "better-auth": "^1.4.9",
     "bullmq": "^5.34.3",
     "hono": "^4.6.14",
     "ioredis": "^5.4.2",

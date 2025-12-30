@@ -1,8 +1,16 @@
 // Enums (must be first to avoid circular dependencies)
 export * from "./enums";
 
+// Users (BetterAuth)
+export * from "./user";
+export * from "./session";
+export * from "./account";
+export * from "./verification";
+
 // Organization
 export * from "./organization";
+export * from "./user-organization";
+export * from "./organization-invite";
 
 // Components
 export * from "./component";

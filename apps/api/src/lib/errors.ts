@@ -39,6 +39,13 @@ export class ValidationError extends AppError {
   }
 }
 
+export class BadRequestError extends AppError {
+  constructor(message = "Bad request", code = "BAD_REQUEST") {
+    super(400, message, code);
+    this.name = "BadRequestError";
+  }
+}
+
 export class ConflictError extends AppError {
   constructor(message = "Resource already exists", code = "CONFLICT") {
     super(409, message, code);

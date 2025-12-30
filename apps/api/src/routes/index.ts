@@ -1,10 +1,12 @@
 import { Hono } from "hono";
-import { authMiddleware, optionalAuthMiddleware } from "../middleware/auth";
+import { authMiddleware, optionalAuthMiddleware, requireAuthOrApiKey } from "../middleware/auth";
+import { auth } from "../lib/auth";
 
 // Public routes
 import { publicOrganizations } from "./public/organizations";
 import { publicComponents } from "./public/components";
 import { publicStatus } from "./public/status";
+import { publicInvites } from "./public/invites";
 
 // Admin routes
 import { adminOrganizations } from "./admin/organizations";
@@ -12,6 +14,9 @@ import { adminComponents } from "./admin/components";
 import { adminApiKeys } from "./admin/api-keys";
 import { adminMonitors } from "./admin/monitors";
 import { adminMonitorResults } from "./admin/monitor-results";
+import { adminUsers } from "./admin/users";
+import { adminMembers } from "./admin/members";
+import { adminInvites } from "./admin/invites";
 
 // Health routes
 import { health } from "./health";
@@ -20,16 +25,31 @@ export function setupRoutes(app: Hono) {
   // Health check routes (no auth)
   app.route("/health", health);
 
+  // BetterAuth handles all /api/auth/* routes
+  app.on(["POST", "GET"], "/api/auth/*", (c) => {
+    return auth.handler(c.req.raw);
+  });
+
   // Public routes (no auth)
   app.route("/api/v1/org", publicOrganizations);
   app.route("/api/v1/org", publicComponents);
   app.route("/api/v1/status", publicStatus);
+  app.route("/api/v1/invites", publicInvites);
+
+  // Admin user routes (session only)
+  app.route("/api/v1/admin", adminUsers);
 
   // Admin organization routes
   // Use optional auth for POST (no auth needed), required auth for GET/PUT
   app.use("/api/v1/admin/organizations", optionalAuthMiddleware);
   app.use("/api/v1/admin/organizations/*", optionalAuthMiddleware);
   app.route("/api/v1/admin/organizations", adminOrganizations);
+
+  // Admin members routes (under organizations)
+  app.route("/api/v1/admin/organizations", adminMembers);
+
+  // Admin invites routes (under organizations)
+  app.route("/api/v1/admin/organizations", adminInvites);
 
   // Protected component routes
   app.use("/api/v1/admin/components", authMiddleware);

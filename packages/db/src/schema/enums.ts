@@ -74,6 +74,19 @@ export const notificationStatusEnum = pgEnum("notification_status", [
   "failed",
 ]);
 
+// Organization member roles
+export const orgRoleEnum = pgEnum("org_role", [
+  "owner",
+  "admin",
+  "member",
+]);
+
+// Invite roles (can't invite as owner)
+export const inviteRoleEnum = pgEnum("invite_role", [
+  "admin",
+  "member",
+]);
+
 // Type exports
 export type ComponentStatus = (typeof componentStatusEnum.enumValues)[number];
 export type MonitorType = (typeof monitorTypeEnum.enumValues)[number];
@@ -85,3 +98,5 @@ export type WebhookType = (typeof webhookTypeEnum.enumValues)[number];
 export type NotificationType = (typeof notificationTypeEnum.enumValues)[number];
 export type NotificationChannel = (typeof notificationChannelEnum.enumValues)[number];
 export type NotificationStatus = (typeof notificationStatusEnum.enumValues)[number];
+export type OrgRole = (typeof orgRoleEnum.enumValues)[number];
+export type InviteRole = (typeof inviteRoleEnum.enumValues)[number];
