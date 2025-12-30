@@ -40,6 +40,7 @@ Fyren combines status pages, uptime monitoring, incident management, maintenance
 | Cache/Realtime   | Redis                             |
 | Queue            | BullMQ                            |
 | Validation       | Zod                               |
+| Auth             | BetterAuth                        |
 | Frontend         | React + Vite + Tailwind CSS       |
 | Email            | SES / SendGrid / SMTP (pluggable) |
 | Containerization | Docker                            |
@@ -170,8 +171,32 @@ ApiKey (for admin access & external integrations)
 ├── organization_id
 ├── name
 ├── key_hash
+├── key_prefix
 ├── last_used_at
 ├── expires_at
+├── created_at
+
+User (managed by BetterAuth)
+├── id
+├── email
+├── email_verified
+├── name
+├── image
+├── created_at
+├── updated_at
+
+Session (managed by BetterAuth)
+├── id
+├── user_id
+├── token
+├── expires_at
+├── created_at
+├── updated_at
+
+UserOrganization (junction for multi-org support)
+├── user_id
+├── organization_id
+├── role (owner | admin | member)
 ├── created_at
 ```
 
@@ -265,11 +290,70 @@ ApiKey (for admin access & external integrations)
 
 ---
 
-### Phase 3: Public Status Page (Week 3)
+### Phase 3: Authentication (Week 3)
+
+**Goal:** User authentication with BetterAuth for admin dashboard access.
+
+#### 3.1 BetterAuth Setup
+
+- [ ] Install BetterAuth and dependencies
+- [ ] Configure BetterAuth with Hono adapter
+- [ ] Set up Drizzle adapter for auth tables (user, session, account, verification)
+- [ ] Add auth tables to schema and run migration
+- [ ] Environment variables for auth secrets
+
+#### 3.2 Auth Configuration
+
+- [ ] Email/password authentication
+- [ ] Email verification flow
+- [ ] Password reset flow
+- [ ] Session management with secure cookies
+- [ ] CSRF protection
+
+#### 3.3 User-Organization Relationship
+
+- [ ] UserOrganization junction table (user can belong to multiple orgs)
+- [ ] Roles: owner, admin, member
+- [ ] First user to create org becomes owner
+- [ ] Invite flow (email-based, creates pending membership)
+
+#### 3.4 Auth Middleware
+
+- [ ] Session middleware for admin routes
+- [ ] Require authenticated user
+- [ ] Require org membership
+- [ ] Require specific role (owner/admin for destructive actions)
+- [ ] Support both session auth (browser) and API key auth (programmatic)
+
+#### 3.5 Auth API Endpoints
+
+- [ ] POST /api/v1/auth/signup — create account
+- [ ] POST /api/v1/auth/signin — login
+- [ ] POST /api/v1/auth/signout — logout
+- [ ] POST /api/v1/auth/forgot-password — request reset
+- [ ] POST /api/v1/auth/reset-password — complete reset
+- [ ] GET /api/v1/auth/session — get current session/user
+- [ ] POST /api/v1/auth/verify-email — verify email address
+
+#### 3.6 Organization Membership
+
+- [ ] POST /api/v1/admin/invites — invite user to org
+- [ ] GET /api/v1/admin/invites — list pending invites
+- [ ] DELETE /api/v1/admin/invites/:id — revoke invite
+- [ ] POST /api/v1/invites/:token/accept — accept invite
+- [ ] GET /api/v1/admin/members — list org members
+- [ ] PUT /api/v1/admin/members/:id — update member role
+- [ ] DELETE /api/v1/admin/members/:id — remove member
+
+**Deliverable:** Users can sign up, log in, create orgs, and invite team members. Admin routes protected by session auth.
+
+---
+
+### Phase 4: Public Status Page (Week 4)
 
 **Goal:** Beautiful, fast, public-facing status page.
 
-#### 3.1 Public API Endpoints
+#### 4.1 Public API Endpoints
 
 - [ ] GET /api/v1/status/:slug — full status summary (cached)
 - [ ] GET /api/v1/status/:slug/components — components with current status
@@ -277,7 +361,7 @@ ApiKey (for admin access & external integrations)
 - [ ] GET /api/v1/status/:slug/incidents — recent incidents
 - [ ] GET /api/v1/status/:slug/maintenance — upcoming maintenance
 
-#### 3.2 Frontend — Status Page
+#### 4.2 Frontend — Status Page
 
 - [ ] Project setup (React + Vite + Tailwind)
 - [ ] Overall status banner
@@ -290,7 +374,7 @@ ApiKey (for admin access & external integrations)
 - [ ] Subscribe form (email)
 - [ ] Footer with branding
 
-#### 3.3 Caching Strategy
+#### 4.3 Caching Strategy
 
 - [ ] Redis cache for status page data
 - [ ] Cache invalidation on status change
@@ -300,11 +384,11 @@ ApiKey (for admin access & external integrations)
 
 ---
 
-### Phase 4: Incidents (Week 4)
+### Phase 5: Incidents (Week 5)
 
 **Goal:** Full incident lifecycle management.
 
-#### 4.1 Incident API
+#### 5.1 Incident API
 
 - [ ] POST /api/v1/admin/incidents — create incident
 - [ ] PUT /api/v1/admin/incidents/:id — update incident
@@ -313,18 +397,18 @@ ApiKey (for admin access & external integrations)
 - [ ] GET /api/v1/admin/incidents — list incidents (with filters)
 - [ ] GET /api/v1/admin/incidents/:id — incident detail with updates
 
-#### 4.2 Incident Templates
+#### 5.2 Incident Templates
 
 - [ ] Template model (optional, store common incident types)
 - [ ] Quick-create from template
 
-#### 4.3 Auto-Incident Creation
+#### 5.3 Auto-Incident Creation
 
 - [ ] Config flag: create incident on monitor failure
 - [ ] Auto-resolve when monitor recovers
 - [ ] Link auto-incidents to affected component
 
-#### 4.4 Status Page Updates
+#### 5.4 Status Page Updates
 
 - [ ] Show active incidents prominently
 - [ ] Incident detail page with timeline
@@ -334,11 +418,11 @@ ApiKey (for admin access & external integrations)
 
 ---
 
-### Phase 5: Maintenance Windows (Week 5)
+### Phase 6: Maintenance Windows (Week 6)
 
 **Goal:** Schedule and communicate planned maintenance.
 
-#### 5.1 Maintenance API
+#### 6.1 Maintenance API
 
 - [ ] POST /api/v1/admin/maintenance — create maintenance
 - [ ] PUT /api/v1/admin/maintenance/:id — update maintenance
@@ -346,13 +430,13 @@ ApiKey (for admin access & external integrations)
 - [ ] PATCH /api/v1/admin/maintenance/:id/start — start maintenance early
 - [ ] PATCH /api/v1/admin/maintenance/:id/complete — mark complete
 
-#### 5.2 Scheduled Jobs
+#### 6.2 Scheduled Jobs
 
 - [ ] Job to auto-start maintenance at scheduled time
 - [ ] Job to auto-complete maintenance at scheduled end
 - [ ] Update component status during maintenance window
 
-#### 5.3 Status Page Updates
+#### 6.3 Status Page Updates
 
 - [ ] Upcoming maintenance section
 - [ ] Active maintenance banner
@@ -362,11 +446,11 @@ ApiKey (for admin access & external integrations)
 
 ---
 
-### Phase 6: Notifications (Week 6)
+### Phase 7: Notifications (Week 7)
 
 **Goal:** Notify subscribers and integrations on status changes.
 
-#### 6.1 Subscriber Management
+#### 7.1 Subscriber Management
 
 - [ ] POST /api/v1/subscribe — subscribe email
 - [ ] GET /api/v1/subscribe/verify/:token — verify email
@@ -374,14 +458,14 @@ ApiKey (for admin access & external integrations)
 - [ ] GET /api/v1/admin/subscribers — list subscribers
 - [ ] DELETE /api/v1/admin/subscribers/:id — remove subscriber
 
-#### 6.2 Email Notifications
+#### 7.2 Email Notifications
 
 - [ ] Email provider abstraction (SES, SendGrid, SMTP)
 - [ ] Email templates (incident created, updated, resolved, maintenance scheduled)
 - [ ] Notification queue (BullMQ)
 - [ ] Rate limiting / batching
 
-#### 6.3 Webhook Integrations
+#### 7.3 Webhook Integrations
 
 - [ ] Webhook endpoint CRUD
 - [ ] Slack incoming webhook formatter
@@ -389,7 +473,7 @@ ApiKey (for admin access & external integrations)
 - [ ] Generic webhook (JSON payload)
 - [ ] Retry logic for failed webhooks
 
-#### 6.4 Notification Triggers
+#### 7.4 Notification Triggers
 
 - [ ] On incident create → notify
 - [ ] On incident update → notify
@@ -398,7 +482,7 @@ ApiKey (for admin access & external integrations)
 - [ ] On maintenance started → notify
 - [ ] On component status change → notify
 
-#### 6.5 RSS Feed
+#### 7.5 RSS Feed
 
 - [ ] GET /api/v1/status/:slug/rss — RSS feed of incidents
 
@@ -406,17 +490,11 @@ ApiKey (for admin access & external integrations)
 
 ---
 
-### Phase 7: Admin Dashboard (Week 7-8)
+### Phase 8: Admin Dashboard (Week 8-9)
 
 **Goal:** Web UI for managing everything.
 
-#### 7.1 Auth
-
-- [ ] Login page (email/password or magic link)
-- [ ] Session management
-- [ ] User model (for multi-user orgs, future)
-
-#### 7.2 Dashboard Pages
+#### 8.1 Dashboard Pages
 
 - [ ] Overview (current status, recent incidents, upcoming maintenance)
 - [ ] Components (list, create, edit, reorder)
@@ -427,8 +505,9 @@ ApiKey (for admin access & external integrations)
 - [ ] Integrations (webhooks, email config)
 - [ ] Settings (org details, branding, custom domain)
 - [ ] API keys management
+- [ ] Team members (invite, manage roles)
 
-#### 7.3 UI Components (Tailwind)
+#### 8.2 UI Components (Tailwind)
 
 - [ ] Status badges
 - [ ] Uptime charts
@@ -441,18 +520,18 @@ ApiKey (for admin access & external integrations)
 
 ---
 
-### Phase 8: Polish & Launch Prep (Week 9)
+### Phase 9: Polish & Launch Prep (Week 10)
 
 **Goal:** Production-ready, documented, deployable.
 
-#### 8.1 Customization
+#### 9.1 Customization
 
 - [ ] Custom branding (logo, colors)
 - [ ] Custom CSS injection option
 - [ ] Embeddable status badge/widget
 - [ ] Custom domain instructions
 
-#### 8.2 DevOps
+#### 9.2 DevOps
 
 - [ ] Production Docker Compose
 - [ ] Helm chart (optional)
@@ -460,7 +539,7 @@ ApiKey (for admin access & external integrations)
 - [ ] Graceful shutdown handling
 - [ ] Database migrations in CI
 
-#### 8.3 Documentation
+#### 9.3 Documentation
 
 - [ ] README with quick start
 - [ ] API documentation (OpenAPI/Swagger)
@@ -468,13 +547,13 @@ ApiKey (for admin access & external integrations)
 - [ ] Configuration reference
 - [ ] Contributing guide
 
-#### 8.4 Testing
+#### 9.4 Testing
 
 - [ ] Unit tests for core logic
 - [ ] Integration tests for API
 - [ ] E2E tests for critical flows
 
-#### 8.5 Security
+#### 9.5 Security
 
 - [ ] Rate limiting
 - [ ] Input sanitization audit
