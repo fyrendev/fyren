@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "bun run --watch src/index.ts",
+    "worker": "bun run src/worker.ts",
+    "dev:worker": "bun run --watch src/worker.ts",
     "build": "bun build src/index.ts --outdir dist --target bun",
     "start": "bun run dist/index.js",
     "lint": "tsc --noEmit"
@@ -12,6 +14,7 @@
   "dependencies": {
     "@fyrendev/db": "workspace:*",
     "@fyrendev/shared": "workspace:*",
+    "bullmq": "^5.34.3",
     "hono": "^4.6.14",
     "ioredis": "^5.4.2",
     "zod": "^3.24.1"

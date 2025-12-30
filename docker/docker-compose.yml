@@ -32,6 +32,49 @@ services:
       retries: 5
     command: redis-server --appendonly yes
 
+  # API service (for production use)
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: fyren-api
+    restart: unless-stopped
+    command: bun run dev
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://fyren:fyren@postgres:5432/fyren
+      - REDIS_URL=redis://redis:6379
+      - PORT=3000
+      - NODE_ENV=development
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    profiles:
+      - full
+
+  # Worker service (for production use)
+  worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: fyren-worker
+    restart: unless-stopped
+    command: bun run worker
+    environment:
+      - DATABASE_URL=postgresql://fyren:fyren@postgres:5432/fyren
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=development
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    profiles:
+      - full
+
 volumes:
   postgres_data:
   redis_data:

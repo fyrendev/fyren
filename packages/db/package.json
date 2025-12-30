@@ -13,11 +13,14 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
+    "db:seed": "bun run src/seed.ts",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
     "drizzle-orm": "^0.38.3",
-    "postgres": "^3.4.5"
+    "drizzle-zod": "^0.8.3",
+    "postgres": "^3.4.5",
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "drizzle-kit": "^0.30.1",
