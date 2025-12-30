@@ -73,19 +73,19 @@ The repository root should contain:
 
 ## Tech Stack
 
-| Layer            | Technology                        |
-| ---------------- | --------------------------------- |
-| Runtime          | Bun                               |
-| API Framework    | Hono                              |
-| Database         | PostgreSQL                        |
-| ORM              | Drizzle                           |
-| Cache/Realtime   | Redis                             |
-| Queue            | BullMQ                            |
-| Validation       | Zod                               |
-| Auth             | BetterAuth                        |
-| Frontend         | React + Vite + Tailwind CSS       |
-| Email            | SES / SendGrid / SMTP (pluggable) |
-| Containerization | Docker                            |
+| Layer            | Technology                          |
+| ---------------- | ----------------------------------- |
+| Runtime          | Bun                                 |
+| API Framework    | Hono                                |
+| Database         | PostgreSQL                          |
+| ORM              | Drizzle                             |
+| Cache/Realtime   | Redis                               |
+| Queue            | BullMQ                              |
+| Validation       | Zod                                 |
+| Auth             | BetterAuth                          |
+| Frontend         | Next.js (App Router) + Tailwind CSS |
+| Email            | SES / SendGrid / SMTP (pluggable)   |
+| Containerization | Docker                              |
 
 ---
 
@@ -403,15 +403,17 @@ UserOrganization (junction for multi-org support)
 - [ ] GET /api/v1/status/:slug/incidents — recent incidents
 - [ ] GET /api/v1/status/:slug/maintenance — upcoming maintenance
 
-#### 4.2 Frontend — Status Page
+#### 4.2 Frontend — Status Page (Next.js)
 
-- [ ] Project setup (React + Vite + Tailwind)
+- [ ] Project setup (Next.js App Router + Tailwind)
+- [ ] Server-side rendering for SEO
 - [ ] Overall status banner
 - [ ] Component list with status indicators
 - [ ] Uptime bars (90-day history visualization)
 - [ ] Response time graph (optional, toggle)
 - [ ] Active incidents section
-- [ ] Incident history (collapsible timeline)
+- [ ] Incident detail page with timeline
+- [ ] Incident history page with pagination
 - [ ] Scheduled maintenance section
 - [ ] Subscribe form (email)
 - [ ] Footer with branding
