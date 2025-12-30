@@ -53,9 +53,9 @@ An open source, self-hosted status page and incident management platform.
 7. **Verify it works**
 
    ```bash
-   curl http://localhost:3000/health
-   curl http://localhost:3000/health/db
-   curl http://localhost:3000/health/redis
+   curl http://localhost:3001/health
+   curl http://localhost:3001/health/db
+   curl http://localhost:3001/health/redis
    ```
 
 ## Project Structure
@@ -74,15 +74,15 @@ fyren/
 
 ## Scripts
 
-| Command             | Description                     |
-| ------------------- | ------------------------------- |
-| `bun run dev`       | Start all apps in dev mode      |
-| `bun run build`     | Build all packages              |
-| `bun run lint`      | Run TypeScript type checking    |
-| `bun run db:generate` | Generate Drizzle migrations   |
-| `bun run db:migrate`  | Run database migrations       |
-| `bun run db:push`     | Push schema changes to DB     |
-| `bun run db:studio`   | Open Drizzle Studio           |
+| Command               | Description                  |
+| --------------------- | ---------------------------- |
+| `bun run dev`         | Start all apps in dev mode   |
+| `bun run build`       | Build all packages           |
+| `bun run lint`        | Run TypeScript type checking |
+| `bun run db:generate` | Generate Drizzle migrations  |
+| `bun run db:migrate`  | Run database migrations      |
+| `bun run db:push`     | Push schema changes to DB    |
+| `bun run db:studio`   | Open Drizzle Studio          |
 
 ## Tech Stack
 
