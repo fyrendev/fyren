@@ -29,6 +29,48 @@ Fyren combines status pages, uptime monitoring, incident management, maintenance
 
 ---
 
+## Licensing
+
+Fyren uses the **Elastic License 2.0 (ELv2)** for the core platform.
+
+### What ELv2 Allows
+
+- ✅ View, read, and audit the source code
+- ✅ Self-host for personal or commercial use
+- ✅ Modify and customize for your own needs
+- ✅ Fork and run internally at your company
+- ✅ Contribute back to the project
+
+### What ELv2 Restricts
+
+- ❌ Offering Fyren as a managed service to third parties (e.g., "Fyren Cloud by AWS")
+- ❌ Circumventing license key functionality (if added later)
+
+### Why ELv2?
+
+We want Fyren to be genuinely useful to the community while protecting the ability to build a sustainable business. ELv2 prevents cloud providers from taking the project and competing with a managed offering without contributing back.
+
+This is the same license used by Elasticsearch, Kibana, and other successful source-available projects.
+
+### License by Component
+
+| Component                           | License | Reason                              |
+| ----------------------------------- | ------- | ----------------------------------- |
+| Core platform (API, workers, admin) | ELv2    | Protects managed service offering   |
+| Public status page frontend         | ELv2    | Part of core product                |
+| Client SDKs / libraries             | MIT     | Encourages adoption and integration |
+| Documentation                       | MIT     | Maximum accessibility               |
+
+### License File
+
+The repository root should contain:
+
+- `LICENSE` — Full Elastic License 2.0 text
+- `LICENSE-MIT` — MIT license for SDK components
+- License headers in source files
+
+---
+
 ## Tech Stack
 
 | Layer            | Technology                        |
