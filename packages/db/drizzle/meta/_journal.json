@@ -15,6 +15,13 @@
       "when": 1767084656630,
       "tag": "0001_right_jean_grey",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1767092680279,
+      "tag": "0002_stale_scalphunter",
+      "breakpoints": true
     }
   ]
 }

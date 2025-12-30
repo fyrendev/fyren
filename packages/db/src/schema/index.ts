@@ -23,6 +23,7 @@ export * from "./monitor-result";
 export * from "./incident";
 export * from "./incident-update";
 export * from "./incident-component";
+export * from "./incident-template";
 
 // Maintenance
 export * from "./maintenance";

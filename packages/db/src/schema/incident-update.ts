@@ -7,6 +7,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { incidents } from "./incident";
+import { users } from "./user";
 import { incidentStatusEnum } from "./enums";
 
 export const incidentUpdates = pgTable(
@@ -18,6 +19,10 @@ export const incidentUpdates = pgTable(
       .references(() => incidents.id, { onDelete: "cascade" }),
     status: incidentStatusEnum("status").notNull(),
     message: text("message").notNull(),
+    // Who posted this update (null for auto-generated updates)
+    createdBy: text("created_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [

@@ -7,6 +7,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { organizations } from "./organization";
+import { monitors } from "./monitor";
 import { incidentStatusEnum, incidentSeverityEnum } from "./enums";
 
 export const incidents = pgTable(
@@ -19,6 +20,11 @@ export const incidents = pgTable(
     title: varchar("title", { length: 255 }).notNull(),
     status: incidentStatusEnum("status").notNull().default("investigating"),
     severity: incidentSeverityEnum("severity").notNull().default("minor"),
+    // Optional: link to monitor that triggered this incident (for auto-incidents)
+    triggeredByMonitorId: uuid("triggered_by_monitor_id").references(
+      () => monitors.id,
+      { onDelete: "set null" }
+    ),
     startedAt: timestamp("started_at").notNull().defaultNow(),
     resolvedAt: timestamp("resolved_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -28,6 +34,7 @@ export const incidents = pgTable(
     index("incidents_organization_id_idx").on(table.organizationId),
     index("incidents_status_idx").on(table.status),
     index("incidents_started_at_idx").on(table.startedAt),
+    index("incidents_triggered_by_monitor_id_idx").on(table.triggeredByMonitorId),
   ]
 );
 

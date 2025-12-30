@@ -17,6 +17,8 @@ import { adminMonitorResults } from "./admin/monitor-results";
 import { adminUsers } from "./admin/users";
 import { adminMembers } from "./admin/members";
 import { adminInvites } from "./admin/invites";
+import { adminIncidents } from "./admin/incidents";
+import { adminIncidentTemplates } from "./admin/incident-templates";
 
 // Health routes
 import { health } from "./health";
@@ -66,4 +68,14 @@ export function setupRoutes(app: Hono) {
   app.use("/api/v1/admin/monitors/*", authMiddleware);
   app.route("/api/v1/admin/monitors", adminMonitors);
   app.route("/api/v1/admin/monitors", adminMonitorResults);
+
+  // Protected incident routes
+  app.use("/api/v1/admin/incidents", authMiddleware);
+  app.use("/api/v1/admin/incidents/*", authMiddleware);
+  app.route("/api/v1/admin/incidents", adminIncidents);
+
+  // Protected incident template routes
+  app.use("/api/v1/admin/incident-templates", authMiddleware);
+  app.use("/api/v1/admin/incident-templates/*", authMiddleware);
+  app.route("/api/v1/admin/incident-templates", adminIncidentTemplates);
 }

@@ -37,6 +37,9 @@ const createMonitorSchema = z.object({
   headers: z.record(z.string()).optional(),
   failureThreshold: z.number().int().min(1).max(10).default(3),
   isActive: z.boolean().default(true),
+  // Auto-incident settings
+  createIncidentOnFailure: z.boolean().default(false),
+  autoResolveIncident: z.boolean().default(true),
 });
 
 const updateMonitorSchema = z.object({
@@ -48,6 +51,9 @@ const updateMonitorSchema = z.object({
   headers: z.record(z.string()).nullable().optional(),
   failureThreshold: z.number().int().min(1).max(10).optional(),
   isActive: z.boolean().optional(),
+  // Auto-incident settings
+  createIncidentOnFailure: z.boolean().optional(),
+  autoResolveIncident: z.boolean().optional(),
 });
 
 // GET /api/v1/admin/monitors - List monitors
@@ -185,6 +191,8 @@ adminMonitors.post("/", async (c) => {
         headers: validatedData.type === "http" ? validatedData.headers ?? null : null,
         failureThreshold: validatedData.failureThreshold,
         isActive: validatedData.isActive,
+        createIncidentOnFailure: validatedData.createIncidentOnFailure,
+        autoResolveIncident: validatedData.autoResolveIncident,
       })
       .returning();
 
@@ -319,6 +327,10 @@ adminMonitors.put("/:id", async (c) => {
       updateData.failureThreshold = validatedData.failureThreshold;
     if (validatedData.isActive !== undefined)
       updateData.isActive = validatedData.isActive;
+    if (validatedData.createIncidentOnFailure !== undefined)
+      updateData.createIncidentOnFailure = validatedData.createIncidentOnFailure;
+    if (validatedData.autoResolveIncident !== undefined)
+      updateData.autoResolveIncident = validatedData.autoResolveIncident;
 
     const updateResult = await db
       .update(monitors)
