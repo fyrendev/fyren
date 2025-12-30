@@ -35,3 +35,13 @@ export const IncidentSeverity = {
 
 export type IncidentSeverity =
   (typeof IncidentSeverity)[keyof typeof IncidentSeverity];
+
+// Webhook type enum
+export const WebhookType = {
+  SLACK: "slack",
+  DISCORD: "discord",
+  TEAMS: "teams",
+  GENERIC: "generic",
+} as const;
+
+export type WebhookType = (typeof WebhookType)[keyof typeof WebhookType];

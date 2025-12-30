@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { WebhookType } from "@fyrendev/shared";
 import { api, type WebhookEndpoint } from "@/lib/api-client";
 import { Button } from "@/components/admin/ui/Button";
 import { Card } from "@/components/admin/ui/Card";
@@ -34,7 +35,7 @@ export default function WebhooksPage() {
   const [formData, setFormData] = useState<{
     name: string;
     url: string;
-    type: "slack" | "discord" | "teams" | "generic";
+    type: WebhookType;
   }>({
     name: "",
     url: "",
@@ -71,7 +72,7 @@ export default function WebhooksPage() {
     setFormData({
       name: webhook.name,
       url: webhook.url,
-      type: webhook.type as "slack" | "discord" | "teams" | "generic",
+      type: webhook.type,
     });
     setError(null);
     setModalOpen(true);
@@ -256,7 +257,7 @@ export default function WebhooksPage() {
           <Select
             label="Type"
             value={formData.type}
-            onChange={(e) => setFormData({ ...formData, type: e.target.value as "slack" | "discord" | "teams" | "generic" })}
+            onChange={(e) => setFormData({ ...formData, type: e.target.value as WebhookType })}
             options={typeOptions}
           />
           <Input

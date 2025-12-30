@@ -1,5 +1,6 @@
 import { db, eq, and } from "@fyrendev/db";
 import { subscribers, webhookEndpoints, organizations } from "@fyrendev/db";
+import type { WebhookType } from "@fyrendev/shared";
 import { Queue } from "bullmq";
 import { bullmqRedis } from "../lib/redis";
 
@@ -21,7 +22,7 @@ export interface NotificationJobData {
   unsubscribeToken?: string;
   // Webhook specific
   webhookId?: string;
-  webhookType?: "slack" | "discord" | "teams" | "generic";
+  webhookType?: WebhookType;
   webhookUrl?: string;
   webhookSecret?: string;
 }

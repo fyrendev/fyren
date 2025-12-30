@@ -1,3 +1,5 @@
+import type { WebhookType } from "@fyrendev/shared";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 export async function apiClient<T>(
@@ -103,7 +105,7 @@ export interface WebhookEndpoint {
   id: string;
   name: string;
   url: string;
-  type: "slack" | "discord" | "teams" | "generic";
+  type: WebhookType;
   enabled: boolean;
   createdAt: string;
   updatedAt: string;

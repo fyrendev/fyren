@@ -1,3 +1,4 @@
+import type { WebhookType } from "@fyrendev/shared";
 import type { WebhookPayload, FormattedWebhook } from "./types";
 import { formatSlackWebhook } from "./formatters/slack";
 import { formatDiscordWebhook } from "./formatters/discord";
@@ -5,7 +6,7 @@ import { formatTeamsWebhook } from "./formatters/teams";
 import { formatGenericWebhook } from "./formatters/generic";
 
 export function formatWebhook(
-  type: "slack" | "discord" | "teams" | "generic",
+  type: WebhookType,
   payload: WebhookPayload,
   secret?: string
 ): FormattedWebhook {
