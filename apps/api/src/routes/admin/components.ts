@@ -13,9 +13,8 @@ import {
   ForbiddenError,
   errorResponse,
 } from "../../lib/errors";
-import type { AuthContext } from "../../middleware/auth";
 
-const adminComponents = new Hono<{ Variables: { auth: AuthContext } }>();
+const adminComponents = new Hono();
 
 const componentStatuses = componentStatusEnum.enumValues;
 
@@ -41,19 +40,19 @@ const updateStatusSchema = z.object({
 // GET /api/v1/admin/components - List all components
 adminComponents.get("/", async (c) => {
   try {
-    const auth = c.get("auth");
+    const orgId = c.get("organizationId")!;
     const status = c.req.query("status");
 
     let query = db
       .select()
       .from(components)
-      .where(eq(components.organizationId, auth.organizationId))
+      .where(eq(components.organizationId, orgId))
       .$dynamic();
 
     if (status && componentStatuses.includes(status as any)) {
       query = query.where(
         and(
-          eq(components.organizationId, auth.organizationId),
+          eq(components.organizationId, orgId),
           eq(components.status, status as typeof componentStatuses[number])
         )
       );
@@ -81,14 +80,14 @@ adminComponents.get("/", async (c) => {
 // POST /api/v1/admin/components - Create component
 adminComponents.post("/", async (c) => {
   try {
-    const auth = c.get("auth");
+    const orgId = c.get("organizationId")!;
     const body = await c.req.json();
     const data = createComponentSchema.parse(body);
 
     const [comp] = await db
       .insert(components)
       .values({
-        organizationId: auth.organizationId,
+        organizationId: orgId,
         name: data.name,
         description: data.description,
         status: data.status,
@@ -120,7 +119,7 @@ adminComponents.post("/", async (c) => {
 // GET /api/v1/admin/components/:id - Get component by ID
 adminComponents.get("/:id", async (c) => {
   try {
-    const auth = c.get("auth");
+    const orgId = c.get("organizationId")!;
     const id = c.req.param("id");
 
     const [comp] = await db
@@ -129,7 +128,7 @@ adminComponents.get("/:id", async (c) => {
       .where(
         and(
           eq(components.id, id),
-          eq(components.organizationId, auth.organizationId)
+          eq(components.organizationId, orgId)
         )
       )
       .limit(1);
@@ -158,7 +157,7 @@ adminComponents.get("/:id", async (c) => {
 // PUT /api/v1/admin/components/:id - Update component
 adminComponents.put("/:id", async (c) => {
   try {
-    const auth = c.get("auth");
+    const orgId = c.get("organizationId")!;
     const id = c.req.param("id");
     const body = await c.req.json();
     const data = updateComponentSchema.parse(body);
@@ -172,7 +171,7 @@ adminComponents.put("/:id", async (c) => {
       .where(
         and(
           eq(components.id, id),
-          eq(components.organizationId, auth.organizationId)
+          eq(components.organizationId, orgId)
         )
       )
       .returning();
@@ -201,7 +200,7 @@ adminComponents.put("/:id", async (c) => {
 // PATCH /api/v1/admin/components/:id/status - Update component status
 adminComponents.patch("/:id/status", async (c) => {
   try {
-    const auth = c.get("auth");
+    const orgId = c.get("organizationId")!;
     const id = c.req.param("id");
     const body = await c.req.json();
     const data = updateStatusSchema.parse(body);
@@ -215,7 +214,7 @@ adminComponents.patch("/:id/status", async (c) => {
       .where(
         and(
           eq(components.id, id),
-          eq(components.organizationId, auth.organizationId)
+          eq(components.organizationId, orgId)
         )
       )
       .returning();
@@ -244,7 +243,7 @@ adminComponents.patch("/:id/status", async (c) => {
 // DELETE /api/v1/admin/components/:id - Delete component
 adminComponents.delete("/:id", async (c) => {
   try {
-    const auth = c.get("auth");
+    const orgId = c.get("organizationId")!;
     const id = c.req.param("id");
 
     const [comp] = await db
@@ -252,7 +251,7 @@ adminComponents.delete("/:id", async (c) => {
       .where(
         and(
           eq(components.id, id),
-          eq(components.organizationId, auth.organizationId)
+          eq(components.organizationId, orgId)
         )
       )
       .returning();

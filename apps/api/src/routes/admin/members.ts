@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { db, userOrganizations, users, orgRoleEnum, eq, and } from "@fyrendev/db";
-import { requireAuthOrApiKey } from "../../middleware/auth";
+import { authMiddleware } from "../../middleware/auth";
 import { requireOrgMembership, requireRole } from "../../middleware/session";
 import { errorResponse, NotFoundError, ForbiddenError, BadRequestError } from "../../lib/errors";
 import type { AuthUser } from "../../lib/auth";
@@ -21,7 +21,7 @@ const updateMemberSchema = z.object({
 });
 
 // GET /api/v1/admin/organizations/:orgId/members - List org members
-adminMembers.get("/:orgId/members", requireAuthOrApiKey, requireOrgMembership, async (c) => {
+adminMembers.get("/:orgId/members", authMiddleware, requireOrgMembership, async (c) => {
   try {
     const orgId = c.get("organizationId")!;
 
@@ -55,7 +55,7 @@ adminMembers.get("/:orgId/members", requireAuthOrApiKey, requireOrgMembership, a
 // PUT /api/v1/admin/organizations/:orgId/members/:id - Update member role
 adminMembers.put(
   "/:orgId/members/:id",
-  requireAuthOrApiKey,
+  authMiddleware,
   requireOrgMembership,
   requireRole("owner", "admin"),
   async (c) => {
@@ -132,7 +132,7 @@ adminMembers.put(
 // DELETE /api/v1/admin/organizations/:orgId/members/:id - Remove member
 adminMembers.delete(
   "/:orgId/members/:id",
-  requireAuthOrApiKey,
+  authMiddleware,
   requireOrgMembership,
   requireRole("owner", "admin"),
   async (c) => {
@@ -185,7 +185,7 @@ adminMembers.delete(
 );
 
 // POST /api/v1/admin/organizations/:orgId/leave - Leave organization
-adminMembers.post("/:orgId/leave", requireAuthOrApiKey, requireOrgMembership, async (c) => {
+adminMembers.post("/:orgId/leave", authMiddleware, requireOrgMembership, async (c) => {
   try {
     const membership = c.get("membership");
     const user = c.get("user");

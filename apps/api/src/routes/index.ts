@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { authMiddleware, optionalAuthMiddleware, requireAuthOrApiKey } from "../middleware/auth";
+import { authMiddleware, optionalAuthMiddleware } from "../middleware/auth";
 import { auth } from "../lib/auth";
 
 // Public routes

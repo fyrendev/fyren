@@ -6,16 +6,8 @@ import { UnauthorizedError, ForbiddenError, errorResponse } from "../lib/errors"
 import type { Session, AuthUser } from "../lib/auth";
 import type { UserOrganization } from "@fyrendev/db";
 
-export type AuthContext = {
-  organizationId: string;
-  apiKeyId: string;
-};
-
 declare module "hono" {
   interface ContextVariableMap {
-    // Legacy API key auth context
-    auth?: AuthContext;
-    // New auth context
     session?: Session | null;
     user?: AuthUser | null;
     membership?: UserOrganization | null;
@@ -25,78 +17,8 @@ declare module "hono" {
   }
 }
 
-// API key only auth (legacy, for backwards compatibility)
-export const authMiddleware = createMiddleware(async (c, next) => {
-  try {
-    const authHeader = c.req.header("Authorization");
-    if (!authHeader) {
-      throw new UnauthorizedError("Missing Authorization header");
-    }
-
-    // Support both "Bearer fyr_xxx" and "fyr_xxx" formats
-    let apiKey: string;
-    if (authHeader.startsWith("Bearer ")) {
-      apiKey = authHeader.slice(7);
-    } else if (authHeader.startsWith("fyr_")) {
-      apiKey = authHeader;
-    } else {
-      throw new UnauthorizedError("Invalid Authorization header format");
-    }
-
-    if (!isValidApiKeyFormat(apiKey)) {
-      throw new UnauthorizedError("Invalid API key format");
-    }
-
-    const keyPrefix = extractKeyPrefix(apiKey);
-
-    // Look up key by prefix
-    const [apiKeyRecord] = await db
-      .select()
-      .from(apiKeys)
-      .where(eq(apiKeys.keyPrefix, keyPrefix))
-      .limit(1);
-
-    if (!apiKeyRecord) {
-      throw new UnauthorizedError("Invalid API key");
-    }
-
-    // Check expiration
-    if (apiKeyRecord.expiresAt && apiKeyRecord.expiresAt < new Date()) {
-      throw new UnauthorizedError("API key has expired");
-    }
-
-    // Verify the full key
-    const isValid = await verifyApiKey(apiKey, apiKeyRecord.keyHash);
-    if (!isValid) {
-      throw new UnauthorizedError("Invalid API key");
-    }
-
-    // Update last used timestamp (fire and forget)
-    db.update(apiKeys)
-      .set({ lastUsedAt: new Date() })
-      .where(eq(apiKeys.id, apiKeyRecord.id))
-      .execute()
-      .catch(console.error);
-
-    // Set legacy auth context
-    c.set("auth", {
-      organizationId: apiKeyRecord.organizationId,
-      apiKeyId: apiKeyRecord.id,
-    });
-
-    // Set new auth context
-    c.set("organizationId", apiKeyRecord.organizationId);
-    c.set("apiKeyId", apiKeyRecord.id);
-    c.set("authMethod", "api_key");
-
-    await next();
-  } catch (error) {
-    return errorResponse(c, error);
-  }
-});
-
 // Combined auth: accepts either session or API key
-export const requireAuthOrApiKey = createMiddleware(async (c, next) => {
+export const authMiddleware = createMiddleware(async (c, next) => {
   try {
     const authHeader = c.req.header("Authorization");
 
@@ -131,11 +53,6 @@ export const requireAuthOrApiKey = createMiddleware(async (c, next) => {
                 .execute()
                 .catch(console.error);
 
-              // Set auth context
-              c.set("auth", {
-                organizationId: apiKeyRecord.organizationId,
-                apiKeyId: apiKeyRecord.id,
-              });
               c.set("organizationId", apiKeyRecord.organizationId);
               c.set("apiKeyId", apiKeyRecord.id);
               c.set("authMethod", "api_key");
@@ -180,12 +97,6 @@ export const requireAuthOrApiKey = createMiddleware(async (c, next) => {
 
         c.set("membership", membership);
         c.set("organizationId", orgId);
-
-        // Set legacy auth context for backwards compatibility
-        c.set("auth", {
-          organizationId: orgId,
-          apiKeyId: "", // Not applicable for session auth
-        });
       }
 
       await next();
@@ -232,10 +143,6 @@ export const optionalAuthMiddleware = createMiddleware(async (c, next) => {
                 .execute()
                 .catch(console.error);
 
-              c.set("auth", {
-                organizationId: apiKeyRecord.organizationId,
-                apiKeyId: apiKeyRecord.id,
-              });
               c.set("organizationId", apiKeyRecord.organizationId);
               c.set("apiKeyId", apiKeyRecord.id);
               c.set("authMethod", "api_key");
@@ -273,10 +180,6 @@ export const optionalAuthMiddleware = createMiddleware(async (c, next) => {
         if (membership) {
           c.set("membership", membership);
           c.set("organizationId", orgId);
-          c.set("auth", {
-            organizationId: orgId,
-            apiKeyId: "",
-          });
         }
       }
     }

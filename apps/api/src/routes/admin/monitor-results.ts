@@ -11,11 +11,8 @@ import {
   sql,
 } from "@fyrendev/db";
 import { NotFoundError, ForbiddenError, errorResponse } from "../../lib/errors";
-import type { AuthContext } from "../../middleware/auth";
 
-export const adminMonitorResults = new Hono<{
-  Variables: { auth: AuthContext };
-}>();
+export const adminMonitorResults = new Hono();
 
 // Query params schema
 const querySchema = z.object({
@@ -28,7 +25,7 @@ const querySchema = z.object({
 // GET /api/v1/admin/monitors/:id/results - Get monitor results with pagination
 adminMonitorResults.get("/:id/results", async (c) => {
   try {
-    const auth = c.get("auth")!;
+    const orgId = c.get("organizationId")!;
     const monitorId = c.req.param("id");
 
     // Parse query params
@@ -62,7 +59,7 @@ adminMonitorResults.get("/:id/results", async (c) => {
       throw new NotFoundError("Monitor not found");
     }
 
-    if (existing.organizationId !== auth.organizationId) {
+    if (existing.organizationId !== orgId) {
       throw new ForbiddenError("Monitor does not belong to your organization");
     }
 

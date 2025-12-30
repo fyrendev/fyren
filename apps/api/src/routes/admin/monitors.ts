@@ -23,11 +23,8 @@ import {
 } from "../../lib/queue";
 import { executeCheck } from "../../lib/checkers";
 import { storeCheckResult } from "../../services/monitor.service";
-import type { AuthContext } from "../../middleware/auth";
 
-export const adminMonitors = new Hono<{
-  Variables: { auth: AuthContext };
-}>();
+export const adminMonitors = new Hono();
 
 // Validation schemas
 const createMonitorSchema = z.object({
@@ -56,7 +53,7 @@ const updateMonitorSchema = z.object({
 // GET /api/v1/admin/monitors - List monitors
 adminMonitors.get("/", async (c) => {
   try {
-    const auth = c.get("auth")!;
+    const orgId = c.get("organizationId")!;
     const componentId = c.req.query("componentId");
     const type = c.req.query("type") as "http" | "tcp" | "ssl_expiry" | undefined;
     const isActive = c.req.query("isActive");
@@ -68,7 +65,7 @@ adminMonitors.get("/", async (c) => {
     const orgComponents = await db
       .select({ id: components.id })
       .from(components)
-      .where(eq(components.organizationId, auth.organizationId));
+      .where(eq(components.organizationId, orgId));
 
     const componentIds = orgComponents.map((c) => c.id);
 
@@ -87,7 +84,7 @@ adminMonitors.get("/", async (c) => {
       })
       .from(monitors)
       .innerJoin(components, eq(monitors.componentId, components.id))
-      .where(eq(components.organizationId, auth.organizationId));
+      .where(eq(components.organizationId, orgId));
 
     // Apply filters
     const allMonitors = await query.orderBy(desc(monitors.createdAt));
@@ -139,7 +136,7 @@ adminMonitors.get("/", async (c) => {
 // POST /api/v1/admin/monitors - Create monitor
 adminMonitors.post("/", async (c) => {
   try {
-    const auth = c.get("auth")!;
+    const orgId = c.get("organizationId")!;
     const body = await c.req.json();
 
     const validatedData = createMonitorSchema.parse(body);
@@ -151,7 +148,7 @@ adminMonitors.post("/", async (c) => {
       .where(
         and(
           eq(components.id, validatedData.componentId),
-          eq(components.organizationId, auth.organizationId)
+          eq(components.organizationId, orgId)
         )
       )
       .limit(1);
@@ -209,7 +206,7 @@ adminMonitors.post("/", async (c) => {
 // GET /api/v1/admin/monitors/:id - Get monitor with recent results
 adminMonitors.get("/:id", async (c) => {
   try {
-    const auth = c.get("auth")!;
+    const orgId = c.get("organizationId")!;
     const monitorId = c.req.param("id");
 
     // Get monitor with component info
@@ -226,7 +223,7 @@ adminMonitors.get("/:id", async (c) => {
       .where(
         and(
           eq(monitors.id, monitorId),
-          eq(components.organizationId, auth.organizationId)
+          eq(components.organizationId, orgId)
         )
       )
       .limit(1);
@@ -261,7 +258,7 @@ adminMonitors.get("/:id", async (c) => {
 // PUT /api/v1/admin/monitors/:id - Update monitor
 adminMonitors.put("/:id", async (c) => {
   try {
-    const auth = c.get("auth")!;
+    const orgId = c.get("organizationId")!;
     const monitorId = c.req.param("id");
     const body = await c.req.json();
 
@@ -283,7 +280,7 @@ adminMonitors.put("/:id", async (c) => {
       throw new NotFoundError("Monitor not found");
     }
 
-    if (existing.organizationId !== auth.organizationId) {
+    if (existing.organizationId !== orgId) {
       throw new ForbiddenError("Monitor does not belong to your organization");
     }
 
@@ -355,7 +352,7 @@ adminMonitors.put("/:id", async (c) => {
 // DELETE /api/v1/admin/monitors/:id - Delete monitor
 adminMonitors.delete("/:id", async (c) => {
   try {
-    const auth = c.get("auth")!;
+    const orgId = c.get("organizationId")!;
     const monitorId = c.req.param("id");
 
     // Verify monitor exists and belongs to org
@@ -374,7 +371,7 @@ adminMonitors.delete("/:id", async (c) => {
       throw new NotFoundError("Monitor not found");
     }
 
-    if (existing.organizationId !== auth.organizationId) {
+    if (existing.organizationId !== orgId) {
       throw new ForbiddenError("Monitor does not belong to your organization");
     }
 
@@ -393,7 +390,7 @@ adminMonitors.delete("/:id", async (c) => {
 // POST /api/v1/admin/monitors/:id/check - Trigger immediate check
 adminMonitors.post("/:id/check", async (c) => {
   try {
-    const auth = c.get("auth")!;
+    const orgId = c.get("organizationId")!;
     const monitorId = c.req.param("id");
 
     // Verify monitor exists and belongs to org
@@ -412,7 +409,7 @@ adminMonitors.post("/:id/check", async (c) => {
       throw new NotFoundError("Monitor not found");
     }
 
-    if (existing.organizationId !== auth.organizationId) {
+    if (existing.organizationId !== orgId) {
       throw new ForbiddenError("Monitor does not belong to your organization");
     }
 

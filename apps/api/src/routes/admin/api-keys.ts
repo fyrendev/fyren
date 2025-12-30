@@ -8,9 +8,8 @@ import {
   ForbiddenError,
   errorResponse,
 } from "../../lib/errors";
-import type { AuthContext } from "../../middleware/auth";
 
-const adminApiKeys = new Hono<{ Variables: { auth: AuthContext } }>();
+const adminApiKeys = new Hono();
 
 const createApiKeySchema = z.object({
   name: z.string().min(1).max(255),
@@ -20,7 +19,7 @@ const createApiKeySchema = z.object({
 // GET /api/v1/admin/api-keys - List all API keys
 adminApiKeys.get("/", async (c) => {
   try {
-    const auth = c.get("auth");
+    const orgId = c.get("organizationId")!;
 
     const keys = await db
       .select({
@@ -32,7 +31,7 @@ adminApiKeys.get("/", async (c) => {
         createdAt: apiKeys.createdAt,
       })
       .from(apiKeys)
-      .where(eq(apiKeys.organizationId, auth.organizationId));
+      .where(eq(apiKeys.organizationId, orgId));
 
     return c.json({
       apiKeys: keys.map((key) => ({
@@ -52,22 +51,27 @@ adminApiKeys.get("/", async (c) => {
 // POST /api/v1/admin/api-keys - Create new API key
 adminApiKeys.post("/", async (c) => {
   try {
-    const auth = c.get("auth");
+    const orgId = c.get("organizationId")!;
     const body = await c.req.json();
     const data = createApiKeySchema.parse(body);
 
     const apiKeyData = await generateApiKey();
 
-    const [key] = await db
+    const result = await db
       .insert(apiKeys)
       .values({
-        organizationId: auth.organizationId,
+        organizationId: orgId,
         name: data.name,
         keyHash: apiKeyData.keyHash,
         keyPrefix: apiKeyData.keyPrefix,
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
       })
       .returning();
+
+    const key = result[0];
+    if (!key) {
+      throw new Error("Failed to create API key");
+    }
 
     return c.json(
       {
@@ -91,24 +95,26 @@ adminApiKeys.post("/", async (c) => {
 // DELETE /api/v1/admin/api-keys/:id - Delete API key
 adminApiKeys.delete("/:id", async (c) => {
   try {
-    const auth = c.get("auth");
+    const orgId = c.get("organizationId")!;
+    const apiKeyId = c.get("apiKeyId");
     const id = c.req.param("id");
 
     // Cannot delete the key being used for the current request
-    if (auth.apiKeyId === id) {
+    if (apiKeyId === id) {
       throw new ForbiddenError("Cannot delete the API key being used for this request");
     }
 
-    const [key] = await db
+    const result = await db
       .delete(apiKeys)
       .where(
         and(
           eq(apiKeys.id, id),
-          eq(apiKeys.organizationId, auth.organizationId)
+          eq(apiKeys.organizationId, orgId)
         )
       )
       .returning();
 
+    const key = result[0];
     if (!key) {
       throw new NotFoundError("API key not found");
     }

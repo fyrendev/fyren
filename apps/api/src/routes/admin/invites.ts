@@ -10,7 +10,7 @@ import {
   and,
   isNull,
 } from "@fyrendev/db";
-import { requireAuthOrApiKey } from "../../middleware/auth";
+import { authMiddleware } from "../../middleware/auth";
 import { requireSession, requireOrgMembership, requireRole } from "../../middleware/session";
 import { errorResponse, NotFoundError, ForbiddenError, BadRequestError, ConflictError } from "../../lib/errors";
 import type { AuthUser } from "../../lib/auth";
@@ -42,7 +42,7 @@ const createInviteSchema = z.object({
 // GET /api/v1/admin/organizations/:orgId/invites - List pending invites
 adminInvites.get(
   "/:orgId/invites",
-  requireAuthOrApiKey,
+  authMiddleware,
   requireOrgMembership,
   requireRole("owner", "admin"),
   async (c) => {
@@ -88,7 +88,7 @@ adminInvites.get(
 // POST /api/v1/admin/organizations/:orgId/invites - Create invite
 adminInvites.post(
   "/:orgId/invites",
-  requireAuthOrApiKey,
+  authMiddleware,
   requireOrgMembership,
   requireRole("owner", "admin"),
   async (c) => {
@@ -196,7 +196,7 @@ adminInvites.post(
 // DELETE /api/v1/admin/organizations/:orgId/invites/:id - Revoke invite
 adminInvites.delete(
   "/:orgId/invites/:id",
-  requireAuthOrApiKey,
+  authMiddleware,
   requireOrgMembership,
   requireRole("owner", "admin"),
   async (c) => {

@@ -8,16 +8,8 @@ import {
   ForbiddenError,
   errorResponse,
 } from "../../lib/errors";
-import type { AuthContext } from "../../middleware/auth";
-import type { AuthUser } from "../../lib/auth";
 
-type Variables = {
-  auth?: AuthContext;
-  user?: AuthUser;
-  authMethod?: "session" | "api_key" | null;
-};
-
-const adminOrganizations = new Hono<{ Variables: Variables }>();
+const adminOrganizations = new Hono();
 
 // Slug validation: lowercase alphanumeric with hyphens, 3-50 chars
 const slugRegex = /^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$/;
@@ -105,14 +97,14 @@ adminOrganizations.post("/", async (c) => {
 // GET /organizations/:id - Get organization by ID (auth required)
 adminOrganizations.get("/:id", async (c) => {
   try {
-    const auth = c.get("auth");
-    if (!auth) {
+    const orgId = c.get("organizationId");
+    if (!orgId) {
       throw new ForbiddenError("Authentication required");
     }
     const id = c.req.param("id");
 
     // Verify the user has access to this organization
-    if (auth.organizationId !== id) {
+    if (orgId !== id) {
       throw new ForbiddenError("You don't have access to this organization");
     }
 
@@ -147,14 +139,14 @@ adminOrganizations.get("/:id", async (c) => {
 // PUT /organizations/:id - Update organization (auth required)
 adminOrganizations.put("/:id", async (c) => {
   try {
-    const auth = c.get("auth");
-    if (!auth) {
+    const orgId = c.get("organizationId");
+    if (!orgId) {
       throw new ForbiddenError("Authentication required");
     }
     const id = c.req.param("id");
 
     // Verify the user has access to this organization
-    if (auth.organizationId !== id) {
+    if (orgId !== id) {
       throw new ForbiddenError("You don't have access to this organization");
     }
 
