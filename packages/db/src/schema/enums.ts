@@ -53,18 +53,9 @@ export const webhookTypeEnum = pgEnum("webhook_type", [
   "generic",
 ]);
 
-// Notification types
-export const notificationTypeEnum = pgEnum("notification_type", [
-  "incident",
-  "maintenance",
-  "status_change",
-]);
-
-// Notification channels
-export const notificationChannelEnum = pgEnum("notification_channel", [
+// Notification delivery type
+export const notificationDeliveryTypeEnum = pgEnum("notification_delivery_type", [
   "email",
-  "slack",
-  "discord",
   "webhook",
 ]);
 
@@ -96,8 +87,7 @@ export type IncidentStatus = (typeof incidentStatusEnum.enumValues)[number];
 export type IncidentSeverity = (typeof incidentSeverityEnum.enumValues)[number];
 export type MaintenanceStatus = (typeof maintenanceStatusEnum.enumValues)[number];
 export type WebhookType = (typeof webhookTypeEnum.enumValues)[number];
-export type NotificationType = (typeof notificationTypeEnum.enumValues)[number];
-export type NotificationChannel = (typeof notificationChannelEnum.enumValues)[number];
+export type NotificationDeliveryType = (typeof notificationDeliveryTypeEnum.enumValues)[number];
 export type NotificationStatus = (typeof notificationStatusEnum.enumValues)[number];
 export type OrgRole = (typeof orgRoleEnum.enumValues)[number];
 export type InviteRole = (typeof inviteRoleEnum.enumValues)[number];

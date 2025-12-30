@@ -14,6 +14,7 @@ import {
   sql,
 } from "@fyrendev/db";
 import { invalidateStatusCache } from "./cache.service";
+import { NotificationService } from "./notification.service";
 import type {
   IncidentStatus,
   IncidentSeverity,
@@ -103,6 +104,32 @@ export const IncidentService = {
       // 5. Invalidate cache
       await invalidateOrgCache(data.organizationId);
 
+      // 6. Trigger notifications
+      // Get component names for notification
+      let affectedComponentNames: string[] = [];
+      if (data.componentIds.length > 0) {
+        const comps = await db
+          .select({ name: components.name })
+          .from(components)
+          .where(inArray(components.id, data.componentIds));
+        affectedComponentNames = comps.map((c) => c.name);
+      }
+
+      await NotificationService.trigger({
+        organizationId: data.organizationId,
+        event: "incident.created",
+        entityType: "incident",
+        entityId: incident.id,
+        componentIds: data.componentIds,
+        data: {
+          title: incident.title,
+          status: incident.status,
+          severity: incident.severity,
+          message: data.message,
+          affectedComponents: affectedComponentNames,
+        },
+      });
+
       return incident;
     });
   },
@@ -181,6 +208,45 @@ export const IncidentService = {
 
       // 4. Invalidate cache
       await invalidateOrgCache(data.organizationId);
+
+      // 5. Trigger notifications
+      // Get full incident details and component names
+      const [fullIncident] = await db
+        .select({
+          title: incidents.title,
+          severity: incidents.severity,
+        })
+        .from(incidents)
+        .where(eq(incidents.id, data.incidentId))
+        .limit(1);
+
+      const componentIds = affectedComps.map((ac) => ac.componentId);
+      let affectedComponentNames: string[] = [];
+      if (componentIds.length > 0) {
+        const comps = await db
+          .select({ name: components.name })
+          .from(components)
+          .where(inArray(components.id, componentIds));
+        affectedComponentNames = comps.map((c) => c.name);
+      }
+
+      const eventType =
+        data.status === "resolved" ? "incident.resolved" : "incident.updated";
+
+      await NotificationService.trigger({
+        organizationId: data.organizationId,
+        event: eventType,
+        entityType: "incident",
+        entityId: data.incidentId,
+        componentIds,
+        data: {
+          title: fullIncident?.title || "Incident",
+          status: data.status,
+          severity: fullIncident?.severity || "minor",
+          message: data.message,
+          affectedComponents: affectedComponentNames,
+        },
+      });
 
       return update;
     });

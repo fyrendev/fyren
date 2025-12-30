@@ -15,6 +15,7 @@ import {
 } from "@fyrendev/db";
 import { invalidateStatusCache } from "./cache.service";
 import { MaintenanceScheduler } from "./maintenance-scheduler.service";
+import { NotificationService } from "./notification.service";
 import type { MaintenanceStatus } from "@fyrendev/db";
 
 // Helper to invalidate cache for an organization
@@ -88,6 +89,31 @@ export const MaintenanceService = {
 
       // 4. Invalidate cache
       await invalidateOrgCache(data.organizationId);
+
+      // 5. Trigger notifications
+      let affectedComponentNames: string[] = [];
+      if (data.componentIds.length > 0) {
+        const comps = await db
+          .select({ name: components.name })
+          .from(components)
+          .where(inArray(components.id, data.componentIds));
+        affectedComponentNames = comps.map((c) => c.name);
+      }
+
+      await NotificationService.trigger({
+        organizationId: data.organizationId,
+        event: "maintenance.scheduled",
+        entityType: "maintenance",
+        entityId: maintenance.id,
+        componentIds: data.componentIds,
+        data: {
+          title: maintenance.title,
+          description: maintenance.description,
+          scheduledStartAt: maintenance.scheduledStartAt.toISOString(),
+          scheduledEndAt: maintenance.scheduledEndAt.toISOString(),
+          affectedComponents: affectedComponentNames,
+        },
+      });
 
       return maintenance;
     });
@@ -253,6 +279,31 @@ export const MaintenanceService = {
       // 3. Invalidate cache
       await invalidateOrgCache(organizationId);
 
+      // 4. Trigger notifications
+      let affectedComponentNames: string[] = [];
+      if (componentIds.length > 0) {
+        const comps = await db
+          .select({ name: components.name })
+          .from(components)
+          .where(inArray(components.id, componentIds));
+        affectedComponentNames = comps.map((c) => c.name);
+      }
+
+      await NotificationService.trigger({
+        organizationId,
+        event: "maintenance.started",
+        entityType: "maintenance",
+        entityId: maintenanceId,
+        componentIds,
+        data: {
+          title: maintenance.title,
+          description: maintenance.description,
+          scheduledStartAt: maintenance.scheduledStartAt.toISOString(),
+          scheduledEndAt: maintenance.scheduledEndAt.toISOString(),
+          affectedComponents: affectedComponentNames,
+        },
+      });
+
       return updated;
     });
   },
@@ -312,6 +363,31 @@ export const MaintenanceService = {
 
       // 4. Invalidate cache
       await invalidateOrgCache(organizationId);
+
+      // 5. Trigger notifications
+      let affectedComponentNames: string[] = [];
+      if (componentIds.length > 0) {
+        const comps = await db
+          .select({ name: components.name })
+          .from(components)
+          .where(inArray(components.id, componentIds));
+        affectedComponentNames = comps.map((c) => c.name);
+      }
+
+      await NotificationService.trigger({
+        organizationId,
+        event: "maintenance.completed",
+        entityType: "maintenance",
+        entityId: maintenanceId,
+        componentIds,
+        data: {
+          title: maintenance.title,
+          description: maintenance.description,
+          scheduledStartAt: maintenance.scheduledStartAt.toISOString(),
+          scheduledEndAt: maintenance.scheduledEndAt.toISOString(),
+          affectedComponents: affectedComponentNames,
+        },
+      });
 
       return updated;
     });

@@ -7,6 +7,8 @@ import { publicOrganizations } from "./public/organizations";
 import { publicComponents } from "./public/components";
 import { publicStatus } from "./public/status";
 import { publicInvites } from "./public/invites";
+import { subscribeRoutes } from "./public/subscribe";
+import { rssRoutes } from "./public/rss";
 
 // Admin routes
 import { adminOrganizations } from "./admin/organizations";
@@ -20,6 +22,8 @@ import { adminInvites } from "./admin/invites";
 import { adminIncidents } from "./admin/incidents";
 import { adminIncidentTemplates } from "./admin/incident-templates";
 import { adminMaintenance } from "./admin/maintenance";
+import { adminSubscribers } from "./admin/subscribers";
+import { adminWebhooks } from "./admin/webhooks";
 
 // Health routes
 import { health } from "./health";
@@ -37,6 +41,8 @@ export function setupRoutes(app: Hono) {
   app.route("/api/v1/org", publicOrganizations);
   app.route("/api/v1/org", publicComponents);
   app.route("/api/v1/status", publicStatus);
+  app.route("/api/v1/status", subscribeRoutes);
+  app.route("/api/v1/status", rssRoutes);
   app.route("/api/v1/invites", publicInvites);
 
   // Admin user routes (session only)
@@ -84,4 +90,14 @@ export function setupRoutes(app: Hono) {
   app.use("/api/v1/admin/maintenance", authMiddleware);
   app.use("/api/v1/admin/maintenance/*", authMiddleware);
   app.route("/api/v1/admin/maintenance", adminMaintenance);
+
+  // Protected subscriber routes
+  app.use("/api/v1/admin/subscribers", authMiddleware);
+  app.use("/api/v1/admin/subscribers/*", authMiddleware);
+  app.route("/api/v1/admin/subscribers", adminSubscribers);
+
+  // Protected webhook routes
+  app.use("/api/v1/admin/webhooks", authMiddleware);
+  app.use("/api/v1/admin/webhooks/*", authMiddleware);
+  app.route("/api/v1/admin/webhooks", adminWebhooks);
 }

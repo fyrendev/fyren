@@ -5,6 +5,7 @@ import { setupRoutes } from "./routes";
 import { redis, bullmqRedis } from "./lib/redis";
 import { errorResponse } from "./lib/errors";
 import { maintenanceWorker, closeMaintenanceWorker } from "./workers/maintenance.worker";
+import { notificationWorker, closeNotificationWorker } from "./workers/notification.worker";
 import { rescheduleMaintenanceJobs } from "./services/maintenance-startup.service";
 
 const app = new Hono();
@@ -43,8 +44,9 @@ const server = Bun.serve({
 
 console.log(`Fyren API running at http://localhost:${server.port}`);
 
-// Start maintenance worker
+// Start workers
 console.log("Maintenance worker started");
+console.log("Notification worker started");
 
 // Reschedule any pending maintenance jobs on startup
 rescheduleMaintenanceJobs().catch((err) => {
@@ -59,6 +61,13 @@ async function shutdown() {
     console.log("Maintenance worker closed");
   } catch (err) {
     console.error("Error closing maintenance worker:", err);
+  }
+
+  try {
+    await closeNotificationWorker();
+    console.log("Notification worker closed");
+  } catch (err) {
+    console.error("Error closing notification worker:", err);
   }
 
   try {
