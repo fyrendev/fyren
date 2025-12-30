@@ -19,6 +19,7 @@ import { adminMembers } from "./admin/members";
 import { adminInvites } from "./admin/invites";
 import { adminIncidents } from "./admin/incidents";
 import { adminIncidentTemplates } from "./admin/incident-templates";
+import { adminMaintenance } from "./admin/maintenance";
 
 // Health routes
 import { health } from "./health";
@@ -78,4 +79,9 @@ export function setupRoutes(app: Hono) {
   app.use("/api/v1/admin/incident-templates", authMiddleware);
   app.use("/api/v1/admin/incident-templates/*", authMiddleware);
   app.route("/api/v1/admin/incident-templates", adminIncidentTemplates);
+
+  // Protected maintenance routes
+  app.use("/api/v1/admin/maintenance", authMiddleware);
+  app.use("/api/v1/admin/maintenance/*", authMiddleware);
+  app.route("/api/v1/admin/maintenance", adminMaintenance);
 }

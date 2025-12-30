@@ -1,4 +1,4 @@
-import { pgTable, uuid, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, uuid, primaryKey, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { maintenances } from "./maintenance";
 import { components } from "./component";
@@ -12,6 +12,7 @@ export const maintenanceComponents = pgTable(
     componentId: uuid("component_id")
       .notNull()
       .references(() => components.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [primaryKey({ columns: [table.maintenanceId, table.componentId] })]
 );

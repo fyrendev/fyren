@@ -147,16 +147,15 @@ async function getActiveIncidents(orgId: string) {
 
 // Helper to get scheduled/in-progress maintenance
 async function getUpcomingMaintenance(orgId: string) {
-  const now = new Date();
-
   const upcomingMaintenance = await db
     .select({
       id: maintenances.id,
       title: maintenances.title,
       description: maintenances.description,
       status: maintenances.status,
-      scheduledStart: maintenances.scheduledStart,
-      scheduledEnd: maintenances.scheduledEnd,
+      scheduledStartAt: maintenances.scheduledStartAt,
+      scheduledEndAt: maintenances.scheduledEndAt,
+      startedAt: maintenances.startedAt,
     })
     .from(maintenances)
     .where(
@@ -168,7 +167,7 @@ async function getUpcomingMaintenance(orgId: string) {
         )
       )
     )
-    .orderBy(asc(maintenances.scheduledStart));
+    .orderBy(asc(maintenances.scheduledStartAt));
 
   // Get affected components for each maintenance
   const maintenanceWithComponents = await Promise.all(
@@ -191,8 +190,9 @@ async function getUpcomingMaintenance(orgId: string) {
         description: maint.description,
         status: maint.status,
         affectedComponents,
-        scheduledStartAt: maint.scheduledStart.toISOString(),
-        scheduledEndAt: maint.scheduledEnd.toISOString(),
+        scheduledStartAt: maint.scheduledStartAt.toISOString(),
+        scheduledEndAt: maint.scheduledEndAt.toISOString(),
+        startedAt: maint.startedAt?.toISOString() || null,
       };
     })
   );

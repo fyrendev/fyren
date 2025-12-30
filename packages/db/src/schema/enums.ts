@@ -42,6 +42,7 @@ export const maintenanceStatusEnum = pgEnum("maintenance_status", [
   "scheduled",
   "in_progress",
   "completed",
+  "cancelled",
 ]);
 
 // Webhook types
