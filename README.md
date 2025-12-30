@@ -96,4 +96,28 @@ fyren/
 
 ## License
 
-MIT
+Fyren is licensed under the **Elastic License 2.0 (ELv2)**.
+
+### What You Can Do
+
+- View, read, and audit the source code
+- Self-host for personal or commercial use
+- Modify and customize for your own needs
+- Fork and run internally at your company
+- Contribute back to the project
+
+### What's Restricted
+
+- Offering Fyren as a managed service to third parties
+- Circumventing license key functionality
+
+### License by Component
+
+| Component                           | License |
+| ----------------------------------- | ------- |
+| Core platform (API, workers, admin) | ELv2    |
+| Public status page frontend         | ELv2    |
+| Client SDKs / libraries             | MIT     |
+| Documentation                       | MIT     |
+
+See [LICENSE](LICENSE) for the full Elastic License 2.0 text.
