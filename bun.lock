@@ -34,6 +34,7 @@
       "name": "@fyren/web",
       "version": "0.0.0",
       "dependencies": {
+        "better-auth": "^1.4.9",
         "clsx": "^2.1.0",
         "date-fns": "^3.2.0",
         "lucide-react": "^0.468.0",
