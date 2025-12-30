@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  PORT: z.coerce.number().default(3000),
+  PORT: z.coerce.number().default(3001),
   DATABASE_URL: z.string().url(),
   REDIS_URL: z.string().url(),
   NODE_ENV: z
@@ -9,8 +9,8 @@ const envSchema = z.object({
     .default("development"),
   // Auth (BetterAuth)
   BETTER_AUTH_SECRET: z.string().min(32),
-  BETTER_AUTH_URL: z.string().url().default("http://localhost:3000"),
-  APP_URL: z.string().url().default("http://localhost:3000"),
+  BETTER_AUTH_URL: z.string().url().default("http://localhost:3001"),
+  APP_URL: z.string().url().default("http://localhost:3001"),
 });
 
 export type Env = z.infer<typeof envSchema>;
