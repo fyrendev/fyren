@@ -1,43 +1,55 @@
 # Fyren Web Dockerfile
-# Multi-stage build for minimal production image
+# Multi-stage build using Turborepo prune for proper monorepo support
 
 # ================================
-# Stage 1: Base
+# Stage 1: Pruner
+# Extract only what's needed for this app using turbo prune
 # ================================
-FROM node:20-alpine AS base
+FROM node:20-alpine AS pruner
 RUN apk add --no-cache libc6-compat
-WORKDIR /app
-
-# ================================
-# Stage 2: Dependencies & Build
-# ================================
-FROM base AS builder
+RUN npm install -g turbo@^2
 
 WORKDIR /app
+COPY . .
+RUN turbo prune @fyren/web --docker
 
-# Copy shared package first (it's a workspace dependency)
-COPY packages/shared ./packages/shared
+# ================================
+# Stage 2: Installer
+# Install dependencies (this layer is cached when deps don't change)
+# ================================
+FROM oven/bun:1.3-alpine AS installer
 
-# Copy web app source and package.json
-COPY apps/web ./apps/web
+WORKDIR /app
 
-# Create a modified package.json that replaces workspace:* with file reference
-RUN cd apps/web && \
-    sed -i 's/"@fyrendev\/shared": "workspace:\*"/"@fyrendev\/shared": "file:..\/..\/packages\/shared"/' package.json && \
-    npm install
+# Copy pruned package.json files and lockfile
+COPY --from=pruner /app/out/json/ .
+
+# Install dependencies with Bun
+RUN bun install --frozen-lockfile
+
+# ================================
+# Stage 3: Builder
+# Copy source and build the application
+# ================================
+FROM installer AS builder
+
+WORKDIR /app
+
+# Copy pruned source code
+COPY --from=pruner /app/out/full/ .
 
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
 # Build Next.js application
-WORKDIR /app/apps/web
-RUN npm run build
+RUN bun run build --filter=@fyren/web
 
 # ================================
-# Stage 3: Production
+# Stage 4: Runner
+# Minimal production image with standalone output
 # ================================
-FROM base AS runner
+FROM oven/bun:1.3-alpine AS runner
 
 WORKDIR /app
 
@@ -48,9 +60,12 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 fyren && \
     adduser --system --uid 1001 fyren
 
-# Copy standalone build output
+# Copy standalone build output (preserves monorepo structure)
 COPY --from=builder --chown=fyren:fyren /app/apps/web/.next/standalone ./
-COPY --from=builder --chown=fyren:fyren /app/apps/web/.next/static ./.next/static
+COPY --from=builder --chown=fyren:fyren /app/apps/web/.next/static ./apps/web/.next/static
+
+# Set working directory to where server.js lives
+WORKDIR /app/apps/web
 
 # Switch to non-root user
 USER fyren
@@ -67,4 +82,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
 
 # Start the Next.js server
-CMD ["node", "server.js"]
+CMD ["bun", "run", "server.js"]
