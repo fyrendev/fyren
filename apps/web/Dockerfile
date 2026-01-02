@@ -2,7 +2,22 @@
 # Multi-stage build for minimal production image
 
 # ================================
-# Stage 1: Base
+# Stage 1: Dependencies (using Bun for speed)
+# ================================
+FROM oven/bun:1.3-alpine AS deps
+
+WORKDIR /app
+
+# Copy package files (include workspace packages that apps/web depends on)
+COPY package.json bun.lock ./
+COPY apps/web/package.json ./apps/web/
+COPY packages/shared/package.json ./packages/shared/
+
+# Install dependencies using Bun (without frozen-lockfile due to partial monorepo copy)
+RUN bun install
+
+# ================================
+# Stage 2: Base for Node.js stages
 # ================================
 FROM node:20-alpine AS base
 
@@ -12,30 +27,18 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # ================================
-# Stage 2: Install dependencies
-# ================================
-FROM base AS deps
-
-# Copy package files
-COPY package.json package-lock.json* bun.lock* ./
-COPY apps/web/package.json ./apps/web/
-
-# Install dependencies using npm (more reliable for Next.js)
-RUN npm ci --prefer-offline
-
-# ================================
 # Stage 3: Build
 # ================================
 FROM base AS builder
 
 WORKDIR /app
 
-# Copy dependencies
+# Copy dependencies from Bun stage
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 
 # Copy source files
 COPY apps/web ./apps/web
+COPY packages/shared ./packages/shared
 COPY package.json ./
 
 # Set environment variables for build
@@ -60,10 +63,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 fyren && \
     adduser --system --uid 1001 fyren
 
-# Copy public assets
-COPY --from=builder /app/apps/web/public ./public
-
-# Copy standalone build output
+# Copy standalone build output (public directory is optional)
 COPY --from=builder --chown=fyren:fyren /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=fyren:fyren /app/apps/web/.next/static ./.next/static
 

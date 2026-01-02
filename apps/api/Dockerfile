@@ -4,7 +4,7 @@
 # ================================
 # Stage 1: Base
 # ================================
-FROM oven/bun:1.1-alpine AS base
+FROM oven/bun:1.3-alpine AS base
 WORKDIR /app
 
 # ================================
@@ -18,8 +18,8 @@ COPY packages/db/package.json ./packages/db/
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/api/package.json ./apps/api/
 
-# Install all dependencies
-RUN bun install --frozen-lockfile
+# Install all dependencies (without frozen-lockfile due to partial monorepo copy)
+RUN bun install
 
 # ================================
 # Stage 3: Build
