@@ -27,6 +27,8 @@ bun-debug.log*
 
 # Testing
 coverage/
+playwright-report/
+test-results/
 
 # Turbo
 .turbo/
