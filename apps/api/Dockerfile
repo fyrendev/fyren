@@ -58,12 +58,8 @@ RUN addgroup --system --gid 1001 fyren && \
 
 WORKDIR /app
 
-# Copy built application
-COPY --from=builder --chown=fyren:fyren /app/packages/db ./packages/db
-COPY --from=builder --chown=fyren:fyren /app/packages/shared ./packages/shared
-COPY --from=builder --chown=fyren:fyren /app/apps/api ./apps/api
-COPY --from=builder --chown=fyren:fyren /app/node_modules ./node_modules
-COPY --from=builder --chown=fyren:fyren /app/package.json ./
+# Copy only the bundled output (single ~5MB file instead of 720MB node_modules)
+COPY --from=builder --chown=fyren:fyren /app/apps/api/dist ./dist
 
 # Switch to non-root user
 USER fyren
@@ -78,5 +74,5 @@ ENV PORT=3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
 
-# Start the API
-CMD ["bun", "run", "apps/api/src/index.ts"]
+# Start the bundled API
+CMD ["bun", "run", "dist/index.js"]
