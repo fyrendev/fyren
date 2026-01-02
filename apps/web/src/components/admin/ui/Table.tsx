@@ -39,17 +39,9 @@ export function TableBody({ children }: TableProps) {
 }
 
 export function TableRow({ children, className }: TableProps) {
-  return (
-    <tr className={clsx("hover:bg-navy-800/30 transition-colors", className)}>
-      {children}
-    </tr>
-  );
+  return <tr className={clsx("hover:bg-navy-800/30 transition-colors", className)}>{children}</tr>;
 }
 
 export function TableCell({ children, className }: TableProps) {
-  return (
-    <td className={clsx("px-4 py-4 text-sm text-navy-300", className)}>
-      {children}
-    </td>
-  );
+  return <td className={clsx("px-4 py-4 text-sm text-navy-300", className)}>{children}</td>;
 }

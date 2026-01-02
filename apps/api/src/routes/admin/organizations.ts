@@ -3,11 +3,7 @@ import { z } from "zod";
 import { db } from "../../lib/db";
 import { organizations, apiKeys, userOrganizations, eq } from "@fyrendev/db";
 import { generateApiKey } from "../../lib/api-key";
-import {
-  NotFoundError,
-  ForbiddenError,
-  errorResponse,
-} from "../../lib/errors";
+import { NotFoundError, ForbiddenError, errorResponse } from "../../lib/errors";
 
 const adminOrganizations = new Hono();
 
@@ -112,11 +108,7 @@ adminOrganizations.get("/:id", async (c) => {
       throw new ForbiddenError("You don't have access to this organization");
     }
 
-    const [org] = await db
-      .select()
-      .from(organizations)
-      .where(eq(organizations.id, id))
-      .limit(1);
+    const [org] = await db.select().from(organizations).where(eq(organizations.id, id)).limit(1);
 
     if (!org) {
       throw new NotFoundError("Organization not found");

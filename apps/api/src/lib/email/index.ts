@@ -9,8 +9,7 @@ let emailProvider: EmailProvider | null = null;
 export function getEmailProvider(): EmailProvider {
   if (emailProvider) return emailProvider;
 
-  const providerType = (process.env.EMAIL_PROVIDER ||
-    "console") as EmailProviderType;
+  const providerType = (process.env.EMAIL_PROVIDER || "console") as EmailProviderType;
 
   switch (providerType) {
     case "ses":

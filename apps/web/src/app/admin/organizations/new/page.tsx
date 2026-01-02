@@ -64,9 +64,7 @@ export default function NewOrganizationPage() {
             </div>
             <span className="text-2xl font-semibold text-white">Fyren</span>
           </div>
-          <h1 className="text-2xl font-semibold text-white">
-            Create Your Organization
-          </h1>
+          <h1 className="text-2xl font-semibold text-white">Create Your Organization</h1>
           <p className="text-navy-400 mt-2">
             Set up your organization to start monitoring your services.
           </p>

@@ -84,9 +84,7 @@ export default function NewIncidentPage() {
           <Input
             label="Title"
             value={formData.title}
-            onChange={(e) =>
-              setFormData({ ...formData, title: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             placeholder="Brief description of the incident"
             required
           />
@@ -94,18 +92,14 @@ export default function NewIncidentPage() {
           <Select
             label="Severity"
             value={formData.severity}
-            onChange={(e) =>
-              setFormData({ ...formData, severity: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, severity: e.target.value })}
             options={severityOptions}
           />
 
           <Textarea
             label="Initial Update"
             value={formData.message}
-            onChange={(e) =>
-              setFormData({ ...formData, message: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, message: e.target.value })}
             placeholder="We are currently investigating..."
             rows={4}
             required

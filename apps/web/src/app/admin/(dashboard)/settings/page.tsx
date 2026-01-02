@@ -5,10 +5,9 @@ import { api, type Organization } from "@/lib/api-client";
 import { Button } from "@/components/admin/ui/Button";
 import { Card, CardHeader, CardTitle } from "@/components/admin/ui/Card";
 import { Input } from "@/components/admin/ui/Input";
-import { Textarea } from "@/components/admin/ui/Textarea";
 
 export default function SettingsPage() {
-  const [organization, setOrganization] = useState<Organization | null>(null);
+  const [_organization, setOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,8 +58,7 @@ export default function SettingsPage() {
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Failed to update settings";
+      const message = err instanceof Error ? err.message : "Failed to update settings";
       setError(message);
     } finally {
       setSaving(false);
@@ -100,39 +98,29 @@ export default function SettingsPage() {
             <Input
               label="Organization Name"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="Acme Inc"
               required
             />
             <Input
               label="Slug"
               value={formData.slug}
-              onChange={(e) =>
-                setFormData({ ...formData, slug: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
               placeholder="acme"
               required
             />
-            <p className="text-xs text-navy-400">
-              Your status page URL: {formData.slug}.fyren.dev
-            </p>
+            <p className="text-xs text-navy-400">Your status page URL: {formData.slug}.fyren.dev</p>
             <Input
               label="Website URL"
               type="url"
               value={formData.websiteUrl}
-              onChange={(e) =>
-                setFormData({ ...formData, websiteUrl: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
               placeholder="https://acme.com"
             />
             <Input
               label="Timezone"
               value={formData.timezone}
-              onChange={(e) =>
-                setFormData({ ...formData, timezone: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
               placeholder="UTC"
             />
           </div>
@@ -148,29 +136,21 @@ export default function SettingsPage() {
               label="Logo URL"
               type="url"
               value={formData.logoUrl}
-              onChange={(e) =>
-                setFormData({ ...formData, logoUrl: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
               placeholder="https://example.com/logo.png"
             />
             <div>
-              <label className="block text-sm font-medium text-navy-300 mb-1">
-                Brand Color
-              </label>
+              <label className="block text-sm font-medium text-navy-300 mb-1">Brand Color</label>
               <div className="flex items-center gap-3">
                 <input
                   type="color"
                   value={formData.brandColor || "#f59e0b"}
-                  onChange={(e) =>
-                    setFormData({ ...formData, brandColor: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, brandColor: e.target.value })}
                   className="w-10 h-10 rounded cursor-pointer"
                 />
                 <Input
                   value={formData.brandColor}
-                  onChange={(e) =>
-                    setFormData({ ...formData, brandColor: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, brandColor: e.target.value })}
                   placeholder="#f59e0b"
                   className="flex-1"
                 />
@@ -188,9 +168,7 @@ export default function SettingsPage() {
             <Input
               label="Custom Domain"
               value={formData.customDomain}
-              onChange={(e) =>
-                setFormData({ ...formData, customDomain: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, customDomain: e.target.value })}
               placeholder="status.acme.com"
             />
             <p className="text-xs text-navy-400">
@@ -214,15 +192,12 @@ export default function SettingsPage() {
         </CardHeader>
         <div className="space-y-4">
           <p className="text-sm text-navy-400">
-            Deleting your organization will permanently remove all components,
-            monitors, incidents, and subscriber data. This action cannot be
-            undone.
+            Deleting your organization will permanently remove all components, monitors, incidents,
+            and subscriber data. This action cannot be undone.
           </p>
           <Button
             variant="danger"
-            onClick={() =>
-              alert("This feature is not implemented in this demo.")
-            }
+            onClick={() => alert("This feature is not implemented in this demo.")}
           >
             Delete Organization
           </Button>

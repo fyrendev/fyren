@@ -1,26 +1,8 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import {
-  db,
-  monitors,
-  components,
-  monitorResults,
-  eq,
-  and,
-  desc,
-} from "@fyrendev/db";
-import {
-  NotFoundError,
-  ValidationError,
-  ForbiddenError,
-  errorResponse,
-} from "../../lib/errors";
-import {
-  scheduleMonitor,
-  unscheduleMonitor,
-  rescheduleMonitor,
-  triggerImmediateCheck,
-} from "../../lib/queue";
+import { db, monitors, components, monitorResults, eq, and, desc } from "@fyrendev/db";
+import { NotFoundError, ValidationError, ForbiddenError, errorResponse } from "../../lib/errors";
+import { scheduleMonitor, unscheduleMonitor, rescheduleMonitor } from "../../lib/queue";
 import { executeCheck } from "../../lib/checkers";
 import { storeCheckResult } from "../../services/monitor.service";
 
@@ -64,9 +46,6 @@ adminMonitors.get("/", async (c) => {
     const type = c.req.query("type") as "http" | "tcp" | "ssl_expiry" | undefined;
     const isActive = c.req.query("isActive");
 
-    // Build conditions array
-    const conditions = [];
-
     // Get all components for this organization to filter monitors
     const orgComponents = await db
       .select({ id: components.id })
@@ -80,7 +59,7 @@ adminMonitors.get("/", async (c) => {
     }
 
     // Build query with joins
-    let query = db
+    const query = db
       .select({
         monitor: monitors,
         component: {
@@ -99,9 +78,7 @@ adminMonitors.get("/", async (c) => {
     let filteredMonitors = allMonitors;
 
     if (componentId) {
-      filteredMonitors = filteredMonitors.filter(
-        (m) => m.monitor.componentId === componentId
-      );
+      filteredMonitors = filteredMonitors.filter((m) => m.monitor.componentId === componentId);
     }
 
     if (type) {
@@ -110,9 +87,7 @@ adminMonitors.get("/", async (c) => {
 
     if (isActive !== undefined) {
       const isActiveValue = isActive === "true";
-      filteredMonitors = filteredMonitors.filter(
-        (m) => m.monitor.isActive === isActiveValue
-      );
+      filteredMonitors = filteredMonitors.filter((m) => m.monitor.isActive === isActiveValue);
     }
 
     // Get last status for each monitor
@@ -152,10 +127,7 @@ adminMonitors.post("/", async (c) => {
       .select()
       .from(components)
       .where(
-        and(
-          eq(components.id, validatedData.componentId),
-          eq(components.organizationId, orgId)
-        )
+        and(eq(components.id, validatedData.componentId), eq(components.organizationId, orgId))
       )
       .limit(1);
 
@@ -188,8 +160,8 @@ adminMonitors.post("/", async (c) => {
         intervalSeconds: validatedData.intervalSeconds,
         timeoutMs: validatedData.timeoutMs,
         expectedStatusCode:
-          validatedData.type === "http" ? validatedData.expectedStatusCode ?? 200 : null,
-        headers: validatedData.type === "http" ? validatedData.headers ?? null : null,
+          validatedData.type === "http" ? (validatedData.expectedStatusCode ?? 200) : null,
+        headers: validatedData.type === "http" ? (validatedData.headers ?? null) : null,
         failureThreshold: validatedData.failureThreshold,
         isActive: validatedData.isActive,
         createIncidentOnFailure: validatedData.createIncidentOnFailure,
@@ -229,12 +201,7 @@ adminMonitors.get("/:id", async (c) => {
       })
       .from(monitors)
       .innerJoin(components, eq(monitors.componentId, components.id))
-      .where(
-        and(
-          eq(monitors.id, monitorId),
-          eq(components.organizationId, orgId)
-        )
-      )
+      .where(and(eq(monitors.id, monitorId), eq(components.organizationId, orgId)))
       .limit(1);
 
     const firstResult = result[0];
@@ -319,16 +286,13 @@ adminMonitors.put("/:id", async (c) => {
     if (validatedData.url !== undefined) updateData.url = validatedData.url;
     if (validatedData.intervalSeconds !== undefined)
       updateData.intervalSeconds = validatedData.intervalSeconds;
-    if (validatedData.timeoutMs !== undefined)
-      updateData.timeoutMs = validatedData.timeoutMs;
+    if (validatedData.timeoutMs !== undefined) updateData.timeoutMs = validatedData.timeoutMs;
     if (validatedData.expectedStatusCode !== undefined)
       updateData.expectedStatusCode = validatedData.expectedStatusCode;
-    if (validatedData.headers !== undefined)
-      updateData.headers = validatedData.headers;
+    if (validatedData.headers !== undefined) updateData.headers = validatedData.headers;
     if (validatedData.failureThreshold !== undefined)
       updateData.failureThreshold = validatedData.failureThreshold;
-    if (validatedData.isActive !== undefined)
-      updateData.isActive = validatedData.isActive;
+    if (validatedData.isActive !== undefined) updateData.isActive = validatedData.isActive;
     if (validatedData.createIncidentOnFailure !== undefined)
       updateData.createIncidentOnFailure = validatedData.createIncidentOnFailure;
     if (validatedData.autoResolveIncident !== undefined)
@@ -350,8 +314,7 @@ adminMonitors.put("/:id", async (c) => {
       validatedData.intervalSeconds !== undefined &&
       validatedData.intervalSeconds !== existingMonitor.intervalSeconds;
     const activeChanged =
-      validatedData.isActive !== undefined &&
-      validatedData.isActive !== existingMonitor.isActive;
+      validatedData.isActive !== undefined && validatedData.isActive !== existingMonitor.isActive;
 
     if (intervalChanged || activeChanged) {
       await rescheduleMonitor(updatedMonitor);

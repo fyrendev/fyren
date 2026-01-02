@@ -59,8 +59,7 @@ export default function MaintenanceDetailPage({ params }: PageProps) {
   }
 
   async function handleComplete() {
-    if (!confirm("Are you sure you want to mark this maintenance as complete?"))
-      return;
+    if (!confirm("Are you sure you want to mark this maintenance as complete?")) return;
 
     setActionLoading(true);
     try {
@@ -121,9 +120,7 @@ export default function MaintenanceDetailPage({ params }: PageProps) {
       <Card>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold text-white">
-              {maintenance.title}
-            </h1>
+            <h1 className="text-xl font-semibold text-white">{maintenance.title}</h1>
             <div className="flex items-center gap-3 mt-2">
               <Badge variant={statusVariants[maintenance.status]}>
                 {maintenance.status.replace("_", " ")}
@@ -138,30 +135,18 @@ export default function MaintenanceDetailPage({ params }: PageProps) {
             <div className="flex gap-2">
               {isScheduled && (
                 <>
-                  <Button
-                    variant="secondary"
-                    onClick={handleStart}
-                    loading={actionLoading}
-                  >
+                  <Button variant="secondary" onClick={handleStart} loading={actionLoading}>
                     <Play className="w-4 h-4 mr-2" />
                     Start Now
                   </Button>
-                  <Button
-                    variant="danger"
-                    onClick={handleCancel}
-                    loading={actionLoading}
-                  >
+                  <Button variant="danger" onClick={handleCancel} loading={actionLoading}>
                     <X className="w-4 h-4 mr-2" />
                     Cancel
                   </Button>
                 </>
               )}
               {isInProgress && (
-                <Button
-                  variant="primary"
-                  onClick={handleComplete}
-                  loading={actionLoading}
-                >
+                <Button variant="primary" onClick={handleComplete} loading={actionLoading}>
                   <CheckCircle className="w-4 h-4 mr-2" />
                   Complete
                 </Button>
@@ -223,25 +208,21 @@ export default function MaintenanceDetailPage({ params }: PageProps) {
       </Card>
 
       {/* Affected Components */}
-      {maintenance.affectedComponents &&
-        maintenance.affectedComponents.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Affected Components</CardTitle>
-            </CardHeader>
+      {maintenance.affectedComponents && maintenance.affectedComponents.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Affected Components</CardTitle>
+          </CardHeader>
 
-            <div className="space-y-2">
-              {maintenance.affectedComponents.map((c) => (
-                <div
-                  key={c.componentId}
-                  className="p-3 bg-navy-800/50 rounded-lg"
-                >
-                  <p className="text-white">{c.component?.name || "Unknown"}</p>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
+          <div className="space-y-2">
+            {maintenance.affectedComponents.map((c) => (
+              <div key={c.componentId} className="p-3 bg-navy-800/50 rounded-lg">
+                <p className="text-white">{c.component?.name || "Unknown"}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

@@ -68,9 +68,7 @@ export default function RegisterPage() {
         </div>
 
         <Card>
-          <h1 className="text-xl font-semibold text-white text-center mb-6">
-            Create your account
-          </h1>
+          <h1 className="text-xl font-semibold text-white text-center mb-6">Create your account</h1>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
@@ -83,9 +81,7 @@ export default function RegisterPage() {
               label="Name"
               type="text"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="John Doe"
               required
             />
@@ -94,9 +90,7 @@ export default function RegisterPage() {
               label="Email"
               type="email"
               value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               placeholder="you@example.com"
               required
             />
@@ -105,9 +99,7 @@ export default function RegisterPage() {
               label="Password"
               type="password"
               value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               placeholder="••••••••"
               required
             />
@@ -116,9 +108,7 @@ export default function RegisterPage() {
               label="Confirm Password"
               type="password"
               value={formData.confirmPassword}
-              onChange={(e) =>
-                setFormData({ ...formData, confirmPassword: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
               placeholder="••••••••"
               required
             />
@@ -130,10 +120,7 @@ export default function RegisterPage() {
 
           <p className="mt-6 text-center text-sm text-navy-400">
             Already have an account?{" "}
-            <Link
-              href="/admin/login"
-              className="text-blue-400 hover:text-blue-300"
-            >
+            <Link href="/admin/login" className="text-blue-400 hover:text-blue-300">
               Sign in
             </Link>
           </p>

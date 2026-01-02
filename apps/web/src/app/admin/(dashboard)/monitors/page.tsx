@@ -183,9 +183,7 @@ export default function MonitorsPage() {
             title="No monitors configured"
             description="Add monitors to automatically check the health of your services."
             action={
-              components.length > 0
-                ? { label: "Add Monitor", onClick: openCreateModal }
-                : undefined
+              components.length > 0 ? { label: "Add Monitor", onClick: openCreateModal } : undefined
             }
           />
         ) : (
@@ -202,23 +200,17 @@ export default function MonitorsPage() {
               {monitors.map((monitor) => (
                 <TableRow key={monitor.id}>
                   <TableCell>
-                    <p className="font-medium text-white">
-                      {monitor.component?.name || "Unknown"}
-                    </p>
+                    <p className="font-medium text-white">{monitor.component?.name || "Unknown"}</p>
                   </TableCell>
                   <TableCell>
                     <Badge variant="info">{monitor.type.toUpperCase()}</Badge>
                   </TableCell>
                   <TableCell>
-                    <p className="text-navy-400 truncate max-w-xs">
-                      {monitor.url}
-                    </p>
+                    <p className="text-navy-400 truncate max-w-xs">{monitor.url}</p>
                   </TableCell>
                   <TableCell>
                     {monitor.lastStatus ? (
-                      <Badge
-                        variant={monitor.lastStatus === "up" ? "success" : "danger"}
-                      >
+                      <Badge variant={monitor.lastStatus === "up" ? "success" : "danger"}>
                         {monitor.lastStatus}
                       </Badge>
                     ) : (
@@ -282,9 +274,7 @@ export default function MonitorsPage() {
           <Select
             label="Component"
             value={formData.componentId}
-            onChange={(e) =>
-              setFormData({ ...formData, componentId: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, componentId: e.target.value })}
             options={components.map((c) => ({ value: c.id, label: c.name }))}
           />
           <Select
@@ -310,18 +300,14 @@ export default function MonitorsPage() {
             <Select
               label="Check Interval"
               value={formData.intervalSeconds}
-              onChange={(e) =>
-                setFormData({ ...formData, intervalSeconds: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, intervalSeconds: e.target.value })}
               options={intervalOptions}
             />
             <Input
               label="Timeout (ms)"
               type="number"
               value={formData.timeoutMs}
-              onChange={(e) =>
-                setFormData({ ...formData, timeoutMs: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, timeoutMs: e.target.value })}
               min="1000"
               max="30000"
             />
@@ -331,9 +317,7 @@ export default function MonitorsPage() {
               label="Expected Status Code"
               type="number"
               value={formData.expectedStatusCode}
-              onChange={(e) =>
-                setFormData({ ...formData, expectedStatusCode: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, expectedStatusCode: e.target.value })}
               min="100"
               max="599"
             />
@@ -342,9 +326,7 @@ export default function MonitorsPage() {
             label="Failure Threshold"
             type="number"
             value={formData.failureThreshold}
-            onChange={(e) =>
-              setFormData({ ...formData, failureThreshold: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, failureThreshold: e.target.value })}
             min="1"
             max="10"
           />
@@ -352,11 +334,7 @@ export default function MonitorsPage() {
             Number of consecutive failures before status changes
           </p>
           <div className="flex justify-end gap-3 pt-4">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setModalOpen(false)}
-            >
+            <Button type="button" variant="ghost" onClick={() => setModalOpen(false)}>
               Cancel
             </Button>
             <Button type="submit" loading={saving}>

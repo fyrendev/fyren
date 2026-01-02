@@ -1,24 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { api, type Member, type Invite } from "@/lib/api-client";
-import { Button } from "@/components/admin/ui/Button";
-import { Card, CardHeader, CardTitle } from "@/components/admin/ui/Card";
 import { Badge } from "@/components/admin/ui/Badge";
+import { Button } from "@/components/admin/ui/Button";
+import { Card } from "@/components/admin/ui/Card";
+import { EmptyState } from "@/components/admin/ui/EmptyState";
+import { Input } from "@/components/admin/ui/Input";
+import { Modal } from "@/components/admin/ui/Modal";
+import { Select } from "@/components/admin/ui/Select";
 import {
   Table,
-  TableHeader,
-  TableHead,
   TableBody,
-  TableRow,
   TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/admin/ui/Table";
-import { EmptyState } from "@/components/admin/ui/EmptyState";
-import { Modal } from "@/components/admin/ui/Modal";
-import { Input } from "@/components/admin/ui/Input";
-import { Select } from "@/components/admin/ui/Select";
-import { UserCog, Plus, Trash2, Mail } from "lucide-react";
+import { api, type Invite, type Member } from "@/lib/api-client";
 import { format } from "date-fns";
+import { Mail, Plus, Trash2, UserCog } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const roleOptions = [
   { value: "admin", label: "Admin" },
@@ -49,10 +49,7 @@ export default function TeamPage() {
 
   async function loadData() {
     try {
-      const [membersRes, invitesRes] = await Promise.all([
-        api.getMembers(),
-        api.getInvites(),
-      ]);
+      const [membersRes, invitesRes] = await Promise.all([api.getMembers(), api.getInvites()]);
       setMembers(membersRes.members);
       setInvites(invitesRes.invites);
     } catch (err) {
@@ -155,11 +152,7 @@ export default function TeamPage() {
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-navy-700 rounded-full flex items-center justify-center">
                         {member.user.image ? (
-                          <img
-                            src={member.user.image}
-                            alt=""
-                            className="w-8 h-8 rounded-full"
-                          />
+                          <img src={member.user.image} alt="" className="w-8 h-8 rounded-full" />
                         ) : (
                           <span className="text-sm text-navy-300">
                             {member.user.name?.[0]?.toUpperCase() || "?"}
@@ -167,34 +160,24 @@ export default function TeamPage() {
                         )}
                       </div>
                       <div>
-                        <p className="font-medium text-white">
-                          {member.user.name}
-                        </p>
-                        <p className="text-xs text-navy-400">
-                          {member.user.email}
-                        </p>
+                        <p className="font-medium text-white">{member.user.name}</p>
+                        <p className="text-xs text-navy-400">{member.user.email}</p>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
                     {member.role === "owner" ? (
-                      <Badge variant={roleVariants[member.role]}>
-                        {member.role}
-                      </Badge>
+                      <Badge variant={roleVariants[member.role]}>{member.role}</Badge>
                     ) : (
                       <Select
                         value={member.role}
-                        onChange={(e) =>
-                          handleRoleChange(member.id, e.target.value)
-                        }
+                        onChange={(e) => handleRoleChange(member.id, e.target.value)}
                         options={roleOptions}
                         className="w-28"
                       />
                     )}
                   </TableCell>
-                  <TableCell>
-                    {format(new Date(member.createdAt), "PP")}
-                  </TableCell>
+                  <TableCell>{format(new Date(member.createdAt), "PP")}</TableCell>
                   <TableCell>
                     {member.role !== "owner" && (
                       <button
@@ -235,13 +218,9 @@ export default function TeamPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={roleVariants[invite.role]}>
-                      {invite.role}
-                    </Badge>
+                    <Badge variant={roleVariants[invite.role]}>{invite.role}</Badge>
                   </TableCell>
-                  <TableCell>
-                    {format(new Date(invite.expiresAt), "PP")}
-                  </TableCell>
+                  <TableCell>{format(new Date(invite.expiresAt), "PP")}</TableCell>
                   <TableCell>
                     <button
                       onClick={() => handleRevokeInvite(invite.id)}
@@ -273,9 +252,7 @@ export default function TeamPage() {
             label="Email Address"
             type="email"
             value={formData.email}
-            onChange={(e) =>
-              setFormData({ ...formData, email: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             placeholder="teammate@example.com"
             required
           />
@@ -289,11 +266,7 @@ export default function TeamPage() {
             Admins can manage all resources. Members have read-only access.
           </p>
           <div className="flex justify-end gap-3 pt-4">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setInviteModalOpen(false)}
-            >
+            <Button type="button" variant="ghost" onClick={() => setInviteModalOpen(false)}>
               Cancel
             </Button>
             <Button type="submit" loading={saving}>

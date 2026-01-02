@@ -17,11 +17,7 @@ export const MaintenanceScheduler = {
 
     if (delay <= 0) {
       // Already past start time, start immediately
-      await maintenanceQueue.add(
-        "start",
-        { maintenanceId },
-        { jobId: `start:${maintenanceId}` }
-      );
+      await maintenanceQueue.add("start", { maintenanceId }, { jobId: `start:${maintenanceId}` });
     } else {
       await maintenanceQueue.add(
         "start",

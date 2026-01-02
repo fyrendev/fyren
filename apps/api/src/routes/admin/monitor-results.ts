@@ -1,15 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import {
-  db,
-  monitors,
-  components,
-  monitorResults,
-  eq,
-  and,
-  desc,
-  sql,
-} from "@fyrendev/db";
+import { db, monitors, components, monitorResults, eq, and, desc, sql } from "@fyrendev/db";
 import { NotFoundError, ForbiddenError, errorResponse } from "../../lib/errors";
 
 export const adminMonitorResults = new Hono();
@@ -67,15 +58,11 @@ adminMonitorResults.get("/:id/results", async (c) => {
     const conditions = [eq(monitorResults.monitorId, monitorId)];
 
     if (validated.from) {
-      conditions.push(
-        sql`${monitorResults.checkedAt} >= ${new Date(validated.from)}`
-      );
+      conditions.push(sql`${monitorResults.checkedAt} >= ${new Date(validated.from)}`);
     }
 
     if (validated.to) {
-      conditions.push(
-        sql`${monitorResults.checkedAt} <= ${new Date(validated.to)}`
-      );
+      conditions.push(sql`${monitorResults.checkedAt} <= ${new Date(validated.to)}`);
     }
 
     // Get total count

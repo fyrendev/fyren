@@ -5,12 +5,7 @@ import {
   updateMaintenanceSchema,
   listMaintenanceSchema,
 } from "../../validators/maintenance";
-import {
-  ValidationError,
-  NotFoundError,
-  BadRequestError,
-  errorResponse,
-} from "../../lib/errors";
+import { ValidationError, NotFoundError, BadRequestError, errorResponse } from "../../lib/errors";
 
 export const adminMaintenance = new Hono();
 
@@ -157,12 +152,8 @@ adminMaintenance.put("/:id", async (c) => {
     const maintenance = await MaintenanceService.update(maintenanceId, orgId, {
       title: data.title,
       description: data.description,
-      scheduledStartAt: data.scheduledStartAt
-        ? new Date(data.scheduledStartAt)
-        : undefined,
-      scheduledEndAt: data.scheduledEndAt
-        ? new Date(data.scheduledEndAt)
-        : undefined,
+      scheduledStartAt: data.scheduledStartAt ? new Date(data.scheduledStartAt) : undefined,
+      scheduledEndAt: data.scheduledEndAt ? new Date(data.scheduledEndAt) : undefined,
       componentIds: data.componentIds,
       autoStart: data.autoStart,
       autoComplete: data.autoComplete,

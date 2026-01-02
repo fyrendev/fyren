@@ -16,10 +16,7 @@ export default function Loading() {
           <div className="h-6 w-32 bg-navy-800 rounded animate-pulse mb-4" />
           <div className="bg-navy-900 rounded-lg border border-navy-800 overflow-hidden">
             {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="px-4 py-4 border-b border-navy-800 last:border-b-0"
-              >
+              <div key={i} className="px-4 py-4 border-b border-navy-800 last:border-b-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 bg-navy-700 rounded-full animate-pulse" />

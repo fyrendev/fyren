@@ -10,17 +10,10 @@ export const componentStatusEnum = pgEnum("component_status", [
 ]);
 
 // Monitor types
-export const monitorTypeEnum = pgEnum("monitor_type", [
-  "http",
-  "tcp",
-  "ssl_expiry",
-]);
+export const monitorTypeEnum = pgEnum("monitor_type", ["http", "tcp", "ssl_expiry"]);
 
 // Monitor result status
-export const monitorResultStatusEnum = pgEnum("monitor_result_status", [
-  "up",
-  "down",
-]);
+export const monitorResultStatusEnum = pgEnum("monitor_result_status", ["up", "down"]);
 
 // Incident status
 export const incidentStatusEnum = pgEnum("incident_status", [
@@ -31,11 +24,7 @@ export const incidentStatusEnum = pgEnum("incident_status", [
 ]);
 
 // Incident severity
-export const incidentSeverityEnum = pgEnum("incident_severity", [
-  "minor",
-  "major",
-  "critical",
-]);
+export const incidentSeverityEnum = pgEnum("incident_severity", ["minor", "major", "critical"]);
 
 // Maintenance status
 export const maintenanceStatusEnum = pgEnum("maintenance_status", [
@@ -46,12 +35,7 @@ export const maintenanceStatusEnum = pgEnum("maintenance_status", [
 ]);
 
 // Webhook types
-export const webhookTypeEnum = pgEnum("webhook_type", [
-  "slack",
-  "discord",
-  "teams",
-  "generic",
-]);
+export const webhookTypeEnum = pgEnum("webhook_type", ["slack", "discord", "teams", "generic"]);
 
 // Notification delivery type
 export const notificationDeliveryTypeEnum = pgEnum("notification_delivery_type", [
@@ -60,24 +44,13 @@ export const notificationDeliveryTypeEnum = pgEnum("notification_delivery_type",
 ]);
 
 // Notification status
-export const notificationStatusEnum = pgEnum("notification_status", [
-  "pending",
-  "sent",
-  "failed",
-]);
+export const notificationStatusEnum = pgEnum("notification_status", ["pending", "sent", "failed"]);
 
 // Organization member roles
-export const orgRoleEnum = pgEnum("org_role", [
-  "owner",
-  "admin",
-  "member",
-]);
+export const orgRoleEnum = pgEnum("org_role", ["owner", "admin", "member"]);
 
 // Invite roles (can't invite as owner)
-export const inviteRoleEnum = pgEnum("invite_role", [
-  "admin",
-  "member",
-]);
+export const inviteRoleEnum = pgEnum("invite_role", ["admin", "member"]);
 
 // Type exports
 export type ComponentStatus = (typeof componentStatusEnum.enumValues)[number];

@@ -47,9 +47,7 @@ rssRoutes.get("/:slug/rss", async (c) => {
       .orderBy(desc(incidentUpdates.createdAt))
       .limit(1);
 
-    const pubDate = new Date(
-      latestUpdate?.createdAt || incident.createdAt
-    ).toUTCString();
+    const pubDate = new Date(latestUpdate?.createdAt || incident.createdAt).toUTCString();
     const status = incident.resolvedAt ? "Resolved" : incident.status;
 
     items.push(`

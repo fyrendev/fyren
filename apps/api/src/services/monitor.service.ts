@@ -31,11 +31,7 @@ export async function evaluateComponentStatus(
   latestResult: CheckResult
 ): Promise<StatusEvaluation> {
   // Get the monitor with its failure threshold
-  const [monitor] = await db
-    .select()
-    .from(monitors)
-    .where(eq(monitors.id, monitorId))
-    .limit(1);
+  const [monitor] = await db.select().from(monitors).where(eq(monitors.id, monitorId)).limit(1);
 
   if (!monitor) {
     return {
@@ -104,12 +100,7 @@ export async function evaluateComponentStatus(
       const otherMonitors = await db
         .select({ id: monitors.id, lastCheckedAt: monitors.lastCheckedAt })
         .from(monitors)
-        .where(
-          and(
-            eq(monitors.componentId, monitor.componentId),
-            eq(monitors.isActive, true)
-          )
-        );
+        .where(and(eq(monitors.componentId, monitor.componentId), eq(monitors.isActive, true)));
 
       // If this is the only monitor or all monitors are passing, recover
       if (otherMonitors.length <= 1) {
@@ -181,10 +172,7 @@ export async function updateComponentStatus(
 }
 
 // Store check result and update monitor timestamp
-export async function storeCheckResult(
-  monitorId: string,
-  result: CheckResult
-): Promise<void> {
+export async function storeCheckResult(monitorId: string, result: CheckResult): Promise<void> {
   // Store result
   await db.insert(monitorResults).values({
     monitorId,
@@ -195,10 +183,7 @@ export async function storeCheckResult(
   });
 
   // Update monitor last checked timestamp
-  await db
-    .update(monitors)
-    .set({ lastCheckedAt: new Date() })
-    .where(eq(monitors.id, monitorId));
+  await db.update(monitors).set({ lastCheckedAt: new Date() }).where(eq(monitors.id, monitorId));
 
   // Cache the current status
   await cacheMonitorStatus(monitorId, result.status, result.responseTimeMs);
@@ -307,9 +292,7 @@ const statusToIndicator: Record<ComponentStatus, StatusIndicator> = {
 };
 
 // Get the overall status indicator for an organization
-export function getOverallStatus(
-  componentStatuses: ComponentStatus[]
-): {
+export function getOverallStatus(componentStatuses: ComponentStatus[]): {
   indicator: StatusIndicator;
   description: string;
 } {

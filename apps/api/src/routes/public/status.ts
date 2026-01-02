@@ -1,62 +1,36 @@
-import { Hono } from "hono";
-import { z } from "zod";
+import type { ComponentStatus } from "@fyrendev/db";
 import {
-  db,
-  organizations,
-  components,
-  incidents,
-  incidentUpdates,
-  incidentComponents,
-  maintenances,
-  maintenanceComponents,
-  monitorResults,
-  monitors,
-  subscribers,
-  eq,
   and,
   asc,
+  components,
+  db,
   desc,
+  eq,
+  incidentComponents,
+  incidents,
+  incidentUpdates,
+  maintenanceComponents,
+  maintenances,
+  monitorResults,
+  monitors,
   or,
-  inArray,
-  isNull,
+  organizations,
   sql,
 } from "@fyrendev/db";
-import { NotFoundError, BadRequestError, errorResponse } from "../../lib/errors";
+import { Hono } from "hono";
+import { errorResponse, NotFoundError } from "../../lib/errors";
 import {
-  getCachedComponentStatus,
   cacheComponentStatus,
+  getCachedComponentStatus,
   type ComponentWithStatus,
 } from "../../services/cache.service";
-import {
-  calculateUptime,
-  getOverallStatus,
-} from "../../services/monitor.service";
-import type { ComponentStatus } from "@fyrendev/db";
-
-// Generate a random token for email verification
-function generateToken(length = 32): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  const randomValues = new Uint8Array(length);
-  crypto.getRandomValues(randomValues);
-  for (let i = 0; i < length; i++) {
-    const val = randomValues[i];
-    if (val !== undefined) {
-      result += chars[val % chars.length];
-    }
-  }
-  return result;
-}
+import { calculateUptime, getOverallStatus } from "../../services/monitor.service";
 
 export const publicStatus = new Hono();
 
 // Helper to get organization by slug
 async function getOrgBySlug(slug: string) {
-  const [org] = await db
-    .select()
-    .from(organizations)
-    .where(eq(organizations.slug, slug))
-    .limit(1);
+  const [org] = await db.select().from(organizations).where(eq(organizations.slug, slug)).limit(1);
   if (!org) throw new NotFoundError("Organization not found");
   return org;
 }
@@ -164,10 +138,7 @@ async function getUpcomingMaintenance(orgId: string) {
     .where(
       and(
         eq(maintenances.organizationId, orgId),
-        or(
-          eq(maintenances.status, "scheduled"),
-          eq(maintenances.status, "in_progress")
-        )
+        or(eq(maintenances.status, "scheduled"), eq(maintenances.status, "in_progress"))
       )
     )
     .orderBy(asc(maintenances.scheduledStartAt));
@@ -181,10 +152,7 @@ async function getUpcomingMaintenance(orgId: string) {
           name: components.name,
         })
         .from(maintenanceComponents)
-        .innerJoin(
-          components,
-          eq(maintenanceComponents.componentId, components.id)
-        )
+        .innerJoin(components, eq(maintenanceComponents.componentId, components.id))
         .where(eq(maintenanceComponents.maintenanceId, maint.id));
 
       return {
@@ -245,10 +213,7 @@ publicStatus.get("/:slug", async (c) => {
         description: comp.description,
         status: comp.status,
         order: comp.displayOrder,
-        updatedAt:
-          comp.updatedAt instanceof Date
-            ? comp.updatedAt.toISOString()
-            : comp.updatedAt,
+        updatedAt: comp.updatedAt instanceof Date ? comp.updatedAt.toISOString() : comp.updatedAt,
       })),
       activeIncidents,
       scheduledMaintenance,
@@ -280,10 +245,7 @@ publicStatus.get("/:slug/components", async (c) => {
         description: comp.description,
         status: comp.status,
         order: comp.displayOrder,
-        updatedAt:
-          comp.updatedAt instanceof Date
-            ? comp.updatedAt.toISOString()
-            : comp.updatedAt,
+        updatedAt: comp.updatedAt instanceof Date ? comp.updatedAt.toISOString() : comp.updatedAt,
       })),
     });
   } catch (error) {
@@ -308,12 +270,7 @@ publicStatus.get("/:slug/uptime", async (c) => {
       .orderBy(asc(components.displayOrder));
 
     // Calculate uptime for each component
-    const periods: Array<"24h" | "7d" | "30d" | "90d"> = [
-      "24h",
-      "7d",
-      "30d",
-      "90d",
-    ];
+    const periods: Array<"24h" | "7d" | "30d" | "90d"> = ["24h", "7d", "30d", "90d"];
 
     const componentsWithUptime = await Promise.all(
       orgComponents.map(async (comp) => {
@@ -387,12 +344,7 @@ publicStatus.get("/:slug/uptime/:componentId/history", async (c) => {
         name: components.name,
       })
       .from(components)
-      .where(
-        and(
-          eq(components.id, componentId),
-          eq(components.organizationId, org.id)
-        )
-      )
+      .where(and(eq(components.id, componentId), eq(components.organizationId, org.id)))
       .limit(1);
 
     if (!component) {
@@ -458,10 +410,7 @@ publicStatus.get("/:slug/uptime/:componentId/history", async (c) => {
       const incidentCount = await db
         .select({ count: sql<number>`count(*)::int` })
         .from(incidents)
-        .innerJoin(
-          incidentComponents,
-          eq(incidents.id, incidentComponents.incidentId)
-        )
+        .innerJoin(incidentComponents, eq(incidents.id, incidentComponents.incidentId))
         .where(
           and(
             eq(incidentComponents.componentId, componentId),
@@ -509,7 +458,9 @@ publicStatus.get("/:slug/incidents", async (c) => {
     if (statusFilter && statusFilter !== "all") {
       const validStatuses = ["investigating", "identified", "monitoring", "resolved"];
       if (validStatuses.includes(statusFilter)) {
-        whereConditions.push(eq(incidents.status, statusFilter as typeof incidents.status.enumValues[number]));
+        whereConditions.push(
+          eq(incidents.status, statusFilter as (typeof incidents.status.enumValues)[number])
+        );
       }
     }
 
@@ -548,10 +499,7 @@ publicStatus.get("/:slug/incidents", async (c) => {
               name: components.name,
             })
             .from(incidentComponents)
-            .innerJoin(
-              components,
-              eq(incidentComponents.componentId, components.id)
-            )
+            .innerJoin(components, eq(incidentComponents.componentId, components.id))
             .where(eq(incidentComponents.incidentId, incident.id)),
           db
             .select({
@@ -619,12 +567,7 @@ publicStatus.get("/:slug/incidents/:id", async (c) => {
         updatedAt: incidents.updatedAt,
       })
       .from(incidents)
-      .where(
-        and(
-          eq(incidents.id, incidentId),
-          eq(incidents.organizationId, org.id)
-        )
-      )
+      .where(and(eq(incidents.id, incidentId), eq(incidents.organizationId, org.id)))
       .limit(1);
 
     if (!incident) {

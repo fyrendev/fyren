@@ -7,11 +7,7 @@ import {
   updateTemplateSchema,
   createFromTemplateSchema,
 } from "../../validators/incident";
-import {
-  ValidationError,
-  NotFoundError,
-  errorResponse,
-} from "../../lib/errors";
+import { ValidationError, NotFoundError, errorResponse } from "../../lib/errors";
 
 export const adminIncidentTemplates = new Hono();
 
@@ -59,12 +55,7 @@ adminIncidentTemplates.get("/:id", async (c) => {
     const [template] = await db
       .select()
       .from(incidentTemplates)
-      .where(
-        and(
-          eq(incidentTemplates.id, templateId),
-          eq(incidentTemplates.organizationId, orgId)
-        )
-      )
+      .where(and(eq(incidentTemplates.id, templateId), eq(incidentTemplates.organizationId, orgId)))
       .limit(1);
 
     if (!template) {
@@ -153,12 +144,7 @@ adminIncidentTemplates.put("/:id", async (c) => {
         ...data,
         updatedAt: new Date(),
       })
-      .where(
-        and(
-          eq(incidentTemplates.id, templateId),
-          eq(incidentTemplates.organizationId, orgId)
-        )
-      )
+      .where(and(eq(incidentTemplates.id, templateId), eq(incidentTemplates.organizationId, orgId)))
       .returning();
 
     if (!template) {
@@ -194,12 +180,7 @@ adminIncidentTemplates.delete("/:id", async (c) => {
 
     const [deleted] = await db
       .delete(incidentTemplates)
-      .where(
-        and(
-          eq(incidentTemplates.id, templateId),
-          eq(incidentTemplates.organizationId, orgId)
-        )
-      )
+      .where(and(eq(incidentTemplates.id, templateId), eq(incidentTemplates.organizationId, orgId)))
       .returning();
 
     if (!deleted) {
@@ -228,12 +209,7 @@ adminIncidentTemplates.post("/:id/create-incident", async (c) => {
     const [template] = await db
       .select()
       .from(incidentTemplates)
-      .where(
-        and(
-          eq(incidentTemplates.id, templateId),
-          eq(incidentTemplates.organizationId, orgId)
-        )
-      )
+      .where(and(eq(incidentTemplates.id, templateId), eq(incidentTemplates.organizationId, orgId)))
       .limit(1);
 
     if (!template) {

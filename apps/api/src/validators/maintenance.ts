@@ -17,10 +17,10 @@ export const createMaintenanceSchema = z
     autoStart: z.boolean().optional().default(true),
     autoComplete: z.boolean().optional().default(true),
   })
-  .refine(
-    (data) => new Date(data.scheduledEndAt) > new Date(data.scheduledStartAt),
-    { message: "End time must be after start time", path: ["scheduledEndAt"] }
-  )
+  .refine((data) => new Date(data.scheduledEndAt) > new Date(data.scheduledStartAt), {
+    message: "End time must be after start time",
+    path: ["scheduledEndAt"],
+  })
   .refine((data) => new Date(data.scheduledStartAt) > new Date(), {
     message: "Start time must be in the future",
     path: ["scheduledStartAt"],

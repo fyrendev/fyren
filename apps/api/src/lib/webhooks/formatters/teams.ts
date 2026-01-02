@@ -22,11 +22,7 @@ export function formatTeamsWebhook(payload: WebhookPayload): FormattedWebhook {
   switch (event) {
     case "incident.created":
       themeColor =
-        data.severity === "critical"
-          ? "dc2626"
-          : data.severity === "major"
-            ? "ea580c"
-            : "ca8a04";
+        data.severity === "critical" ? "dc2626" : data.severity === "major" ? "ea580c" : "ca8a04";
       title = `New Incident: ${data.title}`;
       text = data.message as string;
       break;

@@ -9,18 +9,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    {
-      className,
-      variant = "primary",
-      size = "md",
-      loading,
-      children,
-      disabled,
-      ...props
-    },
-    ref
-  ) => {
+  ({ className, variant = "primary", size = "md", loading, children, disabled, ...props }, ref) => {
     return (
       <button
         ref={ref}
@@ -28,12 +17,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={clsx(
           "inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-navy-900 disabled:opacity-50 disabled:cursor-not-allowed",
           {
-            "bg-white text-navy-900 hover:bg-navy-100 focus:ring-white":
-              variant === "primary",
-            "bg-navy-800 text-white hover:bg-navy-700 focus:ring-navy-600":
-              variant === "secondary",
-            "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500":
-              variant === "danger",
+            "bg-white text-navy-900 hover:bg-navy-100 focus:ring-white": variant === "primary",
+            "bg-navy-800 text-white hover:bg-navy-700 focus:ring-navy-600": variant === "secondary",
+            "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500": variant === "danger",
             "text-navy-400 hover:text-white hover:bg-navy-800 focus:ring-navy-600":
               variant === "ghost",
           },

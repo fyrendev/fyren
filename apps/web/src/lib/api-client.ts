@@ -3,10 +3,7 @@ import { getCurrentOrgId } from "@/contexts/OrganizationContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-export async function apiClient<T>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
+export async function apiClient<T>(path: string, options: RequestInit = {}): Promise<T> {
   const orgId = getCurrentOrgId();
 
   const res = await fetch(`${API_URL}${path}`, {
@@ -167,8 +164,7 @@ export interface Pagination {
 // Typed API methods
 export const api = {
   // Components
-  getComponents: () =>
-    apiClient<{ components: Component[] }>("/api/v1/admin/components"),
+  getComponents: () => apiClient<{ components: Component[] }>("/api/v1/admin/components"),
   createComponent: (data: Partial<Component>) =>
     apiClient<{ component: Component }>("/api/v1/admin/components", {
       method: "POST",
@@ -185,8 +181,7 @@ export const api = {
     }),
 
   // Monitors
-  getMonitors: () =>
-    apiClient<{ monitors: Monitor[] }>("/api/v1/admin/monitors"),
+  getMonitors: () => apiClient<{ monitors: Monitor[] }>("/api/v1/admin/monitors"),
   createMonitor: (data: Partial<Monitor>) =>
     apiClient<{ monitor: Monitor }>("/api/v1/admin/monitors", {
       method: "POST",
@@ -211,8 +206,7 @@ export const api = {
     apiClient<{ incidents: Incident[]; pagination: Pagination }>(
       `/api/v1/admin/incidents${params ? `?${params}` : ""}`
     ),
-  getIncident: (id: string) =>
-    apiClient<{ incident: Incident }>(`/api/v1/admin/incidents/${id}`),
+  getIncident: (id: string) => apiClient<{ incident: Incident }>(`/api/v1/admin/incidents/${id}`),
   createIncident: (data: {
     title: string;
     severity: string;
@@ -228,25 +222,16 @@ export const api = {
       method: "PUT",
       body: JSON.stringify(data),
     }),
-  addIncidentUpdate: (
-    id: string,
-    data: { status: string; message: string }
-  ) =>
-    apiClient<{ update: IncidentUpdate }>(
-      `/api/v1/admin/incidents/${id}/updates`,
-      {
-        method: "POST",
-        body: JSON.stringify(data),
-      }
-    ),
+  addIncidentUpdate: (id: string, data: { status: string; message: string }) =>
+    apiClient<{ update: IncidentUpdate }>(`/api/v1/admin/incidents/${id}/updates`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
   resolveIncident: (id: string, data?: { message?: string }) =>
-    apiClient<{ update: IncidentUpdate }>(
-      `/api/v1/admin/incidents/${id}/resolve`,
-      {
-        method: "PATCH",
-        body: JSON.stringify(data || {}),
-      }
-    ),
+    apiClient<{ update: IncidentUpdate }>(`/api/v1/admin/incidents/${id}/resolve`, {
+      method: "PATCH",
+      body: JSON.stringify(data || {}),
+    }),
 
   // Maintenance
   getMaintenances: (params?: string) =>
@@ -267,27 +252,18 @@ export const api = {
       body: JSON.stringify(data),
     }),
   updateMaintenance: (id: string, data: Partial<Maintenance>) =>
-    apiClient<{ maintenance: Maintenance }>(
-      `/api/v1/admin/maintenance/${id}`,
-      {
-        method: "PUT",
-        body: JSON.stringify(data),
-      }
-    ),
+    apiClient<{ maintenance: Maintenance }>(`/api/v1/admin/maintenance/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
   startMaintenance: (id: string) =>
-    apiClient<{ maintenance: Maintenance }>(
-      `/api/v1/admin/maintenance/${id}/start`,
-      {
-        method: "PATCH",
-      }
-    ),
+    apiClient<{ maintenance: Maintenance }>(`/api/v1/admin/maintenance/${id}/start`, {
+      method: "PATCH",
+    }),
   completeMaintenance: (id: string) =>
-    apiClient<{ maintenance: Maintenance }>(
-      `/api/v1/admin/maintenance/${id}/complete`,
-      {
-        method: "PATCH",
-      }
-    ),
+    apiClient<{ maintenance: Maintenance }>(`/api/v1/admin/maintenance/${id}/complete`, {
+      method: "PATCH",
+    }),
   cancelMaintenance: (id: string) =>
     apiClient<{ success: boolean }>(`/api/v1/admin/maintenance/${id}`, {
       method: "DELETE",
@@ -304,8 +280,7 @@ export const api = {
     }),
 
   // Webhooks
-  getWebhooks: () =>
-    apiClient<{ webhooks: WebhookEndpoint[] }>("/api/v1/admin/webhooks"),
+  getWebhooks: () => apiClient<{ webhooks: WebhookEndpoint[] }>("/api/v1/admin/webhooks"),
   createWebhook: (data: Partial<WebhookEndpoint>) =>
     apiClient<{ webhook: WebhookEndpoint }>("/api/v1/admin/webhooks", {
       method: "POST",
@@ -321,23 +296,16 @@ export const api = {
       method: "DELETE",
     }),
   toggleWebhook: (id: string) =>
-    apiClient<{ webhook: WebhookEndpoint }>(
-      `/api/v1/admin/webhooks/${id}/toggle`,
-      {
-        method: "PATCH",
-      }
-    ),
+    apiClient<{ webhook: WebhookEndpoint }>(`/api/v1/admin/webhooks/${id}/toggle`, {
+      method: "PATCH",
+    }),
   testWebhook: (id: string) =>
-    apiClient<{ success: boolean; error?: string }>(
-      `/api/v1/admin/webhooks/${id}/test`,
-      {
-        method: "POST",
-      }
-    ),
+    apiClient<{ success: boolean; error?: string }>(`/api/v1/admin/webhooks/${id}/test`, {
+      method: "POST",
+    }),
 
   // API Keys
-  getApiKeys: () =>
-    apiClient<{ apiKeys: ApiKey[] }>("/api/v1/admin/api-keys"),
+  getApiKeys: () => apiClient<{ apiKeys: ApiKey[] }>("/api/v1/admin/api-keys"),
   createApiKey: (data: { name: string; expiresAt?: string }) =>
     apiClient<{ apiKey: ApiKey; plainKey: string }>("/api/v1/admin/api-keys", {
       method: "POST",
@@ -349,8 +317,7 @@ export const api = {
     }),
 
   // Team
-  getMembers: () =>
-    apiClient<{ members: Member[] }>("/api/v1/admin/members"),
+  getMembers: () => apiClient<{ members: Member[] }>("/api/v1/admin/members"),
   updateMember: (id: string, data: { role: string }) =>
     apiClient<{ member: Member }>(`/api/v1/admin/members/${id}`, {
       method: "PUT",
@@ -360,8 +327,7 @@ export const api = {
     apiClient<{ success: boolean }>(`/api/v1/admin/members/${id}`, {
       method: "DELETE",
     }),
-  getInvites: () =>
-    apiClient<{ invites: Invite[] }>("/api/v1/admin/invites"),
+  getInvites: () => apiClient<{ invites: Invite[] }>("/api/v1/admin/invites"),
   createInvite: (data: { email: string; role: string }) =>
     apiClient<{ invite: Invite }>("/api/v1/admin/invites", {
       method: "POST",
@@ -373,8 +339,7 @@ export const api = {
     }),
 
   // Organization
-  getOrganization: () =>
-    apiClient<{ organization: Organization }>("/api/v1/admin/organization"),
+  getOrganization: () => apiClient<{ organization: Organization }>("/api/v1/admin/organization"),
   updateOrganization: (data: Partial<Organization>) =>
     apiClient<{ organization: Organization }>("/api/v1/admin/organization", {
       method: "PUT",

@@ -28,9 +28,7 @@ export const monitors = pgTable(
     failureThreshold: integer("failure_threshold").notNull().default(3),
     isActive: boolean("is_active").notNull().default(true),
     // Auto-incident creation on monitor failure
-    createIncidentOnFailure: boolean("create_incident_on_failure")
-      .notNull()
-      .default(false),
+    createIncidentOnFailure: boolean("create_incident_on_failure").notNull().default(false),
     autoResolveIncident: boolean("auto_resolve_incident").notNull().default(true),
     lastCheckedAt: timestamp("last_checked_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),

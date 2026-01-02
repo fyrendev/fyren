@@ -8,9 +8,7 @@ test.describe("Public Status Page", () => {
     await page.waitForLoadState("networkidle");
 
     // Should show organization name in the header
-    await expect(page.locator("h1, h2, header")).toContainText([
-      testData.organization.name,
-    ]);
+    await expect(page.locator("h1, h2, header")).toContainText([testData.organization.name]);
   });
 
   test("shows components section", async ({ page }) => {

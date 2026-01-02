@@ -1,11 +1,10 @@
+import type { ComponentStatus } from "@fyrendev/db";
 import { redis } from "../lib/redis";
-import type { Component, ComponentStatus } from "@fyrendev/db";
 
 // Cache key generators
 const COMPONENT_STATUS_KEY = (orgSlug: string) => `status:${orgSlug}:components`;
 const MONITOR_STATUS_KEY = (monitorId: string) => `monitor:${monitorId}:status`;
-const UPTIME_KEY = (componentId: string, period: string) =>
-  `uptime:${componentId}:${period}`;
+const UPTIME_KEY = (componentId: string, period: string) => `uptime:${componentId}:${period}`;
 
 // TTL values in seconds
 const STATUS_TTL = 60; // 1 minute
@@ -130,10 +129,7 @@ export async function invalidateUptimeCache(componentId: string): Promise<void> 
 }
 
 // Invalidate all caches for an organization (used when status changes)
-export async function invalidateOrgCaches(
-  orgSlug: string,
-  componentIds: string[]
-): Promise<void> {
+export async function invalidateOrgCaches(orgSlug: string, componentIds: string[]): Promise<void> {
   await invalidateStatusCache(orgSlug);
   for (const componentId of componentIds) {
     await invalidateUptimeCache(componentId);

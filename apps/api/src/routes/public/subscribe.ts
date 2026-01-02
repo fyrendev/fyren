@@ -32,10 +32,7 @@ subscribeRoutes.post("/:slug/subscribe", async (c) => {
 
     // Check if already subscribed
     const existing = await db.query.subscribers.findFirst({
-      where: and(
-        eq(subscribers.organizationId, org.id),
-        eq(subscribers.email, email)
-      ),
+      where: and(eq(subscribers.organizationId, org.id), eq(subscribers.email, email)),
     });
 
     if (existing?.verified) {
@@ -102,10 +99,7 @@ subscribeRoutes.get("/:slug/subscribe/verify/:token", async (c) => {
     }
 
     const subscriber = await db.query.subscribers.findFirst({
-      where: and(
-        eq(subscribers.organizationId, org.id),
-        eq(subscribers.verificationToken, token)
-      ),
+      where: and(eq(subscribers.organizationId, org.id), eq(subscribers.verificationToken, token)),
     });
 
     if (!subscriber) {
@@ -147,10 +141,7 @@ subscribeRoutes.get("/:slug/unsubscribe/:token", async (c) => {
     }
 
     const subscriber = await db.query.subscribers.findFirst({
-      where: and(
-        eq(subscribers.organizationId, org.id),
-        eq(subscribers.unsubscribeToken, token)
-      ),
+      where: and(eq(subscribers.organizationId, org.id), eq(subscribers.unsubscribeToken, token)),
     });
 
     if (!subscriber) {

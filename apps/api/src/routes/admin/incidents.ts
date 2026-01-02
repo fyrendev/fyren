@@ -8,11 +8,7 @@ import {
   listIncidentsSchema,
   updateAffectedComponentsSchema,
 } from "../../validators/incident";
-import {
-  ValidationError,
-  NotFoundError,
-  errorResponse,
-} from "../../lib/errors";
+import { ValidationError, NotFoundError, errorResponse } from "../../lib/errors";
 
 export const adminIncidents = new Hono();
 
@@ -283,11 +279,7 @@ adminIncidents.put("/:id/components", async (c) => {
     const body = await c.req.json();
     const { componentIds } = updateAffectedComponentsSchema.parse(body);
 
-    await IncidentService.updateAffectedComponents(
-      incidentId,
-      orgId,
-      componentIds
-    );
+    await IncidentService.updateAffectedComponents(incidentId, orgId, componentIds);
 
     return c.json({ success: true });
   } catch (error) {

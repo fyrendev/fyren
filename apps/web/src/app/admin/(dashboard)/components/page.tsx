@@ -42,9 +42,7 @@ export default function ComponentsPage() {
   const [components, setComponents] = useState<Component[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingComponent, setEditingComponent] = useState<Component | null>(
-    null
-  );
+  const [editingComponent, setEditingComponent] = useState<Component | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -161,9 +159,7 @@ export default function ComponentsPage() {
                     <div>
                       <p className="font-medium text-white">{component.name}</p>
                       {component.description && (
-                        <p className="text-xs text-navy-500 mt-1">
-                          {component.description}
-                        </p>
+                        <p className="text-xs text-navy-500 mt-1">{component.description}</p>
                       )}
                     </div>
                   </TableCell>
@@ -173,9 +169,7 @@ export default function ComponentsPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>{component.group || "—"}</TableCell>
-                  <TableCell>
-                    {new Date(component.updatedAt).toLocaleDateString()}
-                  </TableCell>
+                  <TableCell>{new Date(component.updatedAt).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <button
@@ -221,18 +215,14 @@ export default function ComponentsPage() {
           <Textarea
             label="Description"
             value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             placeholder="Core API services"
             rows={3}
           />
           <Select
             label="Status"
             value={formData.status}
-            onChange={(e) =>
-              setFormData({ ...formData, status: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
             options={statusOptions}
           />
           <Input
@@ -242,11 +232,7 @@ export default function ComponentsPage() {
             placeholder="Infrastructure"
           />
           <div className="flex justify-end gap-3 pt-4">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setModalOpen(false)}
-            >
+            <Button type="button" variant="ghost" onClick={() => setModalOpen(false)}>
               Cancel
             </Button>
             <Button type="submit" loading={saving}>

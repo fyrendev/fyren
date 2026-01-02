@@ -8,9 +8,7 @@ interface Props {
 
 export function SubscribeForm({ slug }: Props) {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<
-    "idle" | "loading" | "success" | "error"
-  >("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
@@ -34,9 +32,7 @@ export function SubscribeForm({ slug }: Props) {
       setEmail("");
     } catch (err) {
       setStatus("error");
-      setMessage(
-        err instanceof Error ? err.message : "Something went wrong. Please try again."
-      );
+      setMessage(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     }
   }
 

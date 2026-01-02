@@ -70,23 +70,21 @@ export default function MaintenancePage() {
 
       {/* Filters */}
       <div className="flex gap-2">
-        {(["all", "scheduled", "in_progress", "completed"] as const).map(
-          (status) => (
-            <button
-              key={status}
-              onClick={() => setFilter(status)}
-              className={`px-4 py-2 text-sm rounded-lg transition-colors ${
-                filter === status
-                  ? "bg-navy-800 text-white"
-                  : "text-navy-400 hover:text-white hover:bg-navy-800/50"
-              }`}
-            >
-              {status === "in_progress"
-                ? "In Progress"
-                : status.charAt(0).toUpperCase() + status.slice(1)}
-            </button>
-          )
-        )}
+        {(["all", "scheduled", "in_progress", "completed"] as const).map((status) => (
+          <button
+            key={status}
+            onClick={() => setFilter(status)}
+            className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+              filter === status
+                ? "bg-navy-800 text-white"
+                : "text-navy-400 hover:text-white hover:bg-navy-800/50"
+            }`}
+          >
+            {status === "in_progress"
+              ? "In Progress"
+              : status.charAt(0).toUpperCase() + status.slice(1)}
+          </button>
+        ))}
       </div>
 
       <Card className="p-0 overflow-hidden">
@@ -110,9 +108,7 @@ export default function MaintenancePage() {
                 <TableRow key={maintenance.id}>
                   <TableCell>
                     <div>
-                      <p className="font-medium text-white">
-                        {maintenance.title}
-                      </p>
+                      <p className="font-medium text-white">{maintenance.title}</p>
                       {maintenance.affectedComponents &&
                         maintenance.affectedComponents.length > 0 && (
                           <p className="text-xs text-navy-500 mt-1">
@@ -125,18 +121,12 @@ export default function MaintenancePage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant={statusVariants[maintenance.status] || "default"}
-                    >
+                    <Badge variant={statusVariants[maintenance.status] || "default"}>
                       {maintenance.status.replace("_", " ")}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    {format(new Date(maintenance.scheduledStartAt), "PPp")}
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(maintenance.scheduledEndAt), "PPp")}
-                  </TableCell>
+                  <TableCell>{format(new Date(maintenance.scheduledStartAt), "PPp")}</TableCell>
+                  <TableCell>{format(new Date(maintenance.scheduledEndAt), "PPp")}</TableCell>
                   <TableCell>
                     <Link
                       href={`/admin/maintenance/${maintenance.id}`}

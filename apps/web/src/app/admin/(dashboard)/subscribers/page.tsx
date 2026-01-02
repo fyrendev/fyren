@@ -93,9 +93,7 @@ export default function SubscribersPage() {
                       {subscriber.verified ? "Verified" : "Pending"}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    {format(new Date(subscriber.createdAt), "PP")}
-                  </TableCell>
+                  <TableCell>{format(new Date(subscriber.createdAt), "PP")}</TableCell>
                   <TableCell>
                     <button
                       onClick={() => handleDelete(subscriber.id)}

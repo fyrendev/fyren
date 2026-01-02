@@ -57,17 +57,10 @@ export async function getIncidents(
   );
 }
 
-export async function getIncident(
-  slug: string,
-  incidentId: string
-): Promise<IncidentResponse> {
-  return fetchAPI<IncidentResponse>(
-    `/api/v1/status/${slug}/incidents/${incidentId}`
-  );
+export async function getIncident(slug: string, incidentId: string): Promise<IncidentResponse> {
+  return fetchAPI<IncidentResponse>(`/api/v1/status/${slug}/incidents/${incidentId}`);
 }
 
-export async function getMaintenance(
-  slug: string
-): Promise<MaintenanceResponse> {
+export async function getMaintenance(slug: string): Promise<MaintenanceResponse> {
   return fetchAPI<MaintenanceResponse>(`/api/v1/status/${slug}/maintenance`);
 }

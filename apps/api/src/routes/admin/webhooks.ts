@@ -50,10 +50,7 @@ adminWebhooks.get("/:id", async (c) => {
     const webhookId = c.req.param("id");
 
     const webhook = await db.query.webhookEndpoints.findFirst({
-      where: and(
-        eq(webhookEndpoints.id, webhookId),
-        eq(webhookEndpoints.organizationId, orgId)
-      ),
+      where: and(eq(webhookEndpoints.id, webhookId), eq(webhookEndpoints.organizationId, orgId)),
     });
 
     if (!webhook) {
@@ -78,8 +75,7 @@ adminWebhooks.post("/", async (c) => {
     const data = createWebhookSchema.parse(body);
 
     // Generate secret for generic webhooks
-    const secret =
-      data.type === "generic" ? randomBytes(32).toString("hex") : null;
+    const secret = data.type === "generic" ? randomBytes(32).toString("hex") : null;
 
     const [webhook] = await db
       .insert(webhookEndpoints)
@@ -115,10 +111,7 @@ adminWebhooks.put("/:id", async (c) => {
     const data = updateWebhookSchema.parse(body);
 
     const existing = await db.query.webhookEndpoints.findFirst({
-      where: and(
-        eq(webhookEndpoints.id, webhookId),
-        eq(webhookEndpoints.organizationId, orgId)
-      ),
+      where: and(eq(webhookEndpoints.id, webhookId), eq(webhookEndpoints.organizationId, orgId)),
     });
 
     if (!existing) {
@@ -132,14 +125,12 @@ adminWebhooks.put("/:id", async (c) => {
     if (data.name !== undefined) updateData.name = data.name;
     if (data.type !== undefined) updateData.type = data.type;
     if (data.url !== undefined) updateData.url = data.url;
-    if (data.notifyOnIncident !== undefined)
-      updateData.notifyOnIncident = data.notifyOnIncident;
+    if (data.notifyOnIncident !== undefined) updateData.notifyOnIncident = data.notifyOnIncident;
     if (data.notifyOnMaintenance !== undefined)
       updateData.notifyOnMaintenance = data.notifyOnMaintenance;
     if (data.notifyOnComponentChange !== undefined)
       updateData.notifyOnComponentChange = data.notifyOnComponentChange;
-    if (data.componentIds !== undefined)
-      updateData.componentIds = data.componentIds;
+    if (data.componentIds !== undefined) updateData.componentIds = data.componentIds;
 
     const [webhook] = await db
       .update(webhookEndpoints)
@@ -164,10 +155,7 @@ adminWebhooks.delete("/:id", async (c) => {
     const webhookId = c.req.param("id");
 
     const existing = await db.query.webhookEndpoints.findFirst({
-      where: and(
-        eq(webhookEndpoints.id, webhookId),
-        eq(webhookEndpoints.organizationId, orgId)
-      ),
+      where: and(eq(webhookEndpoints.id, webhookId), eq(webhookEndpoints.organizationId, orgId)),
     });
 
     if (!existing) {
@@ -193,10 +181,7 @@ adminWebhooks.patch("/:id/toggle", async (c) => {
     const webhookId = c.req.param("id");
 
     const existing = await db.query.webhookEndpoints.findFirst({
-      where: and(
-        eq(webhookEndpoints.id, webhookId),
-        eq(webhookEndpoints.organizationId, orgId)
-      ),
+      where: and(eq(webhookEndpoints.id, webhookId), eq(webhookEndpoints.organizationId, orgId)),
     });
 
     if (!existing) {
@@ -229,10 +214,7 @@ adminWebhooks.post("/:id/test", async (c) => {
     const webhookId = c.req.param("id");
 
     const webhook = await db.query.webhookEndpoints.findFirst({
-      where: and(
-        eq(webhookEndpoints.id, webhookId),
-        eq(webhookEndpoints.organizationId, orgId)
-      ),
+      where: and(eq(webhookEndpoints.id, webhookId), eq(webhookEndpoints.organizationId, orgId)),
     });
 
     if (!webhook) {

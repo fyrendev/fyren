@@ -1,4 +1,4 @@
-import { test, expect, testData } from "./fixtures";
+import { expect, test } from "./fixtures";
 
 test.describe("Admin Authentication", () => {
   test("displays login page", async ({ page }) => {
@@ -41,9 +41,7 @@ test.describe("Admin Authentication", () => {
     await expect(page).toHaveURL("/admin/register");
   });
 
-  test("redirects unauthenticated users from admin dashboard", async ({
-    page,
-  }) => {
+  test("redirects unauthenticated users from admin dashboard", async ({ page }) => {
     await page.goto("/admin");
 
     // Should redirect to login

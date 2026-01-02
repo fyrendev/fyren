@@ -1,10 +1,7 @@
 import { createHmac } from "crypto";
 import type { WebhookPayload, FormattedWebhook } from "../types";
 
-export function formatGenericWebhook(
-  payload: WebhookPayload,
-  secret?: string
-): FormattedWebhook {
+export function formatGenericWebhook(payload: WebhookPayload, secret?: string): FormattedWebhook {
   const body: Record<string, unknown> = {
     event: payload.event,
     timestamp: payload.timestamp,
@@ -17,9 +14,7 @@ export function formatGenericWebhook(
 
   // Add signature if secret is provided
   if (secret) {
-    const signature = createHmac("sha256", secret)
-      .update(JSON.stringify(body))
-      .digest("hex");
+    const signature = createHmac("sha256", secret).update(JSON.stringify(body)).digest("hex");
     headers["X-Fyren-Signature"] = `sha256=${signature}`;
   }
 

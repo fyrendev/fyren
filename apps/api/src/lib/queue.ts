@@ -33,9 +33,7 @@ export async function scheduleMonitor(monitor: Monitor): Promise<void> {
     }
   );
 
-  console.log(
-    `Scheduled monitor ${monitor.id} to run every ${monitor.intervalSeconds}s`
-  );
+  console.log(`Scheduled monitor ${monitor.id} to run every ${monitor.intervalSeconds}s`);
 }
 
 // Remove a scheduled monitor
@@ -60,9 +58,7 @@ export async function rescheduleMonitor(monitor: Monitor): Promise<void> {
 }
 
 // Trigger an immediate check for a monitor
-export async function triggerImmediateCheck(
-  monitorId: string
-): Promise<string> {
+export async function triggerImmediateCheck(monitorId: string): Promise<string> {
   const job = await monitorQueue.add(
     "check",
     { monitorId },
@@ -75,9 +71,7 @@ export async function triggerImmediateCheck(
 }
 
 // Initialize schedules for all active monitors
-export async function initializeMonitorSchedules(
-  monitors: Monitor[]
-): Promise<void> {
+export async function initializeMonitorSchedules(monitors: Monitor[]): Promise<void> {
   console.log(`Initializing schedules for ${monitors.length} active monitors...`);
 
   for (const monitor of monitors) {

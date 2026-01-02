@@ -36,7 +36,7 @@ async function generateApiKey(): Promise<{
 }
 
 async function seed() {
-  const connectionString = process.env.DATABASE_URL!;
+  const connectionString = process.env["DATABASE_URL"];
   if (!connectionString) {
     console.error("DATABASE_URL is required");
     process.exit(1);
@@ -57,7 +57,11 @@ async function seed() {
     })
     .returning();
 
-  console.log(`✅ Created organization: ${org.name} (${org.slug})`);
+  if (!org) {
+    throw new Error("Failed to create organization");
+  }
+
+  console.log(`Created organization: ${org.name} (${org.slug})`);
 
   // Create sample components
   const componentData = [
@@ -97,7 +101,11 @@ async function seed() {
     })
     .returning();
 
-  console.log(`\n✅ Created API key: ${apiKey.name}`);
+  if (!apiKey) {
+    throw new Error("Failed to create API key");
+  }
+
+  console.log(`\nCreated API key: ${apiKey.name}`);
   console.log(`\n🔑 API Key (save this - it won't be shown again):`);
   console.log(`   ${apiKeyData.key}\n`);
 

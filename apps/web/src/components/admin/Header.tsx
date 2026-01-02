@@ -61,10 +61,7 @@ export function Header({ user, organization }: Props) {
 
             {showDropdown && (
               <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setShowDropdown(false)}
-                />
+                <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)} />
                 <div className="absolute right-0 mt-2 w-48 bg-navy-800 rounded-lg shadow-lg border border-navy-700 z-20">
                   <div className="px-4 py-3 border-b border-navy-700">
                     <p className="text-sm font-medium text-white">{user.name}</p>

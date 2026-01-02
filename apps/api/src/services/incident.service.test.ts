@@ -1,12 +1,12 @@
-import { describe, test, expect } from "bun:test";
+import { components, db, eq, incidentComponents, incidents, incidentUpdates } from "@fyrendev/db";
+import { describe, expect, test } from "bun:test";
 import {
-  setupTestHooks,
-  createTestOrganization,
   createTestComponent,
   createTestMonitor,
+  createTestOrganization,
+  setupTestHooks,
 } from "../test";
 import { IncidentService } from "./incident.service";
-import { db, incidents, incidentUpdates, incidentComponents, components, eq } from "@fyrendev/db";
 
 describe("IncidentService", () => {
   setupTestHooks();
@@ -64,7 +64,9 @@ describe("IncidentService", () => {
 
     test("updates component status based on severity", async () => {
       const org = await createTestOrganization();
-      const component = await createTestComponent(org.id, { status: "operational" });
+      const component = await createTestComponent(org.id, {
+        status: "operational",
+      });
 
       await IncidentService.create({
         organizationId: org.id,
@@ -76,10 +78,7 @@ describe("IncidentService", () => {
       });
 
       // Refresh component
-      const [updated] = await db
-        .select()
-        .from(components)
-        .where(eq(components.id, component.id));
+      const [updated] = await db.select().from(components).where(eq(components.id, component.id));
 
       expect(updated!.status).toBe("partial_outage");
     });
@@ -130,10 +129,7 @@ describe("IncidentService", () => {
       expect(update!.message).toBe("We found the root cause");
 
       // Verify incident status was updated
-      const [refreshed] = await db
-        .select()
-        .from(incidents)
-        .where(eq(incidents.id, incident.id));
+      const [refreshed] = await db.select().from(incidents).where(eq(incidents.id, incident.id));
 
       expect(refreshed!.status).toBe("identified");
     });
@@ -155,7 +151,9 @@ describe("IncidentService", () => {
   describe("resolve", () => {
     test("resolves incident and restores component status", async () => {
       const org = await createTestOrganization();
-      const component = await createTestComponent(org.id, { status: "operational" });
+      const component = await createTestComponent(org.id, {
+        status: "operational",
+      });
 
       const incident = await IncidentService.create({
         organizationId: org.id,
@@ -167,10 +165,7 @@ describe("IncidentService", () => {
       });
 
       // Verify component status was changed
-      const [degraded] = await db
-        .select()
-        .from(components)
-        .where(eq(components.id, component.id));
+      const [degraded] = await db.select().from(components).where(eq(components.id, component.id));
       expect(degraded!.status).toBe("partial_outage");
 
       // Resolve incident
@@ -181,19 +176,13 @@ describe("IncidentService", () => {
       });
 
       // Verify incident is resolved
-      const [resolved] = await db
-        .select()
-        .from(incidents)
-        .where(eq(incidents.id, incident.id));
+      const [resolved] = await db.select().from(incidents).where(eq(incidents.id, incident.id));
 
       expect(resolved!.status).toBe("resolved");
       expect(resolved!.resolvedAt).toBeDefined();
 
       // Verify component status was restored
-      const [restored] = await db
-        .select()
-        .from(components)
-        .where(eq(components.id, component.id));
+      const [restored] = await db.select().from(components).where(eq(components.id, component.id));
       expect(restored!.status).toBe("operational");
     });
   });
@@ -231,10 +220,7 @@ describe("IncidentService", () => {
     test("returns null for non-existent incident", async () => {
       const org = await createTestOrganization();
 
-      const result = await IncidentService.getById(
-        "00000000-0000-0000-0000-000000000000",
-        org.id
-      );
+      const result = await IncidentService.getById("00000000-0000-0000-0000-000000000000", org.id);
 
       expect(result).toBeNull();
     });
@@ -288,7 +274,7 @@ describe("IncidentService", () => {
     test("filters by active status", async () => {
       const org = await createTestOrganization();
 
-      const active = await IncidentService.create({
+      await IncidentService.create({
         organizationId: org.id,
         title: "Active Incident",
         severity: "minor",
@@ -356,7 +342,9 @@ describe("IncidentService", () => {
   describe("delete", () => {
     test("deletes incident and restores component status", async () => {
       const org = await createTestOrganization();
-      const component = await createTestComponent(org.id, { status: "operational" });
+      const component = await createTestComponent(org.id, {
+        status: "operational",
+      });
 
       const incident = await IncidentService.create({
         organizationId: org.id,
@@ -368,10 +356,7 @@ describe("IncidentService", () => {
       });
 
       // Component should be degraded
-      const [degraded] = await db
-        .select()
-        .from(components)
-        .where(eq(components.id, component.id));
+      const [degraded] = await db.select().from(components).where(eq(components.id, component.id));
       expect(degraded!.status).toBe("partial_outage");
 
       // Delete incident
@@ -379,27 +364,18 @@ describe("IncidentService", () => {
       expect(result?.success).toBe(true);
 
       // Component should be restored
-      const [restored] = await db
-        .select()
-        .from(components)
-        .where(eq(components.id, component.id));
+      const [restored] = await db.select().from(components).where(eq(components.id, component.id));
       expect(restored!.status).toBe("operational");
 
       // Incident should be gone
-      const [deleted] = await db
-        .select()
-        .from(incidents)
-        .where(eq(incidents.id, incident.id));
+      const [deleted] = await db.select().from(incidents).where(eq(incidents.id, incident.id));
       expect(deleted).toBeUndefined();
     });
 
     test("returns null for non-existent incident", async () => {
       const org = await createTestOrganization();
 
-      const result = await IncidentService.delete(
-        "00000000-0000-0000-0000-000000000000",
-        org.id
-      );
+      const result = await IncidentService.delete("00000000-0000-0000-0000-000000000000", org.id);
 
       expect(result).toBeNull();
     });
@@ -408,7 +384,9 @@ describe("IncidentService", () => {
   describe("createFromMonitorFailure", () => {
     test("creates new incident for monitor failure", async () => {
       const org = await createTestOrganization();
-      const component = await createTestComponent(org.id, { name: "API Server" });
+      const component = await createTestComponent(org.id, {
+        name: "API Server",
+      });
       const monitor = await createTestMonitor(component.id);
 
       const incident = await IncidentService.createFromMonitorFailure({
@@ -426,7 +404,9 @@ describe("IncidentService", () => {
 
     test("adds update to existing incident for same monitor", async () => {
       const org = await createTestOrganization();
-      const component = await createTestComponent(org.id, { name: "API Server" });
+      const component = await createTestComponent(org.id, {
+        name: "API Server",
+      });
       const monitor = await createTestMonitor(component.id);
 
       // First failure creates incident
@@ -483,10 +463,7 @@ describe("IncidentService", () => {
       expect(resolved?.id).toBe(incident.id);
 
       // Verify incident is resolved
-      const [updated] = await db
-        .select()
-        .from(incidents)
-        .where(eq(incidents.id, incident.id));
+      const [updated] = await db.select().from(incidents).where(eq(incidents.id, incident.id));
       expect(updated!.status).toBe("resolved");
       expect(updated!.resolvedAt).toBeDefined();
     });

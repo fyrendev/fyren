@@ -40,12 +40,9 @@ describe("Admin Monitors API", () => {
       await createTestMonitor(component1.id);
       await createTestMonitor(component2.id);
 
-      const res = await app.request(
-        `/api/v1/admin/monitors?componentId=${component1.id}`,
-        {
-          headers: authHeader(rawKey),
-        }
-      );
+      const res = await app.request(`/api/v1/admin/monitors?componentId=${component1.id}`, {
+        headers: authHeader(rawKey),
+      });
 
       expect(res.status).toBe(200);
       const data = await res.json();
@@ -164,12 +161,9 @@ describe("Admin Monitors API", () => {
       const org = await createTestOrganization();
       const { rawKey } = await createTestApiKey(org.id);
 
-      const res = await app.request(
-        "/api/v1/admin/monitors/00000000-0000-0000-0000-000000000000",
-        {
-          headers: authHeader(rawKey),
-        }
-      );
+      const res = await app.request("/api/v1/admin/monitors/00000000-0000-0000-0000-000000000000", {
+        headers: authHeader(rawKey),
+      });
 
       expect(res.status).toBe(404);
     });
@@ -203,14 +197,11 @@ describe("Admin Monitors API", () => {
       const org = await createTestOrganization();
       const { rawKey } = await createTestApiKey(org.id);
 
-      const res = await app.request(
-        "/api/v1/admin/monitors/00000000-0000-0000-0000-000000000000",
-        {
-          method: "PUT",
-          headers: jsonAuthHeaders(rawKey),
-          body: JSON.stringify({ intervalSeconds: 120 }),
-        }
-      );
+      const res = await app.request("/api/v1/admin/monitors/00000000-0000-0000-0000-000000000000", {
+        method: "PUT",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({ intervalSeconds: 120 }),
+      });
 
       expect(res.status).toBe(404);
     });
@@ -223,13 +214,10 @@ describe("Admin Monitors API", () => {
       const component = await createTestComponent(org.id);
       const monitor = await createTestMonitor(component.id, { isActive: true });
 
-      const res = await app.request(
-        `/api/v1/admin/monitors/${monitor.id}/toggle`,
-        {
-          method: "PATCH",
-          headers: authHeader(rawKey),
-        }
-      );
+      const res = await app.request(`/api/v1/admin/monitors/${monitor.id}/toggle`, {
+        method: "PATCH",
+        headers: authHeader(rawKey),
+      });
 
       expect(res.status).toBe(200);
       const data = await res.json();
@@ -242,13 +230,10 @@ describe("Admin Monitors API", () => {
       const component = await createTestComponent(org.id);
       const monitor = await createTestMonitor(component.id, { isActive: false });
 
-      const res = await app.request(
-        `/api/v1/admin/monitors/${monitor.id}/toggle`,
-        {
-          method: "PATCH",
-          headers: authHeader(rawKey),
-        }
-      );
+      const res = await app.request(`/api/v1/admin/monitors/${monitor.id}/toggle`, {
+        method: "PATCH",
+        headers: authHeader(rawKey),
+      });
 
       expect(res.status).toBe(200);
       const data = await res.json();
@@ -277,13 +262,10 @@ describe("Admin Monitors API", () => {
       const component = await createTestComponent(org2.id);
       const monitor = await createTestMonitor(component.id);
 
-      const res = await app.request(
-        `/api/v1/admin/monitors/${monitor.id}/toggle`,
-        {
-          method: "PATCH",
-          headers: authHeader(rawKey),
-        }
-      );
+      const res = await app.request(`/api/v1/admin/monitors/${monitor.id}/toggle`, {
+        method: "PATCH",
+        headers: authHeader(rawKey),
+      });
 
       expect(res.status).toBe(403);
     });
@@ -293,12 +275,9 @@ describe("Admin Monitors API", () => {
       const component = await createTestComponent(org.id);
       const monitor = await createTestMonitor(component.id);
 
-      const res = await app.request(
-        `/api/v1/admin/monitors/${monitor.id}/toggle`,
-        {
-          method: "PATCH",
-        }
-      );
+      const res = await app.request(`/api/v1/admin/monitors/${monitor.id}/toggle`, {
+        method: "PATCH",
+      });
 
       expect(res.status).toBe(401);
     });
@@ -321,12 +300,9 @@ describe("Admin Monitors API", () => {
       expect(data.success).toBe(true);
 
       // Verify monitor is deleted
-      const getRes = await app.request(
-        `/api/v1/admin/monitors/${monitor.id}`,
-        {
-          headers: authHeader(rawKey),
-        }
-      );
+      const getRes = await app.request(`/api/v1/admin/monitors/${monitor.id}`, {
+        headers: authHeader(rawKey),
+      });
       expect(getRes.status).toBe(404);
     });
 
@@ -334,13 +310,10 @@ describe("Admin Monitors API", () => {
       const org = await createTestOrganization();
       const { rawKey } = await createTestApiKey(org.id);
 
-      const res = await app.request(
-        "/api/v1/admin/monitors/00000000-0000-0000-0000-000000000000",
-        {
-          method: "DELETE",
-          headers: authHeader(rawKey),
-        }
-      );
+      const res = await app.request("/api/v1/admin/monitors/00000000-0000-0000-0000-000000000000", {
+        method: "DELETE",
+        headers: authHeader(rawKey),
+      });
 
       expect(res.status).toBe(404);
     });
@@ -356,13 +329,10 @@ describe("Admin Monitors API", () => {
         type: "http",
       });
 
-      const res = await app.request(
-        `/api/v1/admin/monitors/${monitor.id}/check`,
-        {
-          method: "POST",
-          headers: authHeader(rawKey),
-        }
-      );
+      const res = await app.request(`/api/v1/admin/monitors/${monitor.id}/check`, {
+        method: "POST",
+        headers: authHeader(rawKey),
+      });
 
       expect(res.status).toBe(200);
       const data = await res.json();

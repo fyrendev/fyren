@@ -1,11 +1,4 @@
-import {
-  pgTable,
-  uuid,
-  integer,
-  varchar,
-  timestamp,
-  index,
-} from "drizzle-orm/pg-core";
+import { pgTable, uuid, integer, varchar, timestamp, index } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { monitors } from "./monitor";
 import { monitorResultStatusEnum } from "./enums";

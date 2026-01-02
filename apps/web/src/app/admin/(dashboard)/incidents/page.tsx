@@ -118,26 +118,21 @@ export default function IncidentsPage() {
                   <TableCell>
                     <div>
                       <p className="font-medium text-white">{incident.title}</p>
-                      {incident.affectedComponents &&
-                        incident.affectedComponents.length > 0 && (
-                          <p className="text-xs text-navy-500 mt-1">
-                            Affecting:{" "}
-                            {incident.affectedComponents
-                              .map((c) => c.component?.name || "Unknown")
-                              .join(", ")}
-                          </p>
-                        )}
+                      {incident.affectedComponents && incident.affectedComponents.length > 0 && (
+                        <p className="text-xs text-navy-500 mt-1">
+                          Affecting:{" "}
+                          {incident.affectedComponents
+                            .map((c) => c.component?.name || "Unknown")
+                            .join(", ")}
+                        </p>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={statusVariants[incident.status]}>
-                      {incident.status}
-                    </Badge>
+                    <Badge variant={statusVariants[incident.status]}>{incident.status}</Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={severityVariants[incident.severity]}>
-                      {incident.severity}
-                    </Badge>
+                    <Badge variant={severityVariants[incident.severity]}>{incident.severity}</Badge>
                   </TableCell>
                   <TableCell>
                     {formatDistanceToNow(new Date(incident.createdAt), {

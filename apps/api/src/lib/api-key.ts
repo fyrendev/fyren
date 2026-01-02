@@ -18,10 +18,7 @@ export async function hashApiKey(key: string): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export async function verifyApiKey(
-  key: string,
-  hash: string
-): Promise<boolean> {
+export async function verifyApiKey(key: string, hash: string): Promise<boolean> {
   const keyHash = await hashApiKey(key);
   return keyHash === hash;
 }

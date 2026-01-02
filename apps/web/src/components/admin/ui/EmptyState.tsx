@@ -11,12 +11,7 @@ interface EmptyStateProps {
   };
 }
 
-export function EmptyState({
-  icon: Icon,
-  title,
-  description,
-  action,
-}: EmptyStateProps) {
+export function EmptyState({ icon: Icon, title, description, action }: EmptyStateProps) {
   return (
     <div className="text-center py-12">
       <Icon className="w-12 h-12 mx-auto text-navy-600" />

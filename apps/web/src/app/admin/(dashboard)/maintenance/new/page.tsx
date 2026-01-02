@@ -43,8 +43,7 @@ export default function NewMaintenancePage() {
       });
       router.push(`/admin/maintenance/${result.maintenance.id}`);
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Failed to schedule maintenance";
+      const message = err instanceof Error ? err.message : "Failed to schedule maintenance";
       setError(message);
     } finally {
       setSaving(false);
@@ -83,9 +82,7 @@ export default function NewMaintenancePage() {
           <Input
             label="Title"
             value={formData.title}
-            onChange={(e) =>
-              setFormData({ ...formData, title: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             placeholder="Scheduled database maintenance"
             required
           />
@@ -93,9 +90,7 @@ export default function NewMaintenancePage() {
           <Textarea
             label="Description"
             value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             placeholder="We will be performing routine database maintenance..."
             rows={4}
           />
@@ -105,18 +100,14 @@ export default function NewMaintenancePage() {
               label="Scheduled Start"
               type="datetime-local"
               value={formData.scheduledStartAt}
-              onChange={(e) =>
-                setFormData({ ...formData, scheduledStartAt: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, scheduledStartAt: e.target.value })}
               required
             />
             <Input
               label="Scheduled End"
               type="datetime-local"
               value={formData.scheduledEndAt}
-              onChange={(e) =>
-                setFormData({ ...formData, scheduledEndAt: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, scheduledEndAt: e.target.value })}
               required
             />
           </div>

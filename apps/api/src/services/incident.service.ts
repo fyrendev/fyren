@@ -15,16 +15,10 @@ import {
 } from "@fyrendev/db";
 import { invalidateStatusCache } from "./cache.service";
 import { NotificationService } from "./notification.service";
-import type {
-  IncidentStatus,
-  IncidentSeverity,
-  ComponentStatus,
-} from "@fyrendev/db";
+import type { IncidentStatus, IncidentSeverity, ComponentStatus } from "@fyrendev/db";
 
 // Helper: map severity to component status
-function severityToComponentStatus(
-  severity: IncidentSeverity
-): ComponentStatus {
+function severityToComponentStatus(severity: IncidentSeverity): ComponentStatus {
   switch (severity) {
     case "minor":
       return "degraded";
@@ -150,10 +144,7 @@ export const IncidentService = {
         })
         .from(incidents)
         .where(
-          and(
-            eq(incidents.id, data.incidentId),
-            eq(incidents.organizationId, data.organizationId)
-          )
+          and(eq(incidents.id, data.incidentId), eq(incidents.organizationId, data.organizationId))
         )
         .limit(1);
 
@@ -201,10 +192,7 @@ export const IncidentService = {
         }
       }
 
-      await tx
-        .update(incidents)
-        .set(updateData)
-        .where(eq(incidents.id, data.incidentId));
+      await tx.update(incidents).set(updateData).where(eq(incidents.id, data.incidentId));
 
       // 4. Invalidate cache
       await invalidateOrgCache(data.organizationId);
@@ -230,8 +218,7 @@ export const IncidentService = {
         affectedComponentNames = comps.map((c) => c.name);
       }
 
-      const eventType =
-        data.status === "resolved" ? "incident.resolved" : "incident.updated";
+      const eventType = data.status === "resolved" ? "incident.resolved" : "incident.updated";
 
       await NotificationService.trigger({
         organizationId: data.organizationId,
@@ -273,12 +260,7 @@ export const IncidentService = {
     const [incident] = await db
       .select()
       .from(incidents)
-      .where(
-        and(
-          eq(incidents.id, incidentId),
-          eq(incidents.organizationId, organizationId)
-        )
-      )
+      .where(and(eq(incidents.id, incidentId), eq(incidents.organizationId, organizationId)))
       .limit(1);
 
     if (!incident) {
@@ -361,10 +343,7 @@ export const IncidentService = {
             name: components.name,
           })
           .from(incidentComponents)
-          .innerJoin(
-            components,
-            eq(incidentComponents.componentId, components.id)
-          )
+          .innerJoin(components, eq(incidentComponents.componentId, components.id))
           .where(eq(incidentComponents.incidentId, incident.id));
 
         return {
@@ -396,12 +375,7 @@ export const IncidentService = {
         ...data,
         updatedAt: new Date(),
       })
-      .where(
-        and(
-          eq(incidents.id, incidentId),
-          eq(incidents.organizationId, organizationId)
-        )
-      )
+      .where(and(eq(incidents.id, incidentId), eq(incidents.organizationId, organizationId)))
       .returning();
 
     if (updated) {
@@ -421,12 +395,7 @@ export const IncidentService = {
       const [incident] = await tx
         .select()
         .from(incidents)
-        .where(
-          and(
-            eq(incidents.id, incidentId),
-            eq(incidents.organizationId, organizationId)
-          )
-        )
+        .where(and(eq(incidents.id, incidentId), eq(incidents.organizationId, organizationId)))
         .limit(1);
 
       if (!incident) {
@@ -443,9 +412,7 @@ export const IncidentService = {
 
       // Restore status for components being removed (if incident is still active)
       if (!incident.resolvedAt && currentIds.length > 0) {
-        const idsToRestore = currentIds.filter(
-          (id) => !componentIds.includes(id)
-        );
+        const idsToRestore = currentIds.filter((id) => !componentIds.includes(id));
         if (idsToRestore.length > 0) {
           await tx
             .update(components)
@@ -455,9 +422,7 @@ export const IncidentService = {
       }
 
       // Remove existing links
-      await tx
-        .delete(incidentComponents)
-        .where(eq(incidentComponents.incidentId, incidentId));
+      await tx.delete(incidentComponents).where(eq(incidentComponents.incidentId, incidentId));
 
       // Add new links
       if (componentIds.length > 0) {
@@ -490,12 +455,7 @@ export const IncidentService = {
       const [incident] = await tx
         .select()
         .from(incidents)
-        .where(
-          and(
-            eq(incidents.id, incidentId),
-            eq(incidents.organizationId, organizationId)
-          )
-        )
+        .where(and(eq(incidents.id, incidentId), eq(incidents.organizationId, organizationId)))
         .limit(1);
 
       if (!incident) {
@@ -572,10 +532,7 @@ export const IncidentService = {
   },
 
   // Auto-resolve when monitor recovers
-  async resolveFromMonitorRecovery(data: {
-    organizationId: string;
-    monitorId: string;
-  }) {
+  async resolveFromMonitorRecovery(data: { organizationId: string; monitorId: string }) {
     const [incident] = await db
       .select()
       .from(incidents)

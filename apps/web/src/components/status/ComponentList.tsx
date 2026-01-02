@@ -26,9 +26,7 @@ export function ComponentList({ components, uptimeData, slug }: Props) {
       {Object.entries(grouped).map(([group, items]) => (
         <div key={group}>
           {group !== "default" && (
-            <div className="px-4 py-2 bg-navy-800 text-sm font-medium text-navy-300">
-              {group}
-            </div>
+            <div className="px-4 py-2 bg-navy-800 text-sm font-medium text-navy-300">{group}</div>
           )}
           {items
             .sort((a, b) => a.order - b.order)

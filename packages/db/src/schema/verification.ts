@@ -1,9 +1,4 @@
-import {
-  pgTable,
-  text,
-  timestamp,
-  index,
-} from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, index } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 // BetterAuth managed verification table (email verification, password reset)

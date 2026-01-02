@@ -12,11 +12,7 @@ export type ComponentStatus =
   | "major_outage"
   | "maintenance";
 
-export type IncidentStatus =
-  | "investigating"
-  | "identified"
-  | "monitoring"
-  | "resolved";
+export type IncidentStatus = "investigating" | "identified" | "monitoring" | "resolved";
 
 export type IncidentSeverity = "minor" | "major" | "critical";
 

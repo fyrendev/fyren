@@ -62,9 +62,7 @@ export default function ApiKeysPage() {
     try {
       const result = await api.createApiKey({
         name: formData.name,
-        expiresAt: formData.expiresAt
-          ? new Date(formData.expiresAt).toISOString()
-          : undefined,
+        expiresAt: formData.expiresAt ? new Date(formData.expiresAt).toISOString() : undefined,
       });
       setNewKey(result.plainKey);
       loadApiKeys();
@@ -149,11 +147,7 @@ export default function ApiKeysPage() {
                   <TableCell>
                     {apiKey.expiresAt ? (
                       <Badge
-                        variant={
-                          new Date(apiKey.expiresAt) < new Date()
-                            ? "danger"
-                            : "default"
-                        }
+                        variant={new Date(apiKey.expiresAt) < new Date() ? "danger" : "default"}
                       >
                         {format(new Date(apiKey.expiresAt), "PP")}
                       </Badge>
@@ -189,24 +183,15 @@ export default function ApiKeysPage() {
           <div className="space-y-4">
             <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
               <p className="text-yellow-400 text-sm">
-                Make sure to copy your API key now. You won&apos;t be able to see it
-                again!
+                Make sure to copy your API key now. You won&apos;t be able to see it again!
               </p>
             </div>
             <div className="flex items-center gap-2">
               <code className="flex-1 px-4 py-2 bg-navy-800 rounded-lg text-sm text-white font-mono overflow-x-auto">
                 {newKey}
               </code>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => copyToClipboard(newKey, "new")}
-              >
-                {copiedId === "new" ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  <Copy className="w-4 h-4" />
-                )}
+              <Button variant="secondary" size="sm" onClick={() => copyToClipboard(newKey, "new")}>
+                {copiedId === "new" ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               </Button>
             </div>
             <div className="flex justify-end pt-4">
@@ -230,9 +215,7 @@ export default function ApiKeysPage() {
             <Input
               label="Name"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="CI/CD Pipeline"
               required
             />
@@ -240,16 +223,10 @@ export default function ApiKeysPage() {
               label="Expires At (optional)"
               type="datetime-local"
               value={formData.expiresAt}
-              onChange={(e) =>
-                setFormData({ ...formData, expiresAt: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
             />
             <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setModalOpen(false)}
-              >
+              <Button type="button" variant="ghost" onClick={() => setModalOpen(false)}>
                 Cancel
               </Button>
               <Button type="submit" loading={saving}>

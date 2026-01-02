@@ -24,9 +24,7 @@ export function MaintenanceCard({ maintenance }: Props) {
           <div>
             <h3 className="font-medium">{maintenance.title}</h3>
             {maintenance.description && (
-              <p className="text-sm text-navy-400 mt-1">
-                {maintenance.description}
-              </p>
+              <p className="text-sm text-navy-400 mt-1">{maintenance.description}</p>
             )}
           </div>
         </div>

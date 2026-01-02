@@ -17,12 +17,8 @@ export const maintenanceComponents = pgTable(
   (table) => [primaryKey({ columns: [table.maintenanceId, table.componentId] })]
 );
 
-export const insertMaintenanceComponentSchema = createInsertSchema(
-  maintenanceComponents
-);
-export const selectMaintenanceComponentSchema = createSelectSchema(
-  maintenanceComponents
-);
+export const insertMaintenanceComponentSchema = createInsertSchema(maintenanceComponents);
+export const selectMaintenanceComponentSchema = createSelectSchema(maintenanceComponents);
 
 export type MaintenanceComponent = typeof maintenanceComponents.$inferSelect;
 export type NewMaintenanceComponent = typeof maintenanceComponents.$inferInsert;

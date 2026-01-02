@@ -27,10 +27,7 @@ const statusColors: Record<string, string> = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, id } = await params;
   try {
-    const [statusData, incidentData] = await Promise.all([
-      getStatus(slug),
-      getIncident(slug, id),
-    ]);
+    const [statusData, incidentData] = await Promise.all([getStatus(slug), getIncident(slug, id)]);
     return {
       title: `${incidentData.incident.title} | ${statusData.organization.name} Status`,
       description: incidentData.incident.updates[0]?.message,
@@ -67,27 +64,19 @@ export default async function IncidentPage({ params }: Props) {
           <div className="flex items-start justify-between gap-4">
             <h1 className="text-2xl font-semibold">{incident.title}</h1>
             <div className="flex gap-2">
-              <Badge className={severityColors[incident.severity]}>
-                {incident.severity}
-              </Badge>
-              <Badge className={statusColors[incident.status]}>
-                {incident.status}
-              </Badge>
+              <Badge className={severityColors[incident.severity]}>{incident.severity}</Badge>
+              <Badge className={statusColors[incident.status]}>{incident.status}</Badge>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-4 mt-4 text-sm text-navy-400">
             <span>Started: {formatDateTime(incident.startedAt)}</span>
-            {incident.resolvedAt && (
-              <span>Resolved: {formatDateTime(incident.resolvedAt)}</span>
-            )}
+            {incident.resolvedAt && <span>Resolved: {formatDateTime(incident.resolvedAt)}</span>}
           </div>
 
           {incident.affectedComponents.length > 0 && (
             <div className="mt-4">
-              <span className="text-sm text-navy-500">
-                Affected components:{" "}
-              </span>
+              <span className="text-sm text-navy-500">Affected components: </span>
               <span className="text-sm">
                 {incident.affectedComponents.map((c) => c.name).join(", ")}
               </span>

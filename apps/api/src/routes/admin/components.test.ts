@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterAll } from "bun:test";
+import { describe, test, expect } from "bun:test";
 import {
   createTestApp,
   setupTestHooks,
@@ -28,8 +28,8 @@ describe("Admin Components API", () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.components).toHaveLength(2);
-      expect(data.components.map((c: any) => c.name)).toContain("API Server");
-      expect(data.components.map((c: any) => c.name)).toContain("Database");
+      expect(data.components.map((c: { name: string }) => c.name)).toContain("API Server");
+      expect(data.components.map((c: { name: string }) => c.name)).toContain("Database");
     });
 
     test("filters components by status", async () => {
@@ -215,14 +215,11 @@ describe("Admin Components API", () => {
       const { rawKey } = await createTestApiKey(org.id);
       const component = await createTestComponent(org.id, { status: "operational" });
 
-      const res = await app.request(
-        `/api/v1/admin/components/${component.id}/status`,
-        {
-          method: "PATCH",
-          headers: jsonAuthHeaders(rawKey),
-          body: JSON.stringify({ status: "degraded" }),
-        }
-      );
+      const res = await app.request(`/api/v1/admin/components/${component.id}/status`, {
+        method: "PATCH",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({ status: "degraded" }),
+      });
 
       expect(res.status).toBe(200);
       const data = await res.json();
@@ -234,14 +231,11 @@ describe("Admin Components API", () => {
       const { rawKey } = await createTestApiKey(org.id);
       const component = await createTestComponent(org.id);
 
-      const res = await app.request(
-        `/api/v1/admin/components/${component.id}/status`,
-        {
-          method: "PATCH",
-          headers: jsonAuthHeaders(rawKey),
-          body: JSON.stringify({ status: "invalid_status" }),
-        }
-      );
+      const res = await app.request(`/api/v1/admin/components/${component.id}/status`, {
+        method: "PATCH",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({ status: "invalid_status" }),
+      });
 
       expect(res.status).toBe(400);
     });
@@ -263,12 +257,9 @@ describe("Admin Components API", () => {
       expect(data.success).toBe(true);
 
       // Verify component is deleted
-      const getRes = await app.request(
-        `/api/v1/admin/components/${component.id}`,
-        {
-          headers: authHeader(rawKey),
-        }
-      );
+      const getRes = await app.request(`/api/v1/admin/components/${component.id}`, {
+        headers: authHeader(rawKey),
+      });
       expect(getRes.status).toBe(404);
     });
 

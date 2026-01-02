@@ -36,27 +36,24 @@ export default function DashboardPage() {
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const [componentsRes, incidentsRes, maintenancesRes, subscribersRes] =
-          await Promise.all([
-            api.getComponents().catch(() => ({ components: [] })),
-            api.getIncidents("limit=5").catch(() => ({
-              incidents: [],
-              pagination: { total: 0, limit: 5, offset: 0 },
-            })),
-            api.getMaintenances("limit=5").catch(() => ({
-              maintenances: [],
-              pagination: { total: 0, limit: 5, offset: 0 },
-            })),
-            api.getSubscribers("limit=1").catch(() => ({
-              subscribers: [],
-              pagination: { total: 0, limit: 1, offset: 0 },
-            })),
-          ]);
+        const [componentsRes, incidentsRes, maintenancesRes, subscribersRes] = await Promise.all([
+          api.getComponents().catch(() => ({ components: [] })),
+          api.getIncidents("limit=5").catch(() => ({
+            incidents: [],
+            pagination: { total: 0, limit: 5, offset: 0 },
+          })),
+          api.getMaintenances("limit=5").catch(() => ({
+            maintenances: [],
+            pagination: { total: 0, limit: 5, offset: 0 },
+          })),
+          api.getSubscribers("limit=1").catch(() => ({
+            subscribers: [],
+            pagination: { total: 0, limit: 1, offset: 0 },
+          })),
+        ]);
 
         const components = componentsRes.components;
-        const operational = components.filter(
-          (c) => c.status === "operational"
-        ).length;
+        const operational = components.filter((c) => c.status === "operational").length;
         const degraded = components.filter(
           (c) => c.status === "degraded_performance" || c.status === "degraded"
         ).length;
@@ -68,17 +65,11 @@ export default function DashboardPage() {
         ).length;
 
         const incidents = incidentsRes.incidents;
-        const activeIncidents = incidents.filter(
-          (i) => !i.resolvedAt
-        ).length;
+        const activeIncidents = incidents.filter((i) => !i.resolvedAt).length;
 
         const maintenances = maintenancesRes.maintenances;
-        const upcoming = maintenances.filter(
-          (m) => m.status === "scheduled"
-        ).length;
-        const inProgress = maintenances.filter(
-          (m) => m.status === "in_progress"
-        ).length;
+        const upcoming = maintenances.filter((m) => m.status === "scheduled").length;
+        const inProgress = maintenances.filter((m) => m.status === "in_progress").length;
 
         setStats({
           components: {
@@ -171,10 +162,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Recent Incidents</CardTitle>
-            <Link
-              href="/admin/incidents"
-              className="text-sm text-blue-400 hover:text-blue-300"
-            >
+            <Link href="/admin/incidents" className="text-sm text-blue-400 hover:text-blue-300">
               View all
             </Link>
           </CardHeader>
@@ -191,16 +179,12 @@ export default function DashboardPage() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="text-sm font-medium text-white">
-                        {incident.title}
-                      </p>
+                      <p className="text-sm font-medium text-white">{incident.title}</p>
                       <p className="text-xs text-navy-400 mt-1">
                         {new Date(incident.createdAt).toLocaleDateString()}
                       </p>
                     </div>
-                    <Badge
-                      variant={incident.resolvedAt ? "success" : "danger"}
-                    >
+                    <Badge variant={incident.resolvedAt ? "success" : "danger"}>
                       {incident.resolvedAt ? "Resolved" : incident.status}
                     </Badge>
                   </div>

@@ -12,13 +12,7 @@ interface ModalProps {
   size?: "sm" | "md" | "lg" | "xl";
 }
 
-export function Modal({
-  isOpen,
-  onClose,
-  title,
-  children,
-  size = "md",
-}: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, size = "md" }: ModalProps) {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -36,10 +30,7 @@ export function Modal({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-full items-center justify-center p-4">
         {/* Backdrop */}
-        <div
-          className="fixed inset-0 bg-black/50 transition-opacity"
-          onClick={onClose}
-        />
+        <div className="fixed inset-0 bg-black/50 transition-opacity" onClick={onClose} />
 
         {/* Modal */}
         <div
@@ -56,10 +47,7 @@ export function Modal({
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-navy-800">
             <h2 className="text-lg font-semibold text-white">{title}</h2>
-            <button
-              onClick={onClose}
-              className="text-navy-400 hover:text-white transition-colors"
-            >
+            <button onClick={onClose} className="text-navy-400 hover:text-white transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>

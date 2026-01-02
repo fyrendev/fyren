@@ -1,17 +1,16 @@
-import { Hono } from "hono";
-import { z } from "zod";
-import { zValidator } from "@hono/zod-validator";
 import {
-  db,
-  sql,
-  organizations,
   components,
-  users,
-  userOrganizations,
+  db,
+  incidentComponents,
   incidents,
   incidentUpdates,
-  incidentComponents,
+  organizations,
+  sql,
+  userOrganizations,
 } from "@fyrendev/db";
+import { zValidator } from "@hono/zod-validator";
+import { Hono } from "hono";
+import { z } from "zod";
 import { env } from "../env";
 
 const testRoutes = new Hono();
@@ -125,18 +124,15 @@ testRoutes.post("/setup", zValidator("json", setupSchema), async (c) => {
 
     // Create user using BetterAuth's API via HTTP to ensure proper password hashing
     // We need to call the auth endpoint directly since the internal API has issues with undefined values
-    const signUpResponse = await fetch(
-      `${env.BETTER_AUTH_URL}/api/auth/sign-up/email`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: data.user.email,
-          password: data.user.password,
-          name: data.user.name,
-        }),
-      }
-    );
+    const signUpResponse = await fetch(`${env.BETTER_AUTH_URL}/api/auth/sign-up/email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: data.user.email,
+        password: data.user.password,
+        name: data.user.name,
+      }),
+    });
 
     if (!signUpResponse.ok) {
       const errorBody = await signUpResponse.text();

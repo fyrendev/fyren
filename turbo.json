@@ -1,6 +1,14 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalPassThroughEnv": ["DATABASE_URL", "REDIS_URL", "PORT", "NODE_ENV", "BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "APP_URL"],
+  "globalPassThroughEnv": [
+    "DATABASE_URL",
+    "REDIS_URL",
+    "PORT",
+    "NODE_ENV",
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_URL",
+    "APP_URL"
+  ],
   "tasks": {
     "test": {
       "dependsOn": ["^build"],

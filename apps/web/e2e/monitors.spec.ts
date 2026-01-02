@@ -15,7 +15,10 @@ test.describe("Monitors Page", () => {
   });
 
   test("can navigate to monitors page", async ({ page }) => {
-    await page.getByRole("link", { name: /monitors/i }).first().click();
+    await page
+      .getByRole("link", { name: /monitors/i })
+      .first()
+      .click();
     await expect(page).toHaveURL("/admin/monitors");
     await expect(page.getByText(/monitors/i).first()).toBeVisible();
   });

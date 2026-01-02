@@ -1,14 +1,14 @@
-import { describe, test, expect } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import {
   createTestApp,
-  setupTestHooks,
-  createTestOrganization,
   createTestComponent,
   createTestIncident,
-  createTestIncidentUpdate,
   createTestIncidentComponent,
+  createTestIncidentUpdate,
   createTestMaintenance,
   createTestMaintenanceComponent,
+  createTestOrganization,
+  setupTestHooks,
 } from "../../test";
 
 describe("Public Status API", () => {
@@ -18,9 +18,15 @@ describe("Public Status API", () => {
 
   describe("GET /api/v1/status/:slug", () => {
     test("returns organization status summary", async () => {
-      const org = await createTestOrganization({ slug: "acme", name: "Acme Corp" });
+      const org = await createTestOrganization({
+        slug: "acme",
+        name: "Acme Corp",
+      });
       await createTestComponent(org.id, { name: "API", status: "operational" });
-      await createTestComponent(org.id, { name: "Database", status: "operational" });
+      await createTestComponent(org.id, {
+        name: "Database",
+        status: "operational",
+      });
 
       const res = await app.request("/api/v1/status/acme");
 
@@ -116,7 +122,7 @@ describe("Public Status API", () => {
     });
 
     test("returns empty array when no incidents", async () => {
-      const org = await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization({ slug: "test-org" });
 
       const res = await app.request("/api/v1/status/test-org/incidents");
 
@@ -150,7 +156,7 @@ describe("Public Status API", () => {
     });
 
     test("returns 404 for non-existent incident", async () => {
-      const org = await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization({ slug: "test-org" });
 
       const res = await app.request(
         "/api/v1/status/test-org/incidents/00000000-0000-0000-0000-000000000000"
@@ -179,7 +185,7 @@ describe("Public Status API", () => {
     });
 
     test("returns empty array when no maintenance scheduled", async () => {
-      const org = await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization({ slug: "test-org" });
 
       const res = await app.request("/api/v1/status/test-org/maintenance");
 

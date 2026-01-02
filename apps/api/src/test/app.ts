@@ -1,8 +1,7 @@
 import { Hono } from "hono";
-import { logger } from "hono/logger";
 import { cors } from "hono/cors";
-import { setupRoutes } from "../routes";
 import { errorResponse } from "../lib/errors";
+import { setupRoutes } from "../routes";
 
 /**
  * Create a fresh Hono app instance for testing.

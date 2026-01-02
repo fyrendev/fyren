@@ -18,11 +18,7 @@ export const monitorWorker = new Worker<MonitorJobData>(
 
     try {
       // 1. Fetch monitor from database
-      const [monitor] = await db
-        .select()
-        .from(monitors)
-        .where(eq(monitors.id, monitorId))
-        .limit(1);
+      const [monitor] = await db.select().from(monitors).where(eq(monitors.id, monitorId)).limit(1);
 
       if (!monitor) {
         console.log(`[Worker] Monitor ${monitorId} not found, skipping`);

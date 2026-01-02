@@ -1,22 +1,21 @@
-import { db } from "../lib/db";
+import type { MaintenanceStatus } from "@fyrendev/db";
 import {
-  maintenances,
-  maintenanceComponents,
-  components,
-  organizations,
-  eq,
   and,
+  components,
   desc,
-  inArray,
-  or,
+  eq,
   gte,
-  lte,
+  inArray,
+  maintenanceComponents,
+  maintenances,
+  or,
+  organizations,
   sql,
 } from "@fyrendev/db";
+import { db } from "../lib/db";
 import { invalidateStatusCache } from "./cache.service";
 import { MaintenanceScheduler } from "./maintenance-scheduler.service";
 import { NotificationService } from "./notification.service";
-import type { MaintenanceStatus } from "@fyrendev/db";
 
 // Helper to invalidate cache for an organization
 async function invalidateOrgCache(organizationId: string): Promise<void> {
@@ -75,16 +74,10 @@ export const MaintenanceService = {
 
       // 3. Schedule jobs for auto-start and auto-complete
       if (data.autoStart) {
-        await MaintenanceScheduler.scheduleStart(
-          maintenance.id,
-          data.scheduledStartAt
-        );
+        await MaintenanceScheduler.scheduleStart(maintenance.id, data.scheduledStartAt);
       }
       if (data.autoComplete) {
-        await MaintenanceScheduler.scheduleComplete(
-          maintenance.id,
-          data.scheduledEndAt
-        );
+        await MaintenanceScheduler.scheduleComplete(maintenance.id, data.scheduledEndAt);
       }
 
       // 4. Invalidate cache
@@ -138,10 +131,7 @@ export const MaintenanceService = {
         .select()
         .from(maintenances)
         .where(
-          and(
-            eq(maintenances.id, maintenanceId),
-            eq(maintenances.organizationId, organizationId)
-          )
+          and(eq(maintenances.id, maintenanceId), eq(maintenances.organizationId, organizationId))
         )
         .limit(1);
 
@@ -159,15 +149,11 @@ export const MaintenanceService = {
       };
 
       if (data.title !== undefined) updateData.title = data.title;
-      if (data.description !== undefined)
-        updateData.description = data.description;
-      if (data.scheduledStartAt !== undefined)
-        updateData.scheduledStartAt = data.scheduledStartAt;
-      if (data.scheduledEndAt !== undefined)
-        updateData.scheduledEndAt = data.scheduledEndAt;
+      if (data.description !== undefined) updateData.description = data.description;
+      if (data.scheduledStartAt !== undefined) updateData.scheduledStartAt = data.scheduledStartAt;
+      if (data.scheduledEndAt !== undefined) updateData.scheduledEndAt = data.scheduledEndAt;
       if (data.autoStart !== undefined) updateData.autoStart = data.autoStart;
-      if (data.autoComplete !== undefined)
-        updateData.autoComplete = data.autoComplete;
+      if (data.autoComplete !== undefined) updateData.autoComplete = data.autoComplete;
 
       const [updated] = await tx
         .update(maintenances)
@@ -199,23 +185,14 @@ export const MaintenanceService = {
       if (data.scheduledStartAt !== undefined || data.autoStart !== undefined) {
         await MaintenanceScheduler.cancelStart(maintenanceId);
         if (updated.autoStart) {
-          await MaintenanceScheduler.scheduleStart(
-            maintenanceId,
-            updated.scheduledStartAt
-          );
+          await MaintenanceScheduler.scheduleStart(maintenanceId, updated.scheduledStartAt);
         }
       }
 
-      if (
-        data.scheduledEndAt !== undefined ||
-        data.autoComplete !== undefined
-      ) {
+      if (data.scheduledEndAt !== undefined || data.autoComplete !== undefined) {
         await MaintenanceScheduler.cancelComplete(maintenanceId);
         if (updated.autoComplete) {
-          await MaintenanceScheduler.scheduleComplete(
-            maintenanceId,
-            updated.scheduledEndAt
-          );
+          await MaintenanceScheduler.scheduleComplete(maintenanceId, updated.scheduledEndAt);
         }
       }
 
@@ -232,10 +209,7 @@ export const MaintenanceService = {
         .select()
         .from(maintenances)
         .where(
-          and(
-            eq(maintenances.id, maintenanceId),
-            eq(maintenances.organizationId, organizationId)
-          )
+          and(eq(maintenances.id, maintenanceId), eq(maintenances.organizationId, organizationId))
         )
         .limit(1);
 
@@ -314,10 +288,7 @@ export const MaintenanceService = {
         .select()
         .from(maintenances)
         .where(
-          and(
-            eq(maintenances.id, maintenanceId),
-            eq(maintenances.organizationId, organizationId)
-          )
+          and(eq(maintenances.id, maintenanceId), eq(maintenances.organizationId, organizationId))
         )
         .limit(1);
 
@@ -399,10 +370,7 @@ export const MaintenanceService = {
         .select()
         .from(maintenances)
         .where(
-          and(
-            eq(maintenances.id, maintenanceId),
-            eq(maintenances.organizationId, organizationId)
-          )
+          and(eq(maintenances.id, maintenanceId), eq(maintenances.organizationId, organizationId))
         )
         .limit(1);
 
@@ -410,10 +378,7 @@ export const MaintenanceService = {
         throw new Error("Maintenance not found");
       }
 
-      if (
-        maintenance.status === "completed" ||
-        maintenance.status === "cancelled"
-      ) {
+      if (maintenance.status === "completed" || maintenance.status === "cancelled") {
         throw new Error("Maintenance is already completed or cancelled");
       }
 
@@ -462,10 +427,7 @@ export const MaintenanceService = {
       .select()
       .from(maintenances)
       .where(
-        and(
-          eq(maintenances.id, maintenanceId),
-          eq(maintenances.organizationId, organizationId)
-        )
+        and(eq(maintenances.id, maintenanceId), eq(maintenances.organizationId, organizationId))
       )
       .limit(1);
 
@@ -508,10 +470,7 @@ export const MaintenanceService = {
     if (options.upcoming) {
       // Upcoming = scheduled or in_progress, with end time in future
       conditions.push(
-        or(
-          eq(maintenances.status, "scheduled"),
-          eq(maintenances.status, "in_progress")
-        )!
+        or(eq(maintenances.status, "scheduled"), eq(maintenances.status, "in_progress"))!
       );
       conditions.push(gte(maintenances.scheduledEndAt, new Date()));
     }
@@ -539,10 +498,7 @@ export const MaintenanceService = {
             name: components.name,
           })
           .from(maintenanceComponents)
-          .innerJoin(
-            components,
-            eq(maintenanceComponents.componentId, components.id)
-          )
+          .innerJoin(components, eq(maintenanceComponents.componentId, components.id))
           .where(eq(maintenanceComponents.maintenanceId, maintenance.id));
 
         return {

@@ -1,7 +1,7 @@
-import { db, monitors, eq } from "@fyrendev/db";
-import { bullmqRedis } from "./lib/redis";
-import { monitorWorker, closeWorker } from "./workers/monitor.worker";
+import { db, eq, monitors } from "@fyrendev/db";
 import { initializeMonitorSchedules, monitorQueue } from "./lib/queue";
+import { bullmqRedis } from "./lib/redis";
+import { closeWorker } from "./workers/monitor.worker";
 
 async function main() {
   console.log("🔧 Starting Fyren workers...");
@@ -11,10 +11,7 @@ async function main() {
   console.log("✅ Connected to Redis");
 
   // Fetch all active monitors
-  const activeMonitors = await db
-    .select()
-    .from(monitors)
-    .where(eq(monitors.isActive, true));
+  const activeMonitors = await db.select().from(monitors).where(eq(monitors.isActive, true));
 
   console.log(`📊 Found ${activeMonitors.length} active monitors`);
 

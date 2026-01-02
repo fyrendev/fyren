@@ -37,12 +37,8 @@ export function IncidentTimeline({ updates }: Props) {
 
           <div>
             <div className="flex items-center gap-2">
-              <Badge className={statusBadgeColors[update.status]}>
-                {update.status}
-              </Badge>
-              <span className="text-sm text-navy-400">
-                {formatDateTime(update.createdAt)}
-              </span>
+              <Badge className={statusBadgeColors[update.status]}>{update.status}</Badge>
+              <span className="text-sm text-navy-400">{formatDateTime(update.createdAt)}</span>
             </div>
             <p className="mt-2 text-navy-200">{update.message}</p>
           </div>

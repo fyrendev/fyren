@@ -27,11 +27,7 @@ export function ComponentRow({ component, uptime, slug }: Props) {
           <span className="font-medium">{component.name}</span>
         </div>
         <div className="flex items-center gap-4">
-          {uptime && (
-            <span className="text-sm text-navy-400">
-              {uptime.month.toFixed(2)}%
-            </span>
-          )}
+          {uptime && <span className="text-sm text-navy-400">{uptime.month.toFixed(2)}%</span>}
           <span className="text-sm text-navy-400">
             {statusLabels[component.status] || component.status}
           </span>

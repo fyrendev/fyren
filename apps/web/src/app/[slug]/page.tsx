@@ -53,10 +53,7 @@ export default async function StatusPage({ params }: Props) {
         <div className="max-w-4xl mx-auto px-4 py-8">
           <Header organization={data.organization} />
 
-          <StatusBanner
-            indicator={data.status.indicator}
-            description={data.status.description}
-          />
+          <StatusBanner indicator={data.status.indicator} description={data.status.description} />
 
           {/* Active Incidents */}
           {data.activeIncidents.length > 0 && (
@@ -69,9 +66,7 @@ export default async function StatusPage({ params }: Props) {
           {/* Scheduled Maintenance */}
           {data.scheduledMaintenance.length > 0 && (
             <section className="mt-8">
-              <h2 className="text-xl font-semibold mb-4">
-                Scheduled Maintenance
-              </h2>
+              <h2 className="text-xl font-semibold mb-4">Scheduled Maintenance</h2>
               <div className="space-y-4">
                 {data.scheduledMaintenance.map((m) => (
                   <MaintenanceCard key={m.id} maintenance={m} />
@@ -110,10 +105,7 @@ export default async function StatusPage({ params }: Props) {
             <SubscribeForm slug={slug} />
           </section>
 
-          <Footer
-            organization={data.organization}
-            rssUrl={`/api/v1/status/${slug}/rss`}
-          />
+          <Footer organization={data.organization} rssUrl={`/api/v1/status/${slug}/rss`} />
         </div>
       </div>
     </>

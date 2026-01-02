@@ -14,11 +14,7 @@ const variants = {
   info: "bg-blue-500/20 text-blue-400",
 };
 
-export function Badge({
-  children,
-  variant = "default",
-  className,
-}: BadgeProps) {
+export function Badge({ children, variant = "default", className }: BadgeProps) {
   return (
     <span
       className={clsx(

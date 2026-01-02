@@ -16,10 +16,8 @@ export const incidentComponents = pgTable(
   (table) => [primaryKey({ columns: [table.incidentId, table.componentId] })]
 );
 
-export const insertIncidentComponentSchema =
-  createInsertSchema(incidentComponents);
-export const selectIncidentComponentSchema =
-  createSelectSchema(incidentComponents);
+export const insertIncidentComponentSchema = createInsertSchema(incidentComponents);
+export const selectIncidentComponentSchema = createSelectSchema(incidentComponents);
 
 export type IncidentComponent = typeof incidentComponents.$inferSelect;
 export type NewIncidentComponent = typeof incidentComponents.$inferInsert;

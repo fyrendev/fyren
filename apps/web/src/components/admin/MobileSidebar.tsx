@@ -1,23 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { X } from "lucide-react";
 import {
-  LayoutDashboard,
-  Box,
   Activity,
   AlertTriangle,
-  Wrench,
+  Box,
+  ExternalLink,
+  Key,
+  LayoutDashboard,
+  Settings,
+  UserCog,
   Users,
   Webhook,
-  Settings,
-  Key,
-  UserCog,
-  ExternalLink,
+  Wrench,
+  X,
 } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -57,10 +56,7 @@ export function MobileSidebar({ isOpen, onClose }: Props) {
             </div>
             <span className="text-xl font-semibold text-white">Fyren</span>
           </Link>
-          <button
-            onClick={onClose}
-            className="p-2 text-navy-400 hover:text-white"
-          >
+          <button onClick={onClose} className="p-2 text-navy-400 hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -69,8 +65,7 @@ export function MobileSidebar({ isOpen, onClose }: Props) {
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navigation.map((item) => {
             const isActive =
-              pathname === item.href ||
-              (item.href !== "/admin" && pathname.startsWith(item.href));
+              pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
 
             return (
               <Link

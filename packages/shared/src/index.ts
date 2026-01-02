@@ -12,8 +12,7 @@ export const ComponentStatus = {
   MAINTENANCE: "maintenance",
 } as const;
 
-export type ComponentStatus =
-  (typeof ComponentStatus)[keyof typeof ComponentStatus];
+export type ComponentStatus = (typeof ComponentStatus)[keyof typeof ComponentStatus];
 
 // Incident status enum
 export const IncidentStatus = {
@@ -23,8 +22,7 @@ export const IncidentStatus = {
   RESOLVED: "resolved",
 } as const;
 
-export type IncidentStatus =
-  (typeof IncidentStatus)[keyof typeof IncidentStatus];
+export type IncidentStatus = (typeof IncidentStatus)[keyof typeof IncidentStatus];
 
 // Incident severity enum
 export const IncidentSeverity = {
@@ -33,8 +31,7 @@ export const IncidentSeverity = {
   CRITICAL: "critical",
 } as const;
 
-export type IncidentSeverity =
-  (typeof IncidentSeverity)[keyof typeof IncidentSeverity];
+export type IncidentSeverity = (typeof IncidentSeverity)[keyof typeof IncidentSeverity];
 
 // Webhook type enum
 export const WebhookType = {

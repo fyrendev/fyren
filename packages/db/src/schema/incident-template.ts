@@ -1,12 +1,4 @@
-import {
-  pgTable,
-  uuid,
-  varchar,
-  text,
-  timestamp,
-  jsonb,
-  index,
-} from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, text, timestamp, jsonb, index } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { organizations } from "./organization";
 import { incidentSeverityEnum } from "./enums";
@@ -24,21 +16,15 @@ export const incidentTemplates = pgTable(
     // Default first update message
     initialMessage: text("initial_message"),
     // Default component IDs to mark as affected
-    defaultComponentIds: jsonb("default_component_ids")
-      .$type<string[]>()
-      .default([]),
+    defaultComponentIds: jsonb("default_component_ids").$type<string[]>().default([]),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
-  (table) => [
-    index("incident_templates_organization_id_idx").on(table.organizationId),
-  ]
+  (table) => [index("incident_templates_organization_id_idx").on(table.organizationId)]
 );
 
-export const insertIncidentTemplateSchema =
-  createInsertSchema(incidentTemplates);
-export const selectIncidentTemplateSchema =
-  createSelectSchema(incidentTemplates);
+export const insertIncidentTemplateSchema = createInsertSchema(incidentTemplates);
+export const selectIncidentTemplateSchema = createSelectSchema(incidentTemplates);
 
 export type IncidentTemplate = typeof incidentTemplates.$inferSelect;
 export type NewIncidentTemplate = typeof incidentTemplates.$inferInsert;

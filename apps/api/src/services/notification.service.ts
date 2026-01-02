@@ -89,10 +89,7 @@ export const NotificationService = {
 
     // Build subscriber query - we need to filter manually
     const allSubs = await db.query.subscribers.findMany({
-      where: and(
-        eq(subscribers.organizationId, org.id),
-        eq(subscribers.verified, true)
-      ),
+      where: and(eq(subscribers.organizationId, org.id), eq(subscribers.verified, true)),
     });
 
     // Filter by notification preferences
@@ -145,10 +142,7 @@ export const NotificationService = {
 
     // Get all enabled webhooks for this org
     const allWebhooks = await db.query.webhookEndpoints.findMany({
-      where: and(
-        eq(webhookEndpoints.organizationId, org.id),
-        eq(webhookEndpoints.enabled, true)
-      ),
+      where: and(eq(webhookEndpoints.organizationId, org.id), eq(webhookEndpoints.enabled, true)),
     });
 
     // Filter by notification preferences

@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { db, userOrganizations, users, orgRoleEnum, eq, and } from "@fyrendev/db";
+import { db, userOrganizations, users, eq, and } from "@fyrendev/db";
 import { authMiddleware } from "../../middleware/auth";
 import { requireOrgMembership, requireRole } from "../../middleware/session";
 import { errorResponse, NotFoundError, ForbiddenError, BadRequestError } from "../../lib/errors";
@@ -71,10 +71,7 @@ adminMembers.put(
         .select()
         .from(userOrganizations)
         .where(
-          and(
-            eq(userOrganizations.id, membershipId),
-            eq(userOrganizations.organizationId, orgId)
-          )
+          and(eq(userOrganizations.id, membershipId), eq(userOrganizations.organizationId, orgId))
         )
         .limit(1);
 
@@ -106,11 +103,7 @@ adminMembers.put(
       }
 
       // Get user info
-      const [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, updated.userId))
-        .limit(1);
+      const [user] = await db.select().from(users).where(eq(users.id, updated.userId)).limit(1);
 
       return c.json({
         member: {
@@ -151,10 +144,7 @@ adminMembers.delete(
         .select()
         .from(userOrganizations)
         .where(
-          and(
-            eq(userOrganizations.id, membershipId),
-            eq(userOrganizations.organizationId, orgId)
-          )
+          and(eq(userOrganizations.id, membershipId), eq(userOrganizations.organizationId, orgId))
         )
         .limit(1);
 
@@ -177,9 +167,7 @@ adminMembers.delete(
         throw new ForbiddenError("Admins cannot remove other admins");
       }
 
-      await db
-        .delete(userOrganizations)
-        .where(eq(userOrganizations.id, membershipId));
+      await db.delete(userOrganizations).where(eq(userOrganizations.id, membershipId));
 
       return c.json({ success: true });
     } catch (error) {
@@ -209,9 +197,7 @@ adminMembers.post("/:orgId/leave", authMiddleware, requireOrgMembership, async (
       throw new ForbiddenError("Owner cannot leave organization. Transfer ownership first.");
     }
 
-    await db
-      .delete(userOrganizations)
-      .where(eq(userOrganizations.id, membership.id));
+    await db.delete(userOrganizations).where(eq(userOrganizations.id, membership.id));
 
     return c.json({ success: true });
   } catch (error) {

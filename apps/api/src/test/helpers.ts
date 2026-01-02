@@ -1,4 +1,19 @@
-import { db, organizations, components, apiKeys, users, userOrganizations, monitors, incidents, incidentUpdates, incidentComponents, maintenances, maintenanceComponents, subscribers, webhookEndpoints } from "@fyrendev/db";
+import {
+  db,
+  organizations,
+  components,
+  apiKeys,
+  users,
+  userOrganizations,
+  monitors,
+  incidents,
+  incidentUpdates,
+  incidentComponents,
+  maintenances,
+  maintenanceComponents,
+  subscribers,
+  webhookEndpoints,
+} from "@fyrendev/db";
 import { generateApiKey } from "../lib/api-key";
 
 /**
@@ -6,9 +21,9 @@ import { generateApiKey } from "../lib/api-key";
  */
 function randomString(length = 8): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  return Array.from({ length }, () =>
-    chars.charAt(Math.floor(Math.random() * chars.length))
-  ).join("");
+  return Array.from({ length }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join(
+    ""
+  );
 }
 
 /**
@@ -60,9 +75,7 @@ export async function createTestApiKey(
 /**
  * Create a test user.
  */
-export async function createTestUser(
-  overrides: Partial<typeof users.$inferInsert> = {}
-) {
+export async function createTestUser(overrides: Partial<typeof users.$inferInsert> = {}) {
   const [user] = await db
     .insert(users)
     .values({
@@ -196,10 +209,7 @@ export async function createTestIncidentUpdate(
 /**
  * Link an incident to a component.
  */
-export async function createTestIncidentComponent(
-  incidentId: string,
-  componentId: string
-) {
+export async function createTestIncidentComponent(incidentId: string, componentId: string) {
   const [link] = await db
     .insert(incidentComponents)
     .values({
@@ -243,10 +253,7 @@ export async function createTestMaintenance(
 /**
  * Link a maintenance window to a component.
  */
-export async function createTestMaintenanceComponent(
-  maintenanceId: string,
-  componentId: string
-) {
+export async function createTestMaintenanceComponent(maintenanceId: string, componentId: string) {
   const [link] = await db
     .insert(maintenanceComponents)
     .values({

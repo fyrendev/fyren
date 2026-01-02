@@ -1,18 +1,8 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../../lib/db";
-import {
-  components,
-  componentStatusEnum,
-  eq,
-  and,
-} from "@fyrendev/db";
-import {
-  ValidationError,
-  NotFoundError,
-  ForbiddenError,
-  errorResponse,
-} from "../../lib/errors";
+import { components, componentStatusEnum, eq, and } from "@fyrendev/db";
+import { NotFoundError, errorResponse } from "../../lib/errors";
 
 const adminComponents = new Hono();
 
@@ -43,17 +33,13 @@ adminComponents.get("/", async (c) => {
     const orgId = c.get("organizationId")!;
     const status = c.req.query("status");
 
-    let query = db
-      .select()
-      .from(components)
-      .where(eq(components.organizationId, orgId))
-      .$dynamic();
+    let query = db.select().from(components).where(eq(components.organizationId, orgId)).$dynamic();
 
-    if (status && componentStatuses.includes(status as any)) {
+    if (status && componentStatuses.includes(status as (typeof componentStatuses)[number])) {
       query = query.where(
         and(
           eq(components.organizationId, orgId),
-          eq(components.status, status as typeof componentStatuses[number])
+          eq(components.status, status as (typeof componentStatuses)[number])
         )
       );
     }
@@ -129,12 +115,7 @@ adminComponents.get("/:id", async (c) => {
     const [comp] = await db
       .select()
       .from(components)
-      .where(
-        and(
-          eq(components.id, id),
-          eq(components.organizationId, orgId)
-        )
-      )
+      .where(and(eq(components.id, id), eq(components.organizationId, orgId)))
       .limit(1);
 
     if (!comp) {
@@ -172,12 +153,7 @@ adminComponents.put("/:id", async (c) => {
         ...data,
         updatedAt: new Date(),
       })
-      .where(
-        and(
-          eq(components.id, id),
-          eq(components.organizationId, orgId)
-        )
-      )
+      .where(and(eq(components.id, id), eq(components.organizationId, orgId)))
       .returning();
 
     if (!comp) {
@@ -215,12 +191,7 @@ adminComponents.patch("/:id/status", async (c) => {
         status: data.status,
         updatedAt: new Date(),
       })
-      .where(
-        and(
-          eq(components.id, id),
-          eq(components.organizationId, orgId)
-        )
-      )
+      .where(and(eq(components.id, id), eq(components.organizationId, orgId)))
       .returning();
 
     if (!comp) {
@@ -252,12 +223,7 @@ adminComponents.delete("/:id", async (c) => {
 
     const [comp] = await db
       .delete(components)
-      .where(
-        and(
-          eq(components.id, id),
-          eq(components.organizationId, orgId)
-        )
-      )
+      .where(and(eq(components.id, id), eq(components.organizationId, orgId)))
       .returning();
 
     if (!comp) {

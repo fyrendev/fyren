@@ -1,18 +1,9 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import {
-  db,
-  organizationInvites,
-  userOrganizations,
-  organizations,
-  users,
-  eq,
-  and,
-  isNull,
-} from "@fyrendev/db";
+import { db, organizationInvites, userOrganizations, users, eq, and, isNull } from "@fyrendev/db";
 import { authMiddleware } from "../../middleware/auth";
-import { requireSession, requireOrgMembership, requireRole } from "../../middleware/session";
-import { errorResponse, NotFoundError, ForbiddenError, BadRequestError, ConflictError } from "../../lib/errors";
+import { requireOrgMembership, requireRole } from "../../middleware/session";
+import { errorResponse, NotFoundError, ForbiddenError, ConflictError } from "../../lib/errors";
 import type { AuthUser } from "../../lib/auth";
 import type { UserOrganization } from "@fyrendev/db";
 
@@ -57,10 +48,7 @@ adminInvites.get(
         .from(organizationInvites)
         .leftJoin(users, eq(organizationInvites.invitedBy, users.id))
         .where(
-          and(
-            eq(organizationInvites.organizationId, orgId),
-            isNull(organizationInvites.acceptedAt)
-          )
+          and(eq(organizationInvites.organizationId, orgId), isNull(organizationInvites.acceptedAt))
         );
 
       return c.json({
@@ -117,12 +105,7 @@ adminInvites.post(
         .select()
         .from(userOrganizations)
         .innerJoin(users, eq(userOrganizations.userId, users.id))
-        .where(
-          and(
-            eq(userOrganizations.organizationId, orgId),
-            eq(users.email, data.email)
-          )
-        )
+        .where(and(eq(userOrganizations.organizationId, orgId), eq(users.email, data.email)))
         .limit(1);
 
       if (existingMember) {
@@ -207,10 +190,7 @@ adminInvites.delete(
       const [invite] = await db
         .delete(organizationInvites)
         .where(
-          and(
-            eq(organizationInvites.id, inviteId),
-            eq(organizationInvites.organizationId, orgId)
-          )
+          and(eq(organizationInvites.id, inviteId), eq(organizationInvites.organizationId, orgId))
         )
         .returning();
 

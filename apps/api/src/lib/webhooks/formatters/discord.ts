@@ -25,11 +25,7 @@ export function formatDiscordWebhook(payload: WebhookPayload): FormattedWebhook 
   switch (event) {
     case "incident.created":
       color =
-        data.severity === "critical"
-          ? 0xdc2626
-          : data.severity === "major"
-            ? 0xea580c
-            : 0xca8a04;
+        data.severity === "critical" ? 0xdc2626 : data.severity === "major" ? 0xea580c : 0xca8a04;
       title = `New Incident: ${data.title}`;
       description = data.message as string;
       break;

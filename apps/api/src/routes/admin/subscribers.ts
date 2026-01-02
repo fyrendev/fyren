@@ -81,10 +81,7 @@ adminSubscribers.delete("/:id", async (c) => {
     const subscriberId = c.req.param("id");
 
     const subscriber = await db.query.subscribers.findFirst({
-      where: and(
-        eq(subscribers.id, subscriberId),
-        eq(subscribers.organizationId, orgId)
-      ),
+      where: and(eq(subscribers.id, subscriberId), eq(subscribers.organizationId, orgId)),
     });
 
     if (!subscriber) {
@@ -108,10 +105,7 @@ adminSubscribers.get("/export", async (c) => {
     }
 
     const subs = await db.query.subscribers.findMany({
-      where: and(
-        eq(subscribers.organizationId, orgId),
-        eq(subscribers.verified, true)
-      ),
+      where: and(eq(subscribers.organizationId, orgId), eq(subscribers.verified, true)),
       columns: {
         email: true,
         verifiedAt: true,
@@ -123,8 +117,7 @@ adminSubscribers.get("/export", async (c) => {
     const csv = [
       "email,verified_at,subscribed_at",
       ...subs.map(
-        (s) =>
-          `${s.email},${s.verifiedAt?.toISOString() || ""},${s.createdAt.toISOString()}`
+        (s) => `${s.email},${s.verifiedAt?.toISOString() || ""},${s.createdAt.toISOString()}`
       ),
     ].join("\n");
 

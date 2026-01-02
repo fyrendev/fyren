@@ -1,17 +1,22 @@
-import { Hono } from "hono";
 import {
-  db,
-  organizationInvites,
-  userOrganizations,
-  organizations,
-  users,
-  eq,
   and,
+  db,
+  eq,
   isNull,
+  organizationInvites,
+  organizations,
+  userOrganizations,
 } from "@fyrendev/db";
-import { requireSession } from "../../middleware/session";
-import { errorResponse, NotFoundError, ForbiddenError, BadRequestError, ConflictError } from "../../lib/errors";
+import { Hono } from "hono";
 import type { AuthUser } from "../../lib/auth";
+import {
+  BadRequestError,
+  ConflictError,
+  errorResponse,
+  ForbiddenError,
+  NotFoundError,
+} from "../../lib/errors";
+import { requireSession } from "../../middleware/session";
 
 type Variables = {
   user?: AuthUser;
@@ -31,12 +36,7 @@ publicInvites.get("/:token", async (c) => {
       })
       .from(organizationInvites)
       .innerJoin(organizations, eq(organizationInvites.organizationId, organizations.id))
-      .where(
-        and(
-          eq(organizationInvites.token, token),
-          isNull(organizationInvites.acceptedAt)
-        )
-      )
+      .where(and(eq(organizationInvites.token, token), isNull(organizationInvites.acceptedAt)))
       .limit(1);
 
     if (!result) {
@@ -77,12 +77,7 @@ publicInvites.post("/:token/accept", requireSession, async (c) => {
       })
       .from(organizationInvites)
       .innerJoin(organizations, eq(organizationInvites.organizationId, organizations.id))
-      .where(
-        and(
-          eq(organizationInvites.token, token),
-          isNull(organizationInvites.acceptedAt)
-        )
-      )
+      .where(and(eq(organizationInvites.token, token), isNull(organizationInvites.acceptedAt)))
       .limit(1);
 
     if (!result) {

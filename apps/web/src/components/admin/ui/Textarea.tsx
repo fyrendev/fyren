@@ -1,8 +1,7 @@
 import { forwardRef } from "react";
 import clsx from "clsx";
 
-interface TextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   error?: string;
 }
@@ -12,10 +11,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div className="space-y-1">
         {label && (
-          <label
-            htmlFor={id}
-            className="block text-sm font-medium text-navy-300"
-          >
+          <label htmlFor={id} className="block text-sm font-medium text-navy-300">
             {label}
           </label>
         )}

@@ -10,17 +10,13 @@ export default function VerifySubscriptionPage() {
   const slug = params.slug as string;
   const token = params.token as string;
 
-  const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading"
-  );
+  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     async function verify() {
       try {
-        const res = await fetch(
-          `/api/v1/status/${slug}/subscribe/verify/${token}`
-        );
+        const res = await fetch(`/api/v1/status/${slug}/subscribe/verify/${token}`);
         const data = await res.json();
 
         if (!res.ok) {
@@ -31,9 +27,7 @@ export default function VerifySubscriptionPage() {
         setMessage(data.message || "Successfully subscribed to status updates");
       } catch (err) {
         setStatus("error");
-        setMessage(
-          err instanceof Error ? err.message : "Verification failed"
-        );
+        setMessage(err instanceof Error ? err.message : "Verification failed");
       }
     }
 
@@ -46,9 +40,7 @@ export default function VerifySubscriptionPage() {
         {status === "loading" && (
           <>
             <Loader2 className="w-16 h-16 text-navy-400 mx-auto animate-spin mb-4" />
-            <h1 className="text-2xl font-semibold mb-2">
-              Verifying subscription...
-            </h1>
+            <h1 className="text-2xl font-semibold mb-2">Verifying subscription...</h1>
             <p className="text-navy-400">Please wait while we verify your email.</p>
           </>
         )}

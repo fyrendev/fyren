@@ -43,7 +43,11 @@ export default function WebhooksPage() {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [testResult, setTestResult] = useState<{ id: string; success: boolean; error?: string } | null>(null);
+  const [testResult, setTestResult] = useState<{
+    id: string;
+    success: boolean;
+    error?: string;
+  } | null>(null);
 
   useEffect(() => {
     loadWebhooks();
@@ -177,19 +181,14 @@ export default function WebhooksPage() {
                     <Badge variant="info">{webhook.type}</Badge>
                   </TableCell>
                   <TableCell>
-                    <p className="text-navy-400 truncate max-w-xs">
-                      {webhook.url}
-                    </p>
+                    <p className="text-navy-400 truncate max-w-xs">{webhook.url}</p>
                   </TableCell>
                   <TableCell>
                     <Badge variant={webhook.enabled ? "success" : "default"}>
                       {webhook.enabled ? "Enabled" : "Disabled"}
                     </Badge>
                     {testResult?.id === webhook.id && (
-                      <Badge
-                        variant={testResult.success ? "success" : "danger"}
-                        className="ml-2"
-                      >
+                      <Badge variant={testResult.success ? "success" : "danger"} className="ml-2">
                         {testResult.success ? "Test sent" : "Test failed"}
                       </Badge>
                     )}
@@ -268,11 +267,7 @@ export default function WebhooksPage() {
             required
           />
           <div className="flex justify-end gap-3 pt-4">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setModalOpen(false)}
-            >
+            <Button type="button" variant="ghost" onClick={() => setModalOpen(false)}>
               Cancel
             </Button>
             <Button type="submit" loading={saving}>

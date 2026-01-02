@@ -3,11 +3,7 @@ import { z } from "zod";
 import { db } from "../../lib/db";
 import { apiKeys, eq, and } from "@fyrendev/db";
 import { generateApiKey } from "../../lib/api-key";
-import {
-  NotFoundError,
-  ForbiddenError,
-  errorResponse,
-} from "../../lib/errors";
+import { NotFoundError, ForbiddenError, errorResponse } from "../../lib/errors";
 
 const adminApiKeys = new Hono();
 
@@ -106,12 +102,7 @@ adminApiKeys.delete("/:id", async (c) => {
 
     const result = await db
       .delete(apiKeys)
-      .where(
-        and(
-          eq(apiKeys.id, id),
-          eq(apiKeys.organizationId, orgId)
-        )
-      )
+      .where(and(eq(apiKeys.id, id), eq(apiKeys.organizationId, orgId)))
       .returning();
 
     const key = result[0];

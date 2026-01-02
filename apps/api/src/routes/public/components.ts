@@ -31,12 +31,7 @@ publicComponents.get("/:slug/components", async (c) => {
         displayOrder: components.displayOrder,
       })
       .from(components)
-      .where(
-        and(
-          eq(components.organizationId, org.id),
-          eq(components.isPublic, true)
-        )
-      )
+      .where(and(eq(components.organizationId, org.id), eq(components.isPublic, true)))
       .orderBy(asc(components.displayOrder));
 
     return c.json({

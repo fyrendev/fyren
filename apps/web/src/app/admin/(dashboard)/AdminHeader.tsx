@@ -40,9 +40,7 @@ export function AdminHeader({ user }: Props) {
 
           {/* Organization name */}
           <div className="hidden lg:block">
-            <h1 className="text-lg font-medium text-white">
-              {organization?.name || "Loading..."}
-            </h1>
+            <h1 className="text-lg font-medium text-white">{organization?.name || "Loading..."}</h1>
           </div>
 
           {/* Mobile logo */}
@@ -75,15 +73,10 @@ export function AdminHeader({ user }: Props) {
 
               {showDropdown && (
                 <>
-                  <div
-                    className="fixed inset-0 z-10"
-                    onClick={() => setShowDropdown(false)}
-                  />
+                  <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)} />
                   <div className="absolute right-0 mt-2 w-48 bg-navy-800 rounded-lg shadow-lg border border-navy-700 z-20">
                     <div className="px-4 py-3 border-b border-navy-700">
-                      <p className="text-sm font-medium text-white">
-                        {user.name}
-                      </p>
+                      <p className="text-sm font-medium text-white">{user.name}</p>
                       <p className="text-xs text-navy-400">{user.email}</p>
                     </div>
                     <div className="py-1">
@@ -103,10 +96,7 @@ export function AdminHeader({ user }: Props) {
         </div>
       </header>
 
-      <MobileSidebar
-        isOpen={mobileMenuOpen}
-        onClose={() => setMobileMenuOpen(false)}
-      />
+      <MobileSidebar isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
     </>
   );
 }

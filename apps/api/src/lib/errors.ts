@@ -100,9 +100,7 @@ export function errorResponse(c: Context, error: unknown) {
   // Handle Zod validation errors
   if (error && typeof error === "object" && "issues" in error) {
     const zodError = error as { issues: Array<{ message: string; path: string[] }> };
-    const message = zodError.issues
-      .map((i) => `${i.path.join(".")}: ${i.message}`)
-      .join(", ");
+    const message = zodError.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join(", ");
     return c.json(
       {
         error: {

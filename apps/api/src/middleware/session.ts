@@ -1,5 +1,5 @@
 import { createMiddleware } from "hono/factory";
-import { auth, type Session, type AuthUser } from "../lib/auth";
+import { auth, type Session } from "../lib/auth";
 import { db, userOrganizations, eq, and } from "@fyrendev/db";
 import { UnauthorizedError, ForbiddenError, BadRequestError, errorResponse } from "../lib/errors";
 import type { OrgRole } from "@fyrendev/db";
@@ -56,7 +56,9 @@ export const requireOrgMembership = createMiddleware(async (c, next) => {
     const orgId = c.req.param("orgId") || c.req.header("X-Organization-Id");
 
     if (!orgId) {
-      throw new BadRequestError("Organization ID required (use X-Organization-Id header or :orgId param)");
+      throw new BadRequestError(
+        "Organization ID required (use X-Organization-Id header or :orgId param)"
+      );
     }
 
     // Check user belongs to org
@@ -64,10 +66,7 @@ export const requireOrgMembership = createMiddleware(async (c, next) => {
       .select()
       .from(userOrganizations)
       .where(
-        and(
-          eq(userOrganizations.userId, user.id),
-          eq(userOrganizations.organizationId, orgId)
-        )
+        and(eq(userOrganizations.userId, user.id), eq(userOrganizations.organizationId, orgId))
       )
       .limit(1);
 

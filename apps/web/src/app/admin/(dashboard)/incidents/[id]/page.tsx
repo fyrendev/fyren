@@ -117,13 +117,9 @@ export default function IncidentDetailPage({ params }: PageProps) {
       <Card>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold text-white">
-              {incident.title}
-            </h1>
+            <h1 className="text-xl font-semibold text-white">{incident.title}</h1>
             <div className="flex items-center gap-3 mt-2">
-              <Badge variant={isResolved ? "success" : "danger"}>
-                {incident.status}
-              </Badge>
+              <Badge variant={isResolved ? "success" : "danger"}>{incident.status}</Badge>
               <Badge variant="warning">{incident.severity}</Badge>
               <span className="text-sm text-navy-400">
                 Created {format(new Date(incident.createdAt), "PPp")}
@@ -155,9 +151,7 @@ export default function IncidentDetailPage({ params }: PageProps) {
           <div className="mt-4 pt-4 border-t border-navy-800">
             <p className="text-sm text-navy-400">
               <span className="text-navy-500">Affected components:</span>{" "}
-              {incident.affectedComponents
-                .map((c) => c.component?.name || "Unknown")
-                .join(", ")}
+              {incident.affectedComponents.map((c) => c.component?.name || "Unknown").join(", ")}
             </p>
           </div>
         )}
@@ -200,36 +194,24 @@ export default function IncidentDetailPage({ params }: PageProps) {
       </Card>
 
       {/* Add Update Modal */}
-      <Modal
-        isOpen={updateModalOpen}
-        onClose={() => setUpdateModalOpen(false)}
-        title="Add Update"
-      >
+      <Modal isOpen={updateModalOpen} onClose={() => setUpdateModalOpen(false)} title="Add Update">
         <form onSubmit={handleAddUpdate} className="space-y-4">
           <Select
             label="Status"
             value={updateData.status}
-            onChange={(e) =>
-              setUpdateData({ ...updateData, status: e.target.value })
-            }
+            onChange={(e) => setUpdateData({ ...updateData, status: e.target.value })}
             options={statusOptions}
           />
           <Textarea
             label="Message"
             value={updateData.message}
-            onChange={(e) =>
-              setUpdateData({ ...updateData, message: e.target.value })
-            }
+            onChange={(e) => setUpdateData({ ...updateData, message: e.target.value })}
             placeholder="Describe the update..."
             rows={4}
             required
           />
           <div className="flex justify-end gap-3 pt-4">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setUpdateModalOpen(false)}
-            >
+            <Button type="button" variant="ghost" onClick={() => setUpdateModalOpen(false)}>
               Cancel
             </Button>
             <Button type="submit" loading={saving}>

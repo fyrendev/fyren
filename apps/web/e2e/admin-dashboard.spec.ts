@@ -26,7 +26,10 @@ test.describe("Admin Dashboard", () => {
 
   test("can navigate to components page", async ({ page }) => {
     // Click components link in sidebar
-    await page.getByRole("link", { name: /components/i }).first().click();
+    await page
+      .getByRole("link", { name: /components/i })
+      .first()
+      .click();
 
     // Should navigate to components page
     await expect(page).toHaveURL("/admin/components");
@@ -34,7 +37,10 @@ test.describe("Admin Dashboard", () => {
 
   test("can navigate to incidents page", async ({ page }) => {
     // Click incidents link in sidebar
-    await page.getByRole("link", { name: /incidents/i }).first().click();
+    await page
+      .getByRole("link", { name: /incidents/i })
+      .first()
+      .click();
 
     // Should navigate to incidents page
     await expect(page).toHaveURL("/admin/incidents");
