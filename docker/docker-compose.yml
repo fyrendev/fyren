@@ -33,21 +33,22 @@ services:
       retries: 5
     command: redis-server --appendonly yes
 
-  # API service (for production use)
+  # API service (for local Docker testing)
   api:
     build:
       context: ..
-      dockerfile: docker/Dockerfile
+      dockerfile: apps/api/Dockerfile
     container_name: fyren-api
     restart: unless-stopped
-    command: bun run dev
     ports:
-      - "3000:3000"
+      - "3001:3001"
     environment:
       - DATABASE_URL=postgresql://fyren:fyren@postgres:5432/fyren
       - REDIS_URL=redis://redis:6379
-      - PORT=3000
-      - NODE_ENV=development
+      - PORT=3001
+      - NODE_ENV=production
+      - BETTER_AUTH_SECRET=dev-secret-change-in-production
+      - BETTER_AUTH_URL=http://localhost:3001
     depends_on:
       postgres:
         condition: service_healthy
@@ -56,23 +57,21 @@ services:
     profiles:
       - full
 
-  # Worker service (for production use)
-  worker:
+  # Web service (for local Docker testing)
+  web:
     build:
       context: ..
-      dockerfile: docker/Dockerfile
-    container_name: fyren-worker
+      dockerfile: apps/web/Dockerfile
+    container_name: fyren-web
     restart: unless-stopped
-    command: bun run worker
+    ports:
+      - "3000:3000"
     environment:
-      - DATABASE_URL=postgresql://fyren:fyren@postgres:5432/fyren
-      - REDIS_URL=redis://redis:6379
-      - NODE_ENV=development
+      - NODE_ENV=production
+      - API_URL=http://api:3001
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - api
     profiles:
       - full
 
