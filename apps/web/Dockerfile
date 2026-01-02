@@ -8,13 +8,15 @@ FROM oven/bun:1.3-alpine AS deps
 
 WORKDIR /app
 
-# Copy package files (include workspace packages that apps/web depends on)
-COPY package.json bun.lock ./
+# Copy full workspace structure for proper lockfile resolution
+COPY package.json bun.lock turbo.json ./
+COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
+COPY packages/db/package.json ./packages/db/
 COPY packages/shared/package.json ./packages/shared/
 
-# Install dependencies using Bun (without frozen-lockfile due to partial monorepo copy)
-RUN bun install
+# Install dependencies using Bun with frozen lockfile for reproducibility
+RUN bun install --frozen-lockfile
 
 # ================================
 # Stage 2: Base for Node.js stages
@@ -33,8 +35,9 @@ FROM base AS builder
 
 WORKDIR /app
 
-# Copy dependencies from Bun stage
+# Copy dependencies from Bun stage (includes workspace node_modules)
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 
 # Copy source files
 COPY apps/web ./apps/web
@@ -45,9 +48,9 @@ COPY package.json ./
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-# Build Next.js application
+# Build Next.js application using workspace binary
 WORKDIR /app/apps/web
-RUN npm run build
+RUN ./node_modules/.bin/next build
 
 # ================================
 # Stage 4: Production

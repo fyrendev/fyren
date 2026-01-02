@@ -12,14 +12,15 @@ WORKDIR /app
 # ================================
 FROM base AS deps
 
-# Copy package files for dependency installation
-COPY package.json bun.lock* ./
+# Copy full workspace structure for proper lockfile resolution
+COPY package.json bun.lock turbo.json ./
+COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
 COPY packages/db/package.json ./packages/db/
 COPY packages/shared/package.json ./packages/shared/
-COPY apps/api/package.json ./apps/api/
 
-# Install all dependencies (without frozen-lockfile due to partial monorepo copy)
-RUN bun install
+# Install all dependencies with frozen lockfile for reproducibility
+RUN bun install --frozen-lockfile
 
 # ================================
 # Stage 3: Build

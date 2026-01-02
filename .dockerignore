@@ -1,0 +1,47 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+dist
+**/dist
+.next
+**/.next
+.turbo
+**/.turbo
+
+# Development files
+*.log
+.env
+.env.*
+!.env.example
+
+# Test files
+**/*.test.ts
+**/*.spec.ts
+**/e2e
+**/playwright-report
+**/test-results
+coverage
+
+# IDE and OS
+.git
+.gitignore
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+
+# Documentation
+docs
+*.md
+!README.md
+
+# Docker files (prevent recursive copy)
+**/Dockerfile*
+docker-compose*.yml
+
+# Misc
+.husky
+.github
