@@ -21,9 +21,10 @@ export async function closeConnection() {
 }
 
 export async function runMigrations(migrationsPath?: string) {
-  // Default to ./drizzle (relative to working directory)
-  // In Docker, MIGRATIONS_PATH should be set to ./drizzle
-  const folder = migrationsPath || "./drizzle";
+  // Determine migrations folder:
+  // 1. Explicit path from MIGRATIONS_PATH env var (Docker uses ./drizzle)
+  // 2. In development: ../../packages/db/drizzle (relative to apps/api/)
+  const folder = migrationsPath || "../../packages/db/drizzle";
   console.log(`🔄 Running migrations from ${folder}`);
   await migrate(db, { migrationsFolder: folder });
   console.log("✅ Migrations completed");
