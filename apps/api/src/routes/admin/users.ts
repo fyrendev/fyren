@@ -1,10 +1,9 @@
+import { db, eq, organizations, userOrganizations, users } from "@fyrendev/db";
 import { Hono } from "hono";
 import { z } from "zod";
-import { db, users, userOrganizations, organizations, eq } from "@fyrendev/db";
-import { requireSession } from "../../middleware/session";
-import { errorResponse, NotFoundError } from "../../lib/errors";
 import type { AuthUser } from "../../lib/auth";
-import type { UserOrganization } from "@fyrendev/db";
+import { errorResponse, NotFoundError } from "../../lib/errors";
+import { requireSession } from "../../middleware/session";
 
 type Variables = {
   user: AuthUser;

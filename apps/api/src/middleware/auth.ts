@@ -1,10 +1,10 @@
-import { createMiddleware } from "hono/factory";
-import { db, apiKeys, userOrganizations, eq, and } from "@fyrendev/db";
-import { extractKeyPrefix, verifyApiKey, isValidApiKeyFormat } from "../lib/api-key";
-import { getSession } from "./session";
-import { UnauthorizedError, ForbiddenError, errorResponse } from "../lib/errors";
-import type { Session, AuthUser } from "../lib/auth";
 import type { UserOrganization } from "@fyrendev/db";
+import { and, apiKeys, db, eq, userOrganizations } from "@fyrendev/db";
+import { createMiddleware } from "hono/factory";
+import { extractKeyPrefix, isValidApiKeyFormat, verifyApiKey } from "../lib/api-key";
+import type { AuthUser, Session } from "../lib/auth";
+import { ForbiddenError, UnauthorizedError, errorResponse } from "../lib/errors";
+import { getSession } from "./session";
 
 declare module "hono" {
   interface ContextVariableMap {
@@ -185,7 +185,7 @@ export const optionalAuthMiddleware = createMiddleware(async (c, next) => {
     }
 
     await next();
-  } catch (error) {
+  } catch {
     // On any error, just continue without auth
     await next();
   }
