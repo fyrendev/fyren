@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -38,6 +39,7 @@ interface Props {
 
 export function MobileSidebar({ isOpen, onClose }: Props) {
   const pathname = usePathname();
+  const { organization } = useOrganization();
 
   if (!isOpen) return null;
 
@@ -89,7 +91,7 @@ export function MobileSidebar({ isOpen, onClose }: Props) {
         {/* View Status Page Link */}
         <div className="p-3 border-t border-navy-800">
           <Link
-            href="/"
+            href={organization ? `/${organization.slug}` : "/"}
             target="_blank"
             className="flex items-center gap-2 px-3 py-2 text-sm text-navy-400 hover:text-white transition-colors"
           >
