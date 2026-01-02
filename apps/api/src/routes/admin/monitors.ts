@@ -172,7 +172,8 @@ adminMonitors.post("/", async (c) => {
       }
     } else if (validatedData.type === "tcp") {
       const parts = validatedData.url.replace("tcp://", "").split(":");
-      if (parts.length !== 2 || isNaN(parseInt(parts[1]))) {
+      const port = parts[1];
+      if (parts.length !== 2 || !port || isNaN(parseInt(port))) {
         throw new ValidationError("Invalid URL for TCP monitor. Expected format: host:port");
       }
     }
@@ -303,7 +304,8 @@ adminMonitors.put("/:id", async (c) => {
       }
     } else if (validatedData.type === "tcp" && validatedData.url) {
       const parts = validatedData.url.replace("tcp://", "").split(":");
-      if (parts.length !== 2 || isNaN(parseInt(parts[1]))) {
+      const port = parts[1];
+      if (parts.length !== 2 || !port || isNaN(parseInt(port))) {
         throw new ValidationError("Invalid URL for TCP monitor. Expected format: host:port");
       }
     }
@@ -394,6 +396,57 @@ adminMonitors.delete("/:id", async (c) => {
     await db.delete(monitors).where(eq(monitors.id, monitorId));
 
     return c.json({ success: true });
+  } catch (error) {
+    return errorResponse(c, error);
+  }
+});
+
+// PATCH /api/v1/admin/monitors/:id/toggle - Toggle monitor active state
+adminMonitors.patch("/:id/toggle", async (c) => {
+  try {
+    const orgId = c.get("organizationId")!;
+    const monitorId = c.req.param("id");
+
+    // Verify monitor exists and belongs to org
+    const existingResult = await db
+      .select({
+        monitor: monitors,
+        organizationId: components.organizationId,
+      })
+      .from(monitors)
+      .innerJoin(components, eq(monitors.componentId, components.id))
+      .where(eq(monitors.id, monitorId))
+      .limit(1);
+
+    const existing = existingResult[0];
+    if (!existing) {
+      throw new NotFoundError("Monitor not found");
+    }
+
+    if (existing.organizationId !== orgId) {
+      throw new ForbiddenError("Monitor does not belong to your organization");
+    }
+
+    const newIsActive = !existing.monitor.isActive;
+
+    // Update the monitor
+    const [updatedMonitor] = await db
+      .update(monitors)
+      .set({
+        isActive: newIsActive,
+        updatedAt: new Date(),
+      })
+      .where(eq(monitors.id, monitorId))
+      .returning();
+
+    if (!updatedMonitor) {
+      throw new Error("Failed to update monitor");
+    }
+
+    // Update schedule
+    await rescheduleMonitor(updatedMonitor);
+
+    return c.json({ monitor: updatedMonitor });
   } catch (error) {
     return errorResponse(c, error);
   }

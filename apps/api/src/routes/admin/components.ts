@@ -96,6 +96,10 @@ adminComponents.post("/", async (c) => {
       })
       .returning();
 
+    if (!comp) {
+      throw new Error("Failed to create component");
+    }
+
     return c.json(
       {
         component: {

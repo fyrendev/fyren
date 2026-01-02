@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { AdminHeader } from "./AdminHeader";
+import { OrganizationProvider } from "@/contexts/OrganizationContext";
+import { DashboardContent } from "@/components/admin/DashboardContent";
 
 async function getSession() {
   const cookieStore = await cookies();
@@ -38,15 +40,14 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-navy-950">
-      <Sidebar />
-      <div className="lg:pl-64">
-        <AdminHeader
-          user={session.user}
-          organization={session.organization || { name: "My Organization", slug: "default" }}
-        />
-        <main className="p-6">{children}</main>
+    <OrganizationProvider>
+      <div className="min-h-screen bg-navy-950">
+        <Sidebar />
+        <div className="lg:pl-64">
+          <AdminHeader user={session.user} />
+          <DashboardContent>{children}</DashboardContent>
+        </div>
       </div>
-    </div>
+    </OrganizationProvider>
   );
 }

@@ -20,7 +20,7 @@ app.use(
     origin: env.APP_URL || "http://localhost:3000",
     credentials: true,
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Organization-Id"],
   })
 );
 

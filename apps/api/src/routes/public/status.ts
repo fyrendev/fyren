@@ -40,7 +40,10 @@ function generateToken(length = 32): string {
   const randomValues = new Uint8Array(length);
   crypto.getRandomValues(randomValues);
   for (let i = 0; i < length; i++) {
-    result += chars[randomValues[i] % chars.length];
+    const val = randomValues[i];
+    if (val !== undefined) {
+      result += chars[val % chars.length];
+    }
   }
   return result;
 }
@@ -326,10 +329,10 @@ publicStatus.get("/:slug/uptime", async (c) => {
           id: comp.id,
           name: comp.name,
           uptime: {
-            day: uptime["24h"],
-            week: uptime["7d"],
-            month: uptime["30d"],
-            quarter: uptime["90d"],
+            day: uptime["24h"] ?? 100,
+            week: uptime["7d"] ?? 100,
+            month: uptime["30d"] ?? 100,
+            quarter: uptime["90d"] ?? 100,
           },
         };
       })
@@ -468,9 +471,9 @@ publicStatus.get("/:slug/uptime/:componentId/history", async (c) => {
         );
 
       history.push({
-        date: dayStart.toISOString().split("T")[0],
+        date: dayStart.toISOString().split("T")[0] ?? "",
         uptime: Math.round(uptime * 100) / 100,
-        incidents: incidentCount[0]?.count || 0,
+        incidents: incidentCount[0]?.count ?? 0,
         status,
       });
     }
@@ -511,10 +514,11 @@ publicStatus.get("/:slug/incidents", async (c) => {
     }
 
     // Get total count
-    const [{ count }] = await db
+    const countResult = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(incidents)
       .where(and(...whereConditions));
+    const count = countResult[0]?.count ?? 0;
 
     // Get incidents
     const incidentList = await db

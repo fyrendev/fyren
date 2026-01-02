@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { signOut } from "@/lib/auth-client";
 import { Menu, Bell, ChevronDown, LogOut, User } from "lucide-react";
 import { MobileSidebar } from "@/components/admin/MobileSidebar";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface Props {
   user: {
@@ -12,13 +13,10 @@ interface Props {
     name: string;
     email: string;
   };
-  organization: {
-    name: string;
-    slug: string;
-  };
 }
 
-export function AdminHeader({ user, organization }: Props) {
+export function AdminHeader({ user }: Props) {
+  const { organization } = useOrganization();
   const router = useRouter();
   const [showDropdown, setShowDropdown] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -43,7 +41,7 @@ export function AdminHeader({ user, organization }: Props) {
           {/* Organization name */}
           <div className="hidden lg:block">
             <h1 className="text-lg font-medium text-white">
-              {organization.name}
+              {organization?.name || "Loading..."}
             </h1>
           </div>
 

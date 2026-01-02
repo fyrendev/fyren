@@ -37,7 +37,7 @@ describe("IncidentService", () => {
         .where(eq(incidentUpdates.incidentId, incident.id));
 
       expect(updates).toHaveLength(1);
-      expect(updates[0].message).toBe("We are investigating the issue");
+      expect(updates[0]!.message).toBe("We are investigating the issue");
     });
 
     test("links incident to components", async () => {
@@ -81,7 +81,7 @@ describe("IncidentService", () => {
         .from(components)
         .where(eq(components.id, component.id));
 
-      expect(updated.status).toBe("partial_outage");
+      expect(updated!.status).toBe("partial_outage");
     });
 
     test("creates incident without components", async () => {
@@ -126,8 +126,8 @@ describe("IncidentService", () => {
         message: "We found the root cause",
       });
 
-      expect(update.status).toBe("identified");
-      expect(update.message).toBe("We found the root cause");
+      expect(update!.status).toBe("identified");
+      expect(update!.message).toBe("We found the root cause");
 
       // Verify incident status was updated
       const [refreshed] = await db
@@ -135,7 +135,7 @@ describe("IncidentService", () => {
         .from(incidents)
         .where(eq(incidents.id, incident.id));
 
-      expect(refreshed.status).toBe("identified");
+      expect(refreshed!.status).toBe("identified");
     });
 
     test("throws error for non-existent incident", async () => {
@@ -171,7 +171,7 @@ describe("IncidentService", () => {
         .select()
         .from(components)
         .where(eq(components.id, component.id));
-      expect(degraded.status).toBe("partial_outage");
+      expect(degraded!.status).toBe("partial_outage");
 
       // Resolve incident
       await IncidentService.resolve({
@@ -186,15 +186,15 @@ describe("IncidentService", () => {
         .from(incidents)
         .where(eq(incidents.id, incident.id));
 
-      expect(resolved.status).toBe("resolved");
-      expect(resolved.resolvedAt).toBeDefined();
+      expect(resolved!.status).toBe("resolved");
+      expect(resolved!.resolvedAt).toBeDefined();
 
       // Verify component status was restored
       const [restored] = await db
         .select()
         .from(components)
         .where(eq(components.id, component.id));
-      expect(restored.status).toBe("operational");
+      expect(restored!.status).toBe("operational");
     });
   });
 
@@ -225,7 +225,7 @@ describe("IncidentService", () => {
       expect(result?.title).toBe("Test Incident");
       expect(result?.updates).toHaveLength(2);
       expect(result?.affectedComponents).toHaveLength(1);
-      expect(result?.affectedComponents[0].name).toBe("API");
+      expect(result?.affectedComponents[0]!.name).toBe("API");
     });
 
     test("returns null for non-existent incident", async () => {
@@ -318,7 +318,7 @@ describe("IncidentService", () => {
       });
 
       expect(result.incidents).toHaveLength(1);
-      expect(result.incidents[0].title).toBe("Active Incident");
+      expect(result.incidents[0]!.title).toBe("Active Incident");
     });
 
     test("filters by severity", async () => {
@@ -349,7 +349,7 @@ describe("IncidentService", () => {
       });
 
       expect(result.incidents).toHaveLength(1);
-      expect(result.incidents[0].title).toBe("Critical Issue");
+      expect(result.incidents[0]!.title).toBe("Critical Issue");
     });
   });
 
@@ -372,7 +372,7 @@ describe("IncidentService", () => {
         .select()
         .from(components)
         .where(eq(components.id, component.id));
-      expect(degraded.status).toBe("partial_outage");
+      expect(degraded!.status).toBe("partial_outage");
 
       // Delete incident
       const result = await IncidentService.delete(incident.id, org.id);
@@ -383,7 +383,7 @@ describe("IncidentService", () => {
         .select()
         .from(components)
         .where(eq(components.id, component.id));
-      expect(restored.status).toBe("operational");
+      expect(restored!.status).toBe("operational");
 
       // Incident should be gone
       const [deleted] = await db
@@ -487,8 +487,8 @@ describe("IncidentService", () => {
         .select()
         .from(incidents)
         .where(eq(incidents.id, incident.id));
-      expect(updated.status).toBe("resolved");
-      expect(updated.resolvedAt).toBeDefined();
+      expect(updated!.status).toBe("resolved");
+      expect(updated!.resolvedAt).toBeDefined();
     });
 
     test("returns null when no active incident exists", async () => {

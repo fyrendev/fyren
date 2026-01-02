@@ -101,6 +101,10 @@ adminMembers.put(
         .where(eq(userOrganizations.id, membershipId))
         .returning();
 
+      if (!updated) {
+        throw new Error("Failed to update membership");
+      }
+
       // Get user info
       const [user] = await db
         .select()

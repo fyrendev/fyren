@@ -224,7 +224,8 @@ export async function calculateUptime(
     "90d": 90 * 24 * 60 * 60 * 1000,
   };
 
-  const startDate = new Date(now.getTime() - periodMs[period]);
+  const periodDuration = periodMs[period] ?? 24 * 60 * 60 * 1000;
+  const startDate = new Date(now.getTime() - periodDuration);
 
   // Get all monitors for this component
   const componentMonitors = await db

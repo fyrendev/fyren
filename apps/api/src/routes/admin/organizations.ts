@@ -54,6 +54,10 @@ adminOrganizations.post("/", async (c) => {
       })
       .returning();
 
+    if (!org) {
+      throw new Error("Failed to create organization");
+    }
+
     // If user is logged in, add them as owner
     if (user) {
       await db.insert(userOrganizations).values({

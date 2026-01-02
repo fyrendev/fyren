@@ -1,8 +1,6 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "src",
     "types": ["bun"],
     "paths": {
       "@fyrendev/db": ["../../packages/db/src"],

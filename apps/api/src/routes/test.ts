@@ -119,6 +119,10 @@ testRoutes.post("/setup", zValidator("json", setupSchema), async (c) => {
       })
       .returning();
 
+    if (!org) {
+      throw new Error("Failed to create organization");
+    }
+
     // Create user using BetterAuth's API via HTTP to ensure proper password hashing
     // We need to call the auth endpoint directly since the internal API has issues with undefined values
     const signUpResponse = await fetch(
@@ -158,6 +162,7 @@ testRoutes.post("/setup", zValidator("json", setupSchema), async (c) => {
     if (data.components) {
       for (let i = 0; i < data.components.length; i++) {
         const comp = data.components[i];
+        if (!comp) continue;
         const [created] = await db
           .insert(components)
           .values({
@@ -168,7 +173,9 @@ testRoutes.post("/setup", zValidator("json", setupSchema), async (c) => {
             isPublic: true,
           })
           .returning();
-        createdComponents.push({ id: created.id, name: created.name });
+        if (created) {
+          createdComponents.push({ id: created.id, name: created.name });
+        }
       }
     }
 
@@ -186,6 +193,8 @@ testRoutes.post("/setup", zValidator("json", setupSchema), async (c) => {
           })
           .returning();
 
+        if (!incident) continue;
+
         // Add initial update
         await db.insert(incidentUpdates).values({
           incidentId: incident.id,
@@ -194,10 +203,11 @@ testRoutes.post("/setup", zValidator("json", setupSchema), async (c) => {
         });
 
         // Link to first component if available
-        if (createdComponents.length > 0) {
+        const firstComponent = createdComponents[0];
+        if (firstComponent) {
           await db.insert(incidentComponents).values({
             incidentId: incident.id,
-            componentId: createdComponents[0].id,
+            componentId: firstComponent.id,
           });
         }
       }

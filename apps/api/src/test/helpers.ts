@@ -29,6 +29,7 @@ export async function createTestOrganization(
     })
     .returning();
 
+  if (!org) throw new Error("Failed to create test organization");
   return org;
 }
 
@@ -52,6 +53,7 @@ export async function createTestApiKey(
     })
     .returning();
 
+  if (!apiKey) throw new Error("Failed to create test API key");
   return { apiKey, rawKey: keyData.key };
 }
 
@@ -64,6 +66,7 @@ export async function createTestUser(
   const [user] = await db
     .insert(users)
     .values({
+      id: overrides.id || crypto.randomUUID(),
       email: overrides.email || `test-${randomString()}@example.com`,
       name: overrides.name || "Test User",
       emailVerified: overrides.emailVerified ?? true,
@@ -71,6 +74,7 @@ export async function createTestUser(
     })
     .returning();
 
+  if (!user) throw new Error("Failed to create test user");
   return user;
 }
 
@@ -91,6 +95,7 @@ export async function createTestMembership(
     })
     .returning();
 
+  if (!membership) throw new Error("Failed to create test membership");
   return membership;
 }
 
@@ -114,6 +119,7 @@ export async function createTestComponent(
     })
     .returning();
 
+  if (!component) throw new Error("Failed to create test component");
   return component;
 }
 
@@ -139,6 +145,7 @@ export async function createTestMonitor(
     })
     .returning();
 
+  if (!monitor) throw new Error("Failed to create test monitor");
   return monitor;
 }
 
@@ -161,6 +168,7 @@ export async function createTestIncident(
     })
     .returning();
 
+  if (!incident) throw new Error("Failed to create test incident");
   return incident;
 }
 
@@ -181,6 +189,7 @@ export async function createTestIncidentUpdate(
     })
     .returning();
 
+  if (!update) throw new Error("Failed to create test incident update");
   return update;
 }
 
@@ -199,6 +208,7 @@ export async function createTestIncidentComponent(
     })
     .returning();
 
+  if (!link) throw new Error("Failed to create test incident component link");
   return link;
 }
 
@@ -226,6 +236,7 @@ export async function createTestMaintenance(
     })
     .returning();
 
+  if (!maint) throw new Error("Failed to create test maintenance");
   return maint;
 }
 
@@ -244,6 +255,7 @@ export async function createTestMaintenanceComponent(
     })
     .returning();
 
+  if (!link) throw new Error("Failed to create test maintenance component link");
   return link;
 }
 
@@ -259,13 +271,14 @@ export async function createTestSubscriber(
     .values({
       organizationId,
       email: overrides.email || `subscriber-${randomString()}@example.com`,
-      isVerified: overrides.isVerified ?? true,
+      verified: overrides.verified ?? true,
       verificationToken: overrides.verificationToken || randomString(32),
-      subscribedAt: overrides.subscribedAt || new Date(),
+      unsubscribeToken: overrides.unsubscribeToken || randomString(32),
       ...overrides,
     })
     .returning();
 
+  if (!subscriber) throw new Error("Failed to create test subscriber");
   return subscriber;
 }
 
@@ -283,11 +296,12 @@ export async function createTestWebhook(
       name: overrides.name || "Test Webhook",
       url: overrides.url || "https://example.com/webhook",
       type: overrides.type || "generic",
-      isActive: overrides.isActive ?? true,
+      enabled: overrides.enabled ?? true,
       ...overrides,
     })
     .returning();
 
+  if (!webhook) throw new Error("Failed to create test webhook");
   return webhook;
 }
 
