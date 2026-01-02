@@ -82,6 +82,7 @@ jobs:
           DATABASE_URL: postgres://fyren:fyren@localhost:5432/fyren_test
 
       - name: Run tests
+        working-directory: apps/api
         run: bun test
         env:
           DATABASE_URL: postgres://fyren:fyren@localhost:5432/fyren_test
