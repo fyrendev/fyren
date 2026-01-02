@@ -9,6 +9,19 @@ Deploy Fyren on your own infrastructure.
 - A domain with DNS access
 - (Optional) Email service (AWS SES, SendGrid, or SMTP)
 
+## Architecture
+
+The production deployment includes:
+
+| Service      | Description                                        |
+| ------------ | -------------------------------------------------- |
+| **traefik**  | Reverse proxy with automatic HTTPS                 |
+| **postgres** | PostgreSQL database                                |
+| **redis**    | Cache and job queue (BullMQ)                       |
+| **api**      | Fyren API server (runs migrations on startup)      |
+| **worker**   | Background job processor (monitors, notifications) |
+| **web**      | Next.js frontend                                   |
+
 ## Quick Start with Docker Compose
 
 ### 1. Clone the Repository
@@ -20,6 +33,8 @@ cd fyren
 
 ### 2. Configure Environment
 
+Create your production environment file:
+
 ```bash
 cp docker/.env.prod.example docker/.env.prod
 ```
@@ -27,14 +42,21 @@ cp docker/.env.prod.example docker/.env.prod
 Edit `docker/.env.prod` with your settings:
 
 ```bash
-# Required
+# Required - Your domain configuration
 APP_URL=https://status.example.com
 APP_DOMAIN=status.example.com
 ACME_EMAIL=admin@example.com
 
-POSTGRES_PASSWORD=your-secure-password
-REDIS_PASSWORD=your-redis-password
-BETTER_AUTH_SECRET=your-32-char-min-secret
+# Required - Database credentials
+POSTGRES_PASSWORD=your-secure-password-here
+REDIS_PASSWORD=your-redis-password-here
+
+# Required - Auth secret (generate with: openssl rand -base64 32)
+BETTER_AUTH_SECRET=your-32-char-minimum-secret-here
+
+# Optional - Email provider (ses, sendgrid, smtp, or console)
+EMAIL_PROVIDER=console
+EMAIL_FROM=noreply@example.com
 ```
 
 ### 3. Start Services
@@ -43,15 +65,16 @@ BETTER_AUTH_SECRET=your-32-char-min-secret
 docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.prod up -d
 ```
 
-### 4. Run Database Migrations
+This will:
 
-```bash
-docker compose -f docker/docker-compose.prod.yml exec api bun run db:migrate
-```
+1. Start PostgreSQL and Redis
+2. Run database migrations automatically
+3. Start the API server, worker, and web frontend
+4. Configure Traefik with automatic HTTPS
 
-### 5. Access Your Status Page
+### 4. Create Your First Organization
 
-Open `https://your-domain.com` in your browser.
+Open `https://your-domain.com/admin/register` to create an account and your first organization.
 
 ## Configuration
 
@@ -73,10 +96,18 @@ Value: YOUR_SERVER_IP
 
 Traefik automatically obtains SSL certificates from Let's Encrypt. Ensure:
 
-- Port 80 and 443 are accessible
-- `ACME_EMAIL` is set to a valid email
+- Port 80 and 443 are accessible from the internet
+- `ACME_EMAIL` is set to a valid email address
 
 ## Email Configuration
+
+### Console (Development/Testing)
+
+```bash
+EMAIL_PROVIDER=console
+```
+
+Emails are logged to console instead of being sent.
 
 ### AWS SES
 
@@ -133,31 +164,33 @@ docker cp fyren-redis:/data/dump.rdb ./redis-backup.rdb
 
 ## Updating
 
-### Pull Latest Images
+### Pull Latest and Rebuild
 
 ```bash
 cd fyren
 git pull
-docker compose -f docker/docker-compose.prod.yml build
-docker compose -f docker/docker-compose.prod.yml up -d
+docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.prod build
+docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.prod up -d
 ```
 
-### Run Migrations
-
-```bash
-docker compose -f docker/docker-compose.prod.yml exec api bun run db:migrate
-```
+Database migrations run automatically on container startup.
 
 ## Monitoring
+
+### View Service Status
+
+```bash
+docker compose -f docker/docker-compose.prod.yml ps
+```
 
 ### Health Checks
 
 ```bash
-# Basic liveness
+# API health
 curl https://your-domain.com/health
 
-# Readiness (includes DB and Redis)
-curl https://your-domain.com/health/ready
+# Check if worker is processing jobs
+docker compose -f docker/docker-compose.prod.yml logs worker --tail 50
 ```
 
 ### View Logs
@@ -168,9 +201,23 @@ docker compose -f docker/docker-compose.prod.yml logs -f
 
 # Specific service
 docker compose -f docker/docker-compose.prod.yml logs -f api
+docker compose -f docker/docker-compose.prod.yml logs -f worker
+docker compose -f docker/docker-compose.prod.yml logs -f web
 ```
 
 ## Troubleshooting
+
+### Migration Failed
+
+Migrations run automatically when the API starts. Check the API logs:
+
+```bash
+# Check API logs for migration output
+docker compose -f docker/docker-compose.prod.yml logs api | grep -i migrat
+
+# Restart API to re-run migrations
+docker compose -f docker/docker-compose.prod.yml restart api
+```
 
 ### Database Connection Failed
 
@@ -178,9 +225,9 @@ docker compose -f docker/docker-compose.prod.yml logs -f api
 # Check PostgreSQL logs
 docker compose -f docker/docker-compose.prod.yml logs postgres
 
-# Verify connection
-docker compose -f docker/docker-compose.prod.yml exec api \
-  bun run db:check
+# Test connection
+docker compose -f docker/docker-compose.prod.yml exec postgres \
+  psql -U fyren -d fyren -c "SELECT 1"
 ```
 
 ### Redis Connection Failed
@@ -192,6 +239,18 @@ docker compose -f docker/docker-compose.prod.yml logs redis
 # Test connection
 docker compose -f docker/docker-compose.prod.yml exec redis \
   redis-cli -a $REDIS_PASSWORD ping
+```
+
+### Monitors Not Running
+
+The worker service processes monitor checks. Verify it's running:
+
+```bash
+# Check worker status
+docker compose -f docker/docker-compose.prod.yml ps worker
+
+# Check worker logs
+docker compose -f docker/docker-compose.prod.yml logs worker --tail 100
 ```
 
 ### SSL Certificate Issues
@@ -207,11 +266,26 @@ docker compose -f docker/docker-compose.prod.yml exec traefik \
 
 ## Security Recommendations
 
-1. **Use strong passwords** for database and Redis
+1. **Use strong passwords** for database and Redis (min 32 characters)
 2. **Enable firewall** to allow only ports 80 and 443
-3. **Regular backups** - schedule automated backups
-4. **Keep updated** - regularly pull latest images
-5. **Monitor logs** - set up log aggregation
+3. **Regular backups** - schedule automated database backups
+4. **Keep updated** - regularly pull latest images and rebuild
+5. **Monitor logs** - set up log aggregation for production
+
+## Resource Usage
+
+Approximate resource requirements:
+
+| Service    | Memory | CPU |
+| ---------- | ------ | --- |
+| PostgreSQL | 256MB  | 0.5 |
+| Redis      | 64MB   | 0.1 |
+| API        | 128MB  | 0.5 |
+| Worker     | 128MB  | 0.5 |
+| Web        | 128MB  | 0.5 |
+| Traefik    | 64MB   | 0.1 |
+
+**Total:** ~800MB RAM, 2 CPU cores recommended
 
 ## Support
 

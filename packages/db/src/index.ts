@@ -1,4 +1,5 @@
 import { drizzle } from "drizzle-orm/postgres-js";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 import * as schema from "./schema";
 
@@ -14,6 +15,19 @@ const client = postgres(connectionString, {
 });
 
 export const db = drizzle(client, { schema });
+
+export async function closeConnection() {
+  await client.end();
+}
+
+export async function runMigrations(migrationsPath?: string) {
+  // Default to ./drizzle (relative to working directory)
+  // In Docker, MIGRATIONS_PATH should be set to ./drizzle
+  const folder = migrationsPath || "./drizzle";
+  console.log(`🔄 Running migrations from ${folder}`);
+  await migrate(db, { migrationsFolder: folder });
+  console.log("✅ Migrations completed");
+}
 
 export * from "./schema";
 export {

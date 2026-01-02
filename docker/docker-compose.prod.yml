@@ -73,7 +73,7 @@ services:
       - fyren-network
 
   # ===================================
-  # Fyren API
+  # Fyren API (runs migrations on startup)
   # ===================================
   api:
     build:
@@ -94,6 +94,8 @@ services:
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
       BETTER_AUTH_URL: ${APP_URL:?APP_URL is required}
       APP_URL: ${APP_URL}
+      # Run migrations on startup
+      MIGRATIONS_PATH: ./drizzle
       # Email configuration
       EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
       EMAIL_FROM: ${EMAIL_FROM:-noreply@fyren.dev}
@@ -113,6 +115,37 @@ services:
       - "traefik.http.routers.api-health.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/health`)"
       - "traefik.http.routers.api-health.entrypoints=websecure"
       - "traefik.http.routers.api-health.tls.certresolver=letsencrypt"
+    networks:
+      - fyren-network
+
+  # ===================================
+  # Fyren Worker (Monitor checks, notifications)
+  # ===================================
+  worker:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    container_name: fyren-worker
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://${POSTGRES_USER:-fyren}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-fyren}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      # Don't run migrations (API handles this)
+      RUN_MIGRATIONS: "false"
+      # Email configuration (same as API)
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@fyren.dev}
+      AWS_REGION: ${AWS_REGION:-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+    command: ["bun", "run", "dist/worker.js"]
     networks:
       - fyren-network
 

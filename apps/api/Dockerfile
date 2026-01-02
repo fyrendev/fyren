@@ -40,10 +40,13 @@ COPY apps/api ./apps/api
 COPY turbo.json ./
 COPY package.json ./
 
-# Build the packages and API
+# Build the packages
 RUN bun run build --filter=@fyrendev/db
 RUN bun run build --filter=@fyrendev/shared || true
-RUN bun run build --filter=@fyrendev/api || echo "No build step for API"
+
+# Bundle the API server and worker as separate entry points
+RUN bun build apps/api/src/index.ts --outdir apps/api/dist --target bun
+RUN bun build apps/api/src/worker.ts --outdir apps/api/dist --target bun
 
 # ================================
 # Stage 4: Production
@@ -58,8 +61,11 @@ RUN addgroup --system --gid 1001 fyren && \
 
 WORKDIR /app
 
-# Copy only the bundled output (single ~5MB file instead of 720MB node_modules)
+# Copy bundled output (API server and worker)
 COPY --from=builder --chown=fyren:fyren /app/apps/api/dist ./dist
+
+# Copy database migrations
+COPY --from=builder --chown=fyren:fyren /app/packages/db/drizzle ./drizzle
 
 # Switch to non-root user
 USER fyren

@@ -15,6 +15,7 @@ import {
 } from "./workers/notification.worker";
 import { rescheduleMaintenanceJobs } from "./services/maintenance-startup.service";
 import { securityHeaders } from "./middleware/security";
+import { runMigrations } from "@fyrendev/db";
 
 const app = new Hono();
 
@@ -57,14 +58,32 @@ app.onError((err, c) => {
   return errorResponse(c, err);
 });
 
-console.log(`Starting Fyren API on port ${env.PORT}...`);
+// Run migrations on startup (set RUN_MIGRATIONS=false to skip)
+async function startServer() {
+  if (process.env.RUN_MIGRATIONS !== "false") {
+    try {
+      // In Docker, MIGRATIONS_PATH should be set to ./drizzle
+      const migrationsPath = process.env.MIGRATIONS_PATH;
+      await runMigrations(migrationsPath);
+    } catch (err) {
+      console.error("Migration error:", err);
+      // Don't exit - migrations might already be applied
+    }
+  }
 
-const server = Bun.serve({
-  port: env.PORT,
-  fetch: app.fetch,
-});
+  console.log(`Starting Fyren API on port ${env.PORT}...`);
 
-console.log(`Fyren API running at http://localhost:${server.port}`);
+  const server = Bun.serve({
+    port: env.PORT,
+    fetch: app.fetch,
+  });
+
+  console.log(`Fyren API running at http://localhost:${server.port}`);
+
+  return server;
+}
+
+const server = await startServer();
 
 // Start workers
 console.log("Maintenance worker started");
