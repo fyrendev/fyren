@@ -17,6 +17,8 @@
     "@aws-sdk/client-ses": "^3.958.0",
     "@fyrendev/db": "workspace:*",
     "@fyrendev/shared": "workspace:*",
+    "@hono/zod-validator": "^0.7.6",
+    "bcryptjs": "^3.0.3",
     "better-auth": "^1.4.9",
     "bullmq": "^5.34.3",
     "date-fns": "^4.1.0",
@@ -26,6 +28,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
     "@types/bun": "^1.1.14",
     "@types/nodemailer": "^7.0.4",
     "typescript": "^5.7.2"

@@ -28,6 +28,9 @@ import { adminWebhooks } from "./admin/webhooks";
 // Health routes
 import { health } from "./health";
 
+// Test routes (only enabled in dev/test)
+import { testRoutes } from "./test";
+
 export function setupRoutes(app: Hono) {
   // Health check routes (no auth)
   app.route("/health", health);
@@ -100,4 +103,7 @@ export function setupRoutes(app: Hono) {
   app.use("/api/v1/admin/webhooks", authMiddleware);
   app.use("/api/v1/admin/webhooks/*", authMiddleware);
   app.route("/api/v1/admin/webhooks", adminWebhooks);
+
+  // Test routes (only enabled in dev/test environments)
+  app.route("/api/v1/test", testRoutes);
 }
