@@ -353,10 +353,15 @@ export const api = {
   },
 
   // Organization
-  getOrganization: () => apiClient<{ organization: Organization }>("/api/v1/admin/organization"),
-  updateOrganization: (data: Partial<Organization>) =>
-    apiClient<{ organization: Organization }>("/api/v1/admin/organization", {
+  getOrganization: () => {
+    const orgId = getCurrentOrgId();
+    return apiClient<{ organization: Organization }>(`/api/v1/admin/organizations/${orgId}`);
+  },
+  updateOrganization: (data: Partial<Organization>) => {
+    const orgId = getCurrentOrgId();
+    return apiClient<{ organization: Organization }>(`/api/v1/admin/organizations/${orgId}`, {
       method: "PUT",
       body: JSON.stringify(data),
-    }),
+    });
+  },
 };
