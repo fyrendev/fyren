@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "dev": "turbo run dev",
+    "dev:all": "turbo run dev dev:worker",
     "build": "turbo run build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
