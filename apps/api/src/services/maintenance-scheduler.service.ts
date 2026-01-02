@@ -17,13 +17,13 @@ export const MaintenanceScheduler = {
 
     if (delay <= 0) {
       // Already past start time, start immediately
-      await maintenanceQueue.add("start", { maintenanceId }, { jobId: `start:${maintenanceId}` });
+      await maintenanceQueue.add("start", { maintenanceId }, { jobId: `start_${maintenanceId}` });
     } else {
       await maintenanceQueue.add(
         "start",
         { maintenanceId },
         {
-          jobId: `start:${maintenanceId}`,
+          jobId: `start_${maintenanceId}`,
           delay,
         }
       );
@@ -38,14 +38,14 @@ export const MaintenanceScheduler = {
       await maintenanceQueue.add(
         "complete",
         { maintenanceId },
-        { jobId: `complete:${maintenanceId}` }
+        { jobId: `complete_${maintenanceId}` }
       );
     } else {
       await maintenanceQueue.add(
         "complete",
         { maintenanceId },
         {
-          jobId: `complete:${maintenanceId}`,
+          jobId: `complete_${maintenanceId}`,
           delay,
         }
       );
@@ -53,14 +53,14 @@ export const MaintenanceScheduler = {
   },
 
   async cancelStart(maintenanceId: string) {
-    const job = await maintenanceQueue.getJob(`start:${maintenanceId}`);
+    const job = await maintenanceQueue.getJob(`start_${maintenanceId}`);
     if (job) {
       await job.remove();
     }
   },
 
   async cancelComplete(maintenanceId: string) {
-    const job = await maintenanceQueue.getJob(`complete:${maintenanceId}`);
+    const job = await maintenanceQueue.getJob(`complete_${maintenanceId}`);
     if (job) {
       await job.remove();
     }

@@ -317,26 +317,40 @@ export const api = {
     }),
 
   // Team
-  getMembers: () => apiClient<{ members: Member[] }>("/api/v1/admin/members"),
-  updateMember: (id: string, data: { role: string }) =>
-    apiClient<{ member: Member }>(`/api/v1/admin/members/${id}`, {
+  getMembers: () => {
+    const orgId = getCurrentOrgId();
+    return apiClient<{ members: Member[] }>(`/api/v1/admin/organizations/${orgId}/members`);
+  },
+  updateMember: (id: string, data: { role: string }) => {
+    const orgId = getCurrentOrgId();
+    return apiClient<{ member: Member }>(`/api/v1/admin/organizations/${orgId}/members/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
-    }),
-  removeMember: (id: string) =>
-    apiClient<{ success: boolean }>(`/api/v1/admin/members/${id}`, {
+    });
+  },
+  removeMember: (id: string) => {
+    const orgId = getCurrentOrgId();
+    return apiClient<{ success: boolean }>(`/api/v1/admin/organizations/${orgId}/members/${id}`, {
       method: "DELETE",
-    }),
-  getInvites: () => apiClient<{ invites: Invite[] }>("/api/v1/admin/invites"),
-  createInvite: (data: { email: string; role: string }) =>
-    apiClient<{ invite: Invite }>("/api/v1/admin/invites", {
+    });
+  },
+  getInvites: () => {
+    const orgId = getCurrentOrgId();
+    return apiClient<{ invites: Invite[] }>(`/api/v1/admin/organizations/${orgId}/invites`);
+  },
+  createInvite: (data: { email: string; role: string }) => {
+    const orgId = getCurrentOrgId();
+    return apiClient<{ invite: Invite }>(`/api/v1/admin/organizations/${orgId}/invites`, {
       method: "POST",
       body: JSON.stringify(data),
-    }),
-  deleteInvite: (id: string) =>
-    apiClient<{ success: boolean }>(`/api/v1/admin/invites/${id}`, {
+    });
+  },
+  deleteInvite: (id: string) => {
+    const orgId = getCurrentOrgId();
+    return apiClient<{ success: boolean }>(`/api/v1/admin/organizations/${orgId}/invites/${id}`, {
       method: "DELETE",
-    }),
+    });
+  },
 
   // Organization
   getOrganization: () => apiClient<{ organization: Organization }>("/api/v1/admin/organization"),
