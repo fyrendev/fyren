@@ -288,11 +288,28 @@ export async function calculateUptime(
   return result;
 }
 
+// Status indicator type for frontend (different from ComponentStatus)
+export type StatusIndicator =
+  | "operational"
+  | "degraded_performance"
+  | "partial_outage"
+  | "major_outage"
+  | "under_maintenance";
+
+// Map ComponentStatus to StatusIndicator for frontend compatibility
+const statusToIndicator: Record<ComponentStatus, StatusIndicator> = {
+  operational: "operational",
+  degraded: "degraded_performance",
+  partial_outage: "partial_outage",
+  major_outage: "major_outage",
+  maintenance: "under_maintenance",
+};
+
 // Get the overall status indicator for an organization
 export function getOverallStatus(
   componentStatuses: ComponentStatus[]
 ): {
-  indicator: ComponentStatus;
+  indicator: StatusIndicator;
   description: string;
 } {
   if (componentStatuses.length === 0) {
@@ -331,7 +348,7 @@ export function getOverallStatus(
   };
 
   return {
-    indicator: worstStatus,
+    indicator: statusToIndicator[worstStatus],
     description: descriptions[worstStatus],
   };
 }
