@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { logger } from "hono/logger";
+import { cors } from "hono/cors";
 import { env } from "./env";
 import { setupRoutes } from "./routes";
 import { redis, bullmqRedis } from "./lib/redis";
@@ -11,6 +12,17 @@ import { rescheduleMaintenanceJobs } from "./services/maintenance-startup.servic
 const app = new Hono();
 
 app.use("*", logger());
+
+// CORS middleware for cross-origin requests
+app.use(
+  "*",
+  cors({
+    origin: env.APP_URL || "http://localhost:3000",
+    credentials: true,
+    allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 // Root endpoint
 app.get("/", (c) => {

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signUp } from "@/lib/auth-client";
 import { Card } from "@/components/admin/ui/Card";
@@ -9,7 +8,6 @@ import { Button } from "@/components/admin/ui/Button";
 import { Input } from "@/components/admin/ui/Input";
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -37,12 +35,17 @@ export default function RegisterPage() {
     }
 
     try {
-      await signUp.email({
+      const result = await signUp.email({
         email: formData.email,
         password: formData.password,
         name: formData.name,
       });
-      router.push("/admin");
+      if (result.error) {
+        setError(result.error.message || "Failed to sign up");
+        return;
+      }
+      // Use hard navigation to trigger server-side session check
+      window.location.href = "/admin";
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to sign up";
       setError(message);

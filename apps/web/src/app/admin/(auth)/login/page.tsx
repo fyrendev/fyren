@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "@/lib/auth-client";
 import { Card } from "@/components/admin/ui/Card";
@@ -9,7 +8,6 @@ import { Button } from "@/components/admin/ui/Button";
 import { Input } from "@/components/admin/ui/Input";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,8 +19,13 @@ export default function LoginPage() {
     setError("");
 
     try {
-      await signIn.email({ email, password });
-      router.push("/admin");
+      const result = await signIn.email({ email, password });
+      if (result.error) {
+        setError(result.error.message || "Failed to sign in");
+        return;
+      }
+      // Use hard navigation to trigger server-side session check
+      window.location.href = "/admin";
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to sign in";
       setError(message);

@@ -33,7 +33,7 @@ export function setupRoutes(app: Hono) {
   app.route("/health", health);
 
   // BetterAuth handles all /api/auth/* routes
-  app.on(["POST", "GET"], "/api/auth/*", (c) => {
+  app.on(["POST", "GET", "OPTIONS"], "/api/auth/*", (c) => {
     return auth.handler(c.req.raw);
   });
 
