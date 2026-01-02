@@ -6,10 +6,15 @@ import type { OrgRole } from "@fyrendev/db";
 
 // Get session from request
 export async function getSession(headers: Headers): Promise<Session | null> {
-  const session = await auth.api.getSession({
-    headers,
-  });
-  return session;
+  try {
+    const session = await auth.api.getSession({
+      headers,
+    });
+    return session;
+  } catch {
+    // BetterAuth may throw when there's no session cookie or the session is invalid
+    return null;
+  }
 }
 
 // Middleware: Require authenticated user (session only)

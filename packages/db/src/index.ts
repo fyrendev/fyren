@@ -8,6 +8,9 @@ const client = postgres(connectionString, {
   max: 10,
   idle_timeout: 20,
   connect_timeout: 10,
+  transform: {
+    undefined: null, // Convert undefined values to null for SQL
+  },
 });
 
 export const db = drizzle(client, { schema });

@@ -119,37 +119,32 @@ testRoutes.post("/setup", zValidator("json", setupSchema), async (c) => {
       })
       .returning();
 
-    // Create user with password hash
-    // BetterAuth uses bcrypt for password hashing
-    const bcrypt = await import("bcryptjs");
-    const passwordHash = await bcrypt.hash(data.user.password, 10);
+    // Create user using BetterAuth's API via HTTP to ensure proper password hashing
+    // We need to call the auth endpoint directly since the internal API has issues with undefined values
+    const signUpResponse = await fetch(
+      `${env.BETTER_AUTH_URL}/api/auth/sign-up/email`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: data.user.email,
+          password: data.user.password,
+          name: data.user.name,
+        }),
+      }
+    );
 
-    // Generate a UUID for the user (BetterAuth uses text IDs)
-    const userId = crypto.randomUUID();
+    if (!signUpResponse.ok) {
+      const errorBody = await signUpResponse.text();
+      throw new Error(`Failed to create user: ${errorBody}`);
+    }
 
-    const [user] = await db
-      .insert(users)
-      .values({
-        id: userId,
-        email: data.user.email,
-        name: data.user.name,
-        emailVerified: true,
-      })
-      .returning();
+    const signUpResult = await signUpResponse.json();
+    const user = signUpResult.user;
 
-    // Create account for password-based auth
-    await db.execute(sql`
-      INSERT INTO accounts (id, user_id, account_id, provider_id, password, created_at, updated_at)
-      VALUES (
-        gen_random_uuid(),
-        ${user.id},
-        ${user.id},
-        'credential',
-        ${passwordHash},
-        NOW(),
-        NOW()
-      )
-    `);
+    if (!user?.id) {
+      throw new Error("Sign up did not return user ID");
+    }
 
     // Create user-organization membership
     await db.insert(userOrganizations).values({
