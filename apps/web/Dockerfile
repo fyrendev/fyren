@@ -2,58 +2,40 @@
 # Multi-stage build for minimal production image
 
 # ================================
-# Stage 1: Dependencies (using Bun for speed)
-# ================================
-FROM oven/bun:1.3-alpine AS deps
-
-WORKDIR /app
-
-# Copy full workspace structure for proper lockfile resolution
-COPY package.json bun.lock turbo.json ./
-COPY apps/api/package.json ./apps/api/
-COPY apps/web/package.json ./apps/web/
-COPY packages/db/package.json ./packages/db/
-COPY packages/shared/package.json ./packages/shared/
-
-# Install dependencies using Bun with frozen lockfile for reproducibility
-RUN bun install --frozen-lockfile
-
-# ================================
-# Stage 2: Base for Node.js stages
+# Stage 1: Base
 # ================================
 FROM node:20-alpine AS base
-
-# Install dependencies only when needed
 RUN apk add --no-cache libc6-compat
-
 WORKDIR /app
 
 # ================================
-# Stage 3: Build
+# Stage 2: Dependencies & Build
 # ================================
 FROM base AS builder
 
 WORKDIR /app
 
-# Copy dependencies from Bun stage (includes workspace node_modules)
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
-
-# Copy source files
-COPY apps/web ./apps/web
+# Copy shared package first (it's a workspace dependency)
 COPY packages/shared ./packages/shared
-COPY package.json ./
+
+# Copy web app source and package.json
+COPY apps/web ./apps/web
+
+# Create a modified package.json that replaces workspace:* with file reference
+RUN cd apps/web && \
+    sed -i 's/"@fyrendev\/shared": "workspace:\*"/"@fyrendev\/shared": "file:..\/..\/packages\/shared"/' package.json && \
+    npm install
 
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-# Build Next.js application using workspace binary
+# Build Next.js application
 WORKDIR /app/apps/web
-RUN ./node_modules/.bin/next build
+RUN npm run build
 
 # ================================
-# Stage 4: Production
+# Stage 3: Production
 # ================================
 FROM base AS runner
 
@@ -66,7 +48,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 fyren && \
     adduser --system --uid 1001 fyren
 
-# Copy standalone build output (public directory is optional)
+# Copy standalone build output
 COPY --from=builder --chown=fyren:fyren /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=fyren:fyren /app/apps/web/.next/static ./.next/static
 
