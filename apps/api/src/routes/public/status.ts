@@ -58,7 +58,7 @@ async function getOrgBySlug(slug: string) {
   return org;
 }
 
-// Helper to get components for an org
+// Helper to get public components for an org
 async function getOrgComponents(orgId: string): Promise<ComponentWithStatus[]> {
   const orgComponents = await db
     .select({
@@ -70,7 +70,7 @@ async function getOrgComponents(orgId: string): Promise<ComponentWithStatus[]> {
       updatedAt: components.updatedAt,
     })
     .from(components)
-    .where(eq(components.organizationId, orgId))
+    .where(and(eq(components.organizationId, orgId), eq(components.isPublic, true)))
     .orderBy(asc(components.displayOrder));
 
   return orgComponents.map((comp) => ({
@@ -301,7 +301,7 @@ publicStatus.get("/:slug/uptime", async (c) => {
         name: components.name,
       })
       .from(components)
-      .where(eq(components.organizationId, org.id))
+      .where(and(eq(components.organizationId, org.id), eq(components.isPublic, true)))
       .orderBy(asc(components.displayOrder));
 
     // Calculate uptime for each component
