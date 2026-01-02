@@ -2,7 +2,11 @@ import { defineConfig, devices } from "@playwright/test";
 
 /**
  * Playwright configuration for E2E tests.
- * Requires both API and Web servers to be running.
+ * Uses a separate test database (fyren_test) to avoid conflicts with development.
+ *
+ * Before running tests:
+ * 1. Ensure docker compose is running (creates both fyren and fyren_test databases)
+ * 2. Run migrations on test db: DATABASE_URL=postgres://fyren:fyren@localhost:5432/fyren_test bun run db:push
  */
 export default defineConfig({
   testDir: "./e2e",
@@ -32,9 +36,10 @@ export default defineConfig({
   ],
 
   // Web server configuration - start both API and web
+  // API uses test database via .env.test
   webServer: [
     {
-      command: "cd ../api && bun run dev",
+      command: "cd ../api && bun run dev:test",
       url: "http://localhost:3001/health",
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
