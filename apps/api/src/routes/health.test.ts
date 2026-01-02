@@ -38,4 +38,33 @@ describe("Health API", () => {
       expect(data.timestamp).toBeDefined();
     });
   });
+
+  describe("GET /health/ready", () => {
+    test("returns combined readiness check", async () => {
+      const res = await app.request("/health/ready");
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.status).toBe("ok");
+      expect(data.timestamp).toBeDefined();
+      expect(data.checks).toBeDefined();
+      expect(data.checks.database).toBeDefined();
+      expect(data.checks.database.status).toBe("ok");
+      expect(data.checks.database.latency).toBeDefined();
+      expect(data.checks.redis).toBeDefined();
+      expect(data.checks.redis.status).toBe("ok");
+      expect(data.checks.redis.latency).toBeDefined();
+    });
+  });
+
+  describe("GET /health/startup", () => {
+    test("returns startup probe status", async () => {
+      const res = await app.request("/health/startup");
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.status).toBe("ok");
+      expect(data.timestamp).toBeDefined();
+    });
+  });
 });

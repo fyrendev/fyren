@@ -5,9 +5,16 @@ import { env } from "./env";
 import { setupRoutes } from "./routes";
 import { redis, bullmqRedis } from "./lib/redis";
 import { errorResponse } from "./lib/errors";
-import { maintenanceWorker, closeMaintenanceWorker } from "./workers/maintenance.worker";
-import { notificationWorker, closeNotificationWorker } from "./workers/notification.worker";
+import {
+  maintenanceWorker as _maintenanceWorker,
+  closeMaintenanceWorker,
+} from "./workers/maintenance.worker";
+import {
+  notificationWorker as _notificationWorker,
+  closeNotificationWorker,
+} from "./workers/notification.worker";
 import { rescheduleMaintenanceJobs } from "./services/maintenance-startup.service";
+import { securityHeaders } from "./middleware/security";
 
 const app = new Hono();
 
@@ -23,6 +30,9 @@ app.use(
     allowHeaders: ["Content-Type", "Authorization", "X-Organization-Id"],
   })
 );
+
+// Security headers middleware
+app.use("*", securityHeaders());
 
 // Root endpoint
 app.get("/", (c) => {

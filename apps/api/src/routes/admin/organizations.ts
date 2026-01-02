@@ -4,11 +4,44 @@ import { db } from "../../lib/db";
 import { organizations, apiKeys, userOrganizations, eq } from "@fyrendev/db";
 import { generateApiKey } from "../../lib/api-key";
 import { NotFoundError, ForbiddenError, errorResponse } from "../../lib/errors";
+import { sanitizeCustomCss, sanitizeTwitterHandle } from "../../lib/sanitize";
 
 const adminOrganizations = new Hono();
 
 // Slug validation: lowercase alphanumeric with hyphens, 3-50 chars
 const slugRegex = /^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$/;
+
+// Helper function to serialize organization for API response
+function serializeOrganization(org: typeof organizations.$inferSelect) {
+  return {
+    id: org.id,
+    name: org.name,
+    slug: org.slug,
+    // Branding - Logos
+    logoUrl: org.logoUrl,
+    logoLightUrl: org.logoLightUrl,
+    faviconUrl: org.faviconUrl,
+    // Branding - Colors
+    brandColor: org.brandColor,
+    accentColor: org.accentColor,
+    // Branding - Custom CSS
+    customCss: org.customCss,
+    // Custom domain
+    customDomain: org.customDomain,
+    customDomainVerified: org.customDomainVerified,
+    // SEO / Meta
+    metaTitle: org.metaTitle,
+    metaDescription: org.metaDescription,
+    // Social / Support
+    twitterHandle: org.twitterHandle,
+    supportUrl: org.supportUrl,
+    // Settings
+    timezone: org.timezone,
+    // Timestamps
+    createdAt: org.createdAt.toISOString(),
+    updatedAt: org.updatedAt.toISOString(),
+  };
+}
 
 const createOrganizationSchema = z.object({
   name: z.string().min(1).max(255),
@@ -21,15 +54,42 @@ const createOrganizationSchema = z.object({
 });
 
 const updateOrganizationSchema = z.object({
+  // Basic info
   name: z.string().min(1).max(255).optional(),
+
+  // Branding - Logos
   logoUrl: z.string().url().max(500).nullable().optional(),
+  logoLightUrl: z.string().url().max(500).nullable().optional(),
+  faviconUrl: z.string().url().max(500).nullable().optional(),
+
+  // Branding - Colors
   brandColor: z
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/, "Brand color must be a valid hex color")
     .nullable()
     .optional(),
-  timezone: z.string().max(50).optional(),
+  accentColor: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Accent color must be a valid hex color")
+    .nullable()
+    .optional(),
+
+  // Branding - Custom CSS
+  customCss: z.string().max(50000).nullable().optional(),
+
+  // Custom domain
   customDomain: z.string().max(255).nullable().optional(),
+
+  // SEO / Meta
+  metaTitle: z.string().max(100).nullable().optional(),
+  metaDescription: z.string().max(255).nullable().optional(),
+
+  // Social / Support
+  twitterHandle: z.string().max(50).nullable().optional(),
+  supportUrl: z.string().url().max(500).nullable().optional(),
+
+  // Settings
+  timezone: z.string().max(50).optional(),
 });
 
 // POST /organizations - Create organization
@@ -74,17 +134,7 @@ adminOrganizations.post("/", async (c) => {
 
     return c.json(
       {
-        organization: {
-          id: org.id,
-          name: org.name,
-          slug: org.slug,
-          logoUrl: org.logoUrl,
-          brandColor: org.brandColor,
-          customDomain: org.customDomain,
-          timezone: org.timezone,
-          createdAt: org.createdAt.toISOString(),
-          updatedAt: org.updatedAt.toISOString(),
-        },
+        organization: serializeOrganization(org),
         apiKey: apiKeyData.key, // Only returned on creation
       },
       201
@@ -115,17 +165,7 @@ adminOrganizations.get("/:id", async (c) => {
     }
 
     return c.json({
-      organization: {
-        id: org.id,
-        name: org.name,
-        slug: org.slug,
-        logoUrl: org.logoUrl,
-        brandColor: org.brandColor,
-        customDomain: org.customDomain,
-        timezone: org.timezone,
-        createdAt: org.createdAt.toISOString(),
-        updatedAt: org.updatedAt.toISOString(),
-      },
+      organization: serializeOrganization(org),
     });
   } catch (error) {
     return errorResponse(c, error);
@@ -149,10 +189,29 @@ adminOrganizations.put("/:id", async (c) => {
     const body = await c.req.json();
     const data = updateOrganizationSchema.parse(body);
 
+    // Sanitize custom CSS if provided
+    const sanitizedData = {
+      ...data,
+      // Sanitize custom CSS to prevent XSS
+      customCss:
+        data.customCss !== undefined
+          ? data.customCss
+            ? sanitizeCustomCss(data.customCss)
+            : null
+          : undefined,
+      // Sanitize Twitter handle
+      twitterHandle:
+        data.twitterHandle !== undefined
+          ? data.twitterHandle
+            ? sanitizeTwitterHandle(data.twitterHandle)
+            : null
+          : undefined,
+    };
+
     const [org] = await db
       .update(organizations)
       .set({
-        ...data,
+        ...sanitizedData,
         updatedAt: new Date(),
       })
       .where(eq(organizations.id, id))
@@ -163,17 +222,7 @@ adminOrganizations.put("/:id", async (c) => {
     }
 
     return c.json({
-      organization: {
-        id: org.id,
-        name: org.name,
-        slug: org.slug,
-        logoUrl: org.logoUrl,
-        brandColor: org.brandColor,
-        customDomain: org.customDomain,
-        timezone: org.timezone,
-        createdAt: org.createdAt.toISOString(),
-        updatedAt: org.updatedAt.toISOString(),
-      },
+      organization: serializeOrganization(org),
     });
   } catch (error) {
     return errorResponse(c, error);

@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Enable standalone output for Docker
+  output: "standalone",
+
   // Rewrite API calls to the Hono backend
   async rewrites() {
     return [

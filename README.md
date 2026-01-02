@@ -2,7 +2,21 @@
 
 > The open source lighthouse for your services
 
+[![License](https://img.shields.io/badge/license-ELv2-blue)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/fyrendev/fyren)](https://github.com/fyrendev/fyren)
+
 An open source, self-hosted status page and incident management platform.
+
+## Features
+
+- **Real-time Monitoring** - HTTP, TCP, and SSL checks with configurable intervals
+- **Incident Management** - Full lifecycle tracking with timeline updates
+- **Maintenance Windows** - Schedule and auto-start planned maintenance
+- **Notifications** - Email subscribers, Slack, Discord, and webhooks
+- **Customizable** - Custom branding, colors, and CSS per organization
+- **Embeddable Widgets** - Status badges and widgets for your sites
+- **API First** - Full REST API with OpenAPI documentation
+- **Self-hosted** - Docker Compose or run anywhere
 
 ## Quick Start
 
@@ -11,88 +25,98 @@ An open source, self-hosted status page and incident management platform.
 - [Bun](https://bun.sh/) v1.1+
 - [Docker](https://www.docker.com/) and Docker Compose
 
-### Setup
+### Development Setup
 
-1. **Clone the repository**
+```bash
+# Clone the repository
+git clone https://github.com/fyrendev/fyren.git
+cd fyren
 
-   ```bash
-   git clone https://github.com/fyrendev/fyren.git
-   cd fyren
-   ```
+# Start database and cache
+docker compose -f docker/docker-compose.yml up -d
 
-2. **Start the database and cache**
+# Install dependencies
+bun install
 
-   ```bash
-   docker compose -f docker/docker-compose.yml up -d
-   ```
+# Set up environment
+cp .env.example .env
 
-3. **Install dependencies**
+# Run database migrations
+bun run db:push
 
-   ```bash
-   bun install
-   ```
+# Start development server
+bun run dev
+```
 
-4. **Set up environment variables**
+Open http://localhost:3000 for the web app and http://localhost:3001 for the API.
 
-   ```bash
-   cp .env.example .env
-   ```
+### Production Deployment
 
-5. **Run database migrations** (no-op initially)
+```bash
+# Configure environment
+cp docker/.env.prod.example docker/.env.prod
+# Edit docker/.env.prod with your settings
 
-   ```bash
-   bun run db:migrate
-   ```
+# Start with Docker Compose
+docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.prod up -d
 
-6. **Start the development server**
+# Run migrations
+docker compose -f docker/docker-compose.prod.yml exec api bun run db:migrate
+```
 
-   ```bash
-   bun run dev
-   ```
+See [Self-Hosting Guide](docs/self-hosting.md) for detailed deployment instructions.
 
-7. **Verify it works**
+## Documentation
 
-   ```bash
-   curl http://localhost:3001/health
-   curl http://localhost:3001/health/db
-   curl http://localhost:3001/health/redis
-   ```
+- [Self-Hosting Guide](docs/self-hosting.md) - Deploy Fyren on your infrastructure
+- [Configuration Reference](docs/configuration.md) - All environment variables
+- [Contributing Guide](CONTRIBUTING.md) - Development setup and guidelines
 
 ## Project Structure
 
 ```
 fyren/
 ├── apps/
-│   └── api/                    # Hono API server
+│   ├── api/          # Hono API server
+│   └── web/          # Next.js frontend
 ├── packages/
-│   ├── db/                     # Drizzle schema & migrations
-│   └── shared/                 # Shared types & utilities
-├── docker/
-│   └── docker-compose.yml      # Local dev services
-└── turbo.json                  # Turborepo config
+│   ├── db/           # Drizzle schema & migrations
+│   └── shared/       # Shared types & utilities
+├── docker/           # Docker configurations
+└── docs/             # Documentation
 ```
-
-## Scripts
-
-| Command               | Description                  |
-| --------------------- | ---------------------------- |
-| `bun run dev`         | Start all apps in dev mode   |
-| `bun run build`       | Build all packages           |
-| `bun run lint`        | Run TypeScript type checking |
-| `bun run db:generate` | Generate Drizzle migrations  |
-| `bun run db:migrate`  | Run database migrations      |
-| `bun run db:push`     | Push schema changes to DB    |
-| `bun run db:studio`   | Open Drizzle Studio          |
 
 ## Tech Stack
 
-- **Runtime:** Bun
-- **API Framework:** Hono
-- **Database:** PostgreSQL
-- **ORM:** Drizzle
-- **Cache:** Redis (ioredis)
-- **Validation:** Zod
-- **Monorepo:** Turborepo
+| Layer         | Technology             |
+| ------------- | ---------------------- |
+| Runtime       | Bun                    |
+| API Framework | Hono                   |
+| Database      | PostgreSQL             |
+| ORM           | Drizzle                |
+| Cache/Queue   | Redis + BullMQ         |
+| Frontend      | Next.js + Tailwind CSS |
+| Auth          | BetterAuth             |
+
+## Scripts
+
+| Command             | Description                   |
+| ------------------- | ----------------------------- |
+| `bun run dev`       | Start all apps in dev mode    |
+| `bun run build`     | Build all packages            |
+| `bun run lint`      | Run linting and type checking |
+| `bun run test`      | Run API tests                 |
+| `bun run test:e2e`  | Run E2E tests                 |
+| `bun run db:push`   | Push schema changes to DB     |
+| `bun run db:studio` | Open Drizzle Studio           |
+
+## Embeddable Status Badge
+
+Add a status badge to your README:
+
+```markdown
+[![Status](https://your-domain.com/api/v1/status/your-org/badge.svg)](https://your-domain.com/your-org)
+```
 
 ## License
 
@@ -121,3 +145,12 @@ Fyren is licensed under the **Elastic License 2.0 (ELv2)**.
 | Documentation                       | MIT     |
 
 See [LICENSE](LICENSE) for the full Elastic License 2.0 text.
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+## Support
+
+- [GitHub Issues](https://github.com/fyrendev/fyren/issues) - Bug reports and feature requests
+- [GitHub Discussions](https://github.com/fyrendev/fyren/discussions) - Questions and community

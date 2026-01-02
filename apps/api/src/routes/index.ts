@@ -9,6 +9,8 @@ import { publicStatus } from "./public/status";
 import { publicInvites } from "./public/invites";
 import { subscribeRoutes } from "./public/subscribe";
 import { rssRoutes } from "./public/rss";
+import { badgeRoutes } from "./public/badge";
+import { widgetRoutes } from "./public/widget";
 
 // Admin routes
 import { adminOrganizations } from "./admin/organizations";
@@ -46,6 +48,8 @@ export function setupRoutes(app: Hono) {
   app.route("/api/v1/status", publicStatus);
   app.route("/api/v1/status", subscribeRoutes);
   app.route("/api/v1/status", rssRoutes);
+  app.route("/api/v1/status", badgeRoutes);
+  app.route("/api/v1/status", widgetRoutes);
   app.route("/api/v1/invites", publicInvites);
 
   // Admin user routes (session only)
