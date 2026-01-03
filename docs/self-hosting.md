@@ -62,7 +62,7 @@ EMAIL_FROM=noreply@example.com
 ### 3. Start Services
 
 ```bash
-docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.prod up -d
+docker compose -f docker-compose.prod.yml --env-file docker/.env.prod up -d
 ```
 
 This will:
@@ -143,21 +143,21 @@ SMTP_PASS=your-password
 ### Backup Database
 
 ```bash
-docker compose -f docker/docker-compose.prod.yml exec postgres \
+docker compose -f docker-compose.prod.yml exec postgres \
   pg_dump -U fyren fyren > backup-$(date +%Y%m%d).sql
 ```
 
 ### Restore Database
 
 ```bash
-docker compose -f docker/docker-compose.prod.yml exec -T postgres \
+docker compose -f docker-compose.prod.yml exec -T postgres \
   psql -U fyren fyren < backup.sql
 ```
 
 ### Backup Redis
 
 ```bash
-docker compose -f docker/docker-compose.prod.yml exec redis \
+docker compose -f docker-compose.prod.yml exec redis \
   redis-cli -a $REDIS_PASSWORD BGSAVE
 docker cp fyren-redis:/data/dump.rdb ./redis-backup.rdb
 ```
@@ -169,8 +169,8 @@ docker cp fyren-redis:/data/dump.rdb ./redis-backup.rdb
 ```bash
 cd fyren
 git pull
-docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.prod build
-docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.prod up -d
+docker compose -f docker-compose.prod.yml --env-file docker/.env.prod build
+docker compose -f docker-compose.prod.yml --env-file docker/.env.prod up -d
 ```
 
 Database migrations run automatically on container startup.
@@ -180,7 +180,7 @@ Database migrations run automatically on container startup.
 ### View Service Status
 
 ```bash
-docker compose -f docker/docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml ps
 ```
 
 ### Health Checks
@@ -190,19 +190,19 @@ docker compose -f docker/docker-compose.prod.yml ps
 curl https://your-domain.com/health
 
 # Check if worker is processing jobs
-docker compose -f docker/docker-compose.prod.yml logs worker --tail 50
+docker compose -f docker-compose.prod.yml logs worker --tail 50
 ```
 
 ### View Logs
 
 ```bash
 # All services
-docker compose -f docker/docker-compose.prod.yml logs -f
+docker compose -f docker-compose.prod.yml logs -f
 
 # Specific service
-docker compose -f docker/docker-compose.prod.yml logs -f api
-docker compose -f docker/docker-compose.prod.yml logs -f worker
-docker compose -f docker/docker-compose.prod.yml logs -f web
+docker compose -f docker-compose.prod.yml logs -f api
+docker compose -f docker-compose.prod.yml logs -f worker
+docker compose -f docker-compose.prod.yml logs -f web
 ```
 
 ## Troubleshooting
@@ -213,20 +213,20 @@ Migrations run automatically when the API starts. Check the API logs:
 
 ```bash
 # Check API logs for migration output
-docker compose -f docker/docker-compose.prod.yml logs api | grep -i migrat
+docker compose -f docker-compose.prod.yml logs api | grep -i migrat
 
 # Restart API to re-run migrations
-docker compose -f docker/docker-compose.prod.yml restart api
+docker compose -f docker-compose.prod.yml restart api
 ```
 
 ### Database Connection Failed
 
 ```bash
 # Check PostgreSQL logs
-docker compose -f docker/docker-compose.prod.yml logs postgres
+docker compose -f docker-compose.prod.yml logs postgres
 
 # Test connection
-docker compose -f docker/docker-compose.prod.yml exec postgres \
+docker compose -f docker-compose.prod.yml exec postgres \
   psql -U fyren -d fyren -c "SELECT 1"
 ```
 
@@ -234,10 +234,10 @@ docker compose -f docker/docker-compose.prod.yml exec postgres \
 
 ```bash
 # Check Redis logs
-docker compose -f docker/docker-compose.prod.yml logs redis
+docker compose -f docker-compose.prod.yml logs redis
 
 # Test connection
-docker compose -f docker/docker-compose.prod.yml exec redis \
+docker compose -f docker-compose.prod.yml exec redis \
   redis-cli -a $REDIS_PASSWORD ping
 ```
 
@@ -247,20 +247,20 @@ The worker service processes monitor checks. Verify it's running:
 
 ```bash
 # Check worker status
-docker compose -f docker/docker-compose.prod.yml ps worker
+docker compose -f docker-compose.prod.yml ps worker
 
 # Check worker logs
-docker compose -f docker/docker-compose.prod.yml logs worker --tail 100
+docker compose -f docker-compose.prod.yml logs worker --tail 100
 ```
 
 ### SSL Certificate Issues
 
 ```bash
 # Check Traefik logs
-docker compose -f docker/docker-compose.prod.yml logs traefik
+docker compose -f docker-compose.prod.yml logs traefik
 
 # Verify ACME storage
-docker compose -f docker/docker-compose.prod.yml exec traefik \
+docker compose -f docker-compose.prod.yml exec traefik \
   cat /letsencrypt/acme.json
 ```
 

@@ -58,10 +58,10 @@ cp docker/.env.prod.example docker/.env.prod
 # Edit docker/.env.prod with your settings
 
 # Start with Docker Compose
-docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.prod up -d
+docker compose -f docker-compose.prod.yml --env-file docker/.env.prod up -d
 
 # Run migrations
-docker compose -f docker/docker-compose.prod.yml exec api bun run db:migrate
+docker compose -f docker-compose.prod.yml exec api bun run db:migrate
 ```
 
 See [Self-Hosting Guide](docs/self-hosting.md) for detailed deployment instructions.

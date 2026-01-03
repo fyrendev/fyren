@@ -707,8 +707,7 @@ fyren/
 │
 ├── docker/
 │   ├── Dockerfile
-│   ├── docker-compose.yml
-│   └── docker-compose.prod.yml
+│   └── docker-compose.yml
 │
 ├── docs/
 │   ├── self-hosting.md
@@ -716,6 +715,7 @@ fyren/
 │   └── configuration.md
 │
 ├── .env.example
+├── docker-compose.prod.yml     # Production Docker Compose
 ├── package.json                # Workspace root
 ├── turbo.json                  # Turborepo config
 └── README.md
