@@ -43,6 +43,13 @@
       "when": 1735833600000,
       "tag": "0005_email_config",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1735920000000,
+      "tag": "0006_subscriber-groups",
+      "breakpoints": true
     }
   ]
 }

@@ -1,8 +1,9 @@
 import { db, eq, and } from "@fyrendev/db";
-import { subscribers, webhookEndpoints, organizations } from "@fyrendev/db";
+import { webhookEndpoints, organizations } from "@fyrendev/db";
 import type { WebhookType } from "@fyrendev/shared";
 import { Queue } from "bullmq";
 import { bullmqRedis } from "../lib/redis";
+import { SubscriberService } from "./subscriber.service";
 
 const QUEUE_NAME = "notifications";
 
@@ -83,32 +84,26 @@ export const NotificationService = {
   ): Promise<void> {
     const { event, componentIds } = notification;
 
-    // Determine notification type filter
+    // Determine notification type
     const isIncidentEvent = event.startsWith("incident.");
     const isMaintenanceEvent = event.startsWith("maintenance.");
+    const eventType = isIncidentEvent
+      ? "incident"
+      : isMaintenanceEvent
+        ? "maintenance"
+        : "component";
 
-    // Build subscriber query - we need to filter manually
-    const allSubs = await db.query.subscribers.findMany({
-      where: and(eq(subscribers.organizationId, org.id), eq(subscribers.verified, true)),
-    });
+    // Global events have no component filter - they should always notify
+    // (e.g., a global incident with no specific components)
+    const isGlobalEvent = !componentIds || componentIds.length === 0;
 
-    // Filter by notification preferences
-    const prefilteredSubs = allSubs.filter((sub) => {
-      if (isIncidentEvent && !sub.notifyOnIncident) return false;
-      if (isMaintenanceEvent && !sub.notifyOnMaintenance) return false;
-      return true;
-    });
-
-    // Filter by component subscription (if subscriber has component filter)
-    const eligibleSubs = prefilteredSubs.filter((sub) => {
-      if (!sub.componentIds || sub.componentIds.length === 0) {
-        return true; // Subscribed to all
-      }
-      if (!componentIds || componentIds.length === 0) {
-        return true; // No component filter on event
-      }
-      // Check if any subscribed component is affected
-      return componentIds.some((id) => sub.componentIds!.includes(id));
+    // Use SubscriberService to get eligible subscribers
+    // This handles group-based component filtering automatically
+    const eligibleSubs = await SubscriberService.getEligibleSubscribers({
+      organizationId: org.id,
+      eventType,
+      componentIds,
+      isGlobalEvent,
     });
 
     // Queue jobs for each subscriber

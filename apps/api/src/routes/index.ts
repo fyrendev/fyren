@@ -25,6 +25,7 @@ import { adminIncidents } from "./admin/incidents";
 import { adminIncidentTemplates } from "./admin/incident-templates";
 import { adminMaintenance } from "./admin/maintenance";
 import { adminSubscribers } from "./admin/subscribers";
+import { subscriberGroupsRouter } from "./admin/subscriber-groups";
 import { adminWebhooks } from "./admin/webhooks";
 
 // Health routes
@@ -102,6 +103,11 @@ export function setupRoutes(app: Hono) {
   app.use("/api/v1/admin/subscribers", authMiddleware);
   app.use("/api/v1/admin/subscribers/*", authMiddleware);
   app.route("/api/v1/admin/subscribers", adminSubscribers);
+
+  // Protected subscriber group routes
+  app.use("/api/v1/admin/subscriber-groups", authMiddleware);
+  app.use("/api/v1/admin/subscriber-groups/*", authMiddleware);
+  app.route("/api/v1/admin/subscriber-groups", subscriberGroupsRouter);
 
   // Protected webhook routes
   app.use("/api/v1/admin/webhooks", authMiddleware);

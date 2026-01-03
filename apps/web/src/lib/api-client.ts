@@ -94,12 +94,28 @@ export interface Maintenance {
   }>;
 }
 
+export interface SubscriberGroup {
+  id: string;
+  name: string;
+  description: string | null;
+  componentIds: string[] | null;
+  memberCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Subscriber {
   id: string;
   email: string;
   verified: boolean;
+  verifiedAt: string | null;
+  groupId: string | null;
+  group: { id: string; name: string } | null;
+  componentIds: string[] | null;
+  notifyOnIncident: boolean;
+  notifyOnMaintenance: boolean;
   createdAt: string;
-  unsubscribedAt: string | null;
+  updatedAt: string;
 }
 
 export interface WebhookEndpoint {
@@ -308,10 +324,70 @@ export const api = {
     apiClient<{ subscribers: Subscriber[]; pagination: Pagination }>(
       `/api/v1/admin/subscribers${params ? `?${params}` : ""}`
     ),
+  getSubscriber: (id: string) =>
+    apiClient<{ subscriber: Subscriber }>(`/api/v1/admin/subscribers/${id}`),
+  createSubscriber: (data: {
+    email: string;
+    groupId?: string | null;
+    componentIds?: string[] | null;
+    notifyOnIncident?: boolean;
+    notifyOnMaintenance?: boolean;
+  }) =>
+    apiClient<{ subscriber: Subscriber }>("/api/v1/admin/subscribers", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  updateSubscriber: (
+    id: string,
+    data: {
+      email?: string;
+      groupId?: string | null;
+      componentIds?: string[] | null;
+      notifyOnIncident?: boolean;
+      notifyOnMaintenance?: boolean;
+    }
+  ) =>
+    apiClient<{ subscriber: Subscriber }>(`/api/v1/admin/subscribers/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
   deleteSubscriber: (id: string) =>
     apiClient<{ success: boolean }>(`/api/v1/admin/subscribers/${id}`, {
       method: "DELETE",
     }),
+
+  // Subscriber Groups
+  getSubscriberGroups: () =>
+    apiClient<{ subscriberGroups: SubscriberGroup[] }>("/api/v1/admin/subscriber-groups"),
+  getSubscriberGroup: (id: string) =>
+    apiClient<{ subscriberGroup: SubscriberGroup }>(`/api/v1/admin/subscriber-groups/${id}`),
+  createSubscriberGroup: (data: {
+    name: string;
+    description?: string | null;
+    componentIds?: string[] | null;
+  }) =>
+    apiClient<{ subscriberGroup: SubscriberGroup }>("/api/v1/admin/subscriber-groups", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  updateSubscriberGroup: (
+    id: string,
+    data: {
+      name?: string;
+      description?: string | null;
+      componentIds?: string[] | null;
+    }
+  ) =>
+    apiClient<{ subscriberGroup: SubscriberGroup }>(`/api/v1/admin/subscriber-groups/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  deleteSubscriberGroup: (id: string) =>
+    apiClient<{ success: boolean }>(`/api/v1/admin/subscriber-groups/${id}`, {
+      method: "DELETE",
+    }),
+  getSubscriberGroupMembers: (id: string) =>
+    apiClient<{ subscribers: Subscriber[] }>(`/api/v1/admin/subscriber-groups/${id}/members`),
 
   // Webhooks
   getWebhooks: () => apiClient<{ webhooks: WebhookEndpoint[] }>("/api/v1/admin/webhooks"),

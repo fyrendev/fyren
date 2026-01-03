@@ -2,6 +2,7 @@ import { pgTable, uuid, text, boolean, timestamp, jsonb, index, unique } from "d
 import { relations } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { organizations } from "./organization";
+import { subscriberGroups } from "./subscriber-group";
 
 export const subscribers = pgTable(
   "subscribers",
@@ -13,6 +14,9 @@ export const subscribers = pgTable(
 
     email: text("email").notNull(),
 
+    // Optional: belongs to a subscriber group (null = individual subscriber)
+    groupId: uuid("group_id").references(() => subscriberGroups.id, { onDelete: "set null" }),
+
     // Verification
     verified: boolean("verified").notNull().default(false),
     verificationToken: text("verification_token"),
@@ -22,6 +26,7 @@ export const subscribers = pgTable(
     unsubscribeToken: text("unsubscribe_token").notNull(),
 
     // Optional: subscribe to specific components only (null = all)
+    // Note: When subscriber belongs to a group, group's componentIds take precedence
     componentIds: jsonb("component_ids").$type<string[] | null>().default(null),
 
     // Preferences
@@ -34,6 +39,7 @@ export const subscribers = pgTable(
   (table) => [
     index("subscribers_organization_id_idx").on(table.organizationId),
     index("subscribers_email_idx").on(table.email),
+    index("subscribers_group_id_idx").on(table.groupId),
     index("subscribers_verification_token_idx").on(table.verificationToken),
     index("subscribers_unsubscribe_token_idx").on(table.unsubscribeToken),
     unique("subscribers_org_email_unique").on(table.organizationId, table.email),
@@ -44,6 +50,10 @@ export const subscribersRelations = relations(subscribers, ({ one }) => ({
   organization: one(organizations, {
     fields: [subscribers.organizationId],
     references: [organizations.id],
+  }),
+  group: one(subscriberGroups, {
+    fields: [subscribers.groupId],
+    references: [subscriberGroups.id],
   }),
 }));
 

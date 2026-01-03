@@ -12,6 +12,7 @@ import {
   maintenances,
   maintenanceComponents,
   subscribers,
+  subscriberGroups,
   webhookEndpoints,
 } from "@fyrendev/db";
 import { generateApiKey } from "../lib/api-key";
@@ -264,6 +265,28 @@ export async function createTestMaintenanceComponent(maintenanceId: string, comp
 
   if (!link) throw new Error("Failed to create test maintenance component link");
   return link;
+}
+
+/**
+ * Create a test subscriber group.
+ */
+export async function createTestSubscriberGroup(
+  organizationId: string,
+  overrides: Partial<typeof subscriberGroups.$inferInsert> = {}
+) {
+  const [group] = await db
+    .insert(subscriberGroups)
+    .values({
+      organizationId,
+      name: overrides.name || `Test Group ${randomString()}`,
+      description: overrides.description || "A test subscriber group",
+      componentIds: overrides.componentIds ?? null,
+      ...overrides,
+    })
+    .returning();
+
+  if (!group) throw new Error("Failed to create test subscriber group");
+  return group;
 }
 
 /**

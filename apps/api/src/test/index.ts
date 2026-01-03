@@ -17,6 +17,7 @@ export {
   createTestIncidentComponent,
   createTestMaintenance,
   createTestMaintenanceComponent,
+  createTestSubscriberGroup,
   createTestSubscriber,
   createTestWebhook,
   authHeader,

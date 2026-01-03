@@ -12,6 +12,7 @@ export async function cleanDatabase() {
       notification_logs,
       webhook_endpoints,
       subscribers,
+      subscriber_groups,
       maintenance_components,
       maintenances,
       incident_components,

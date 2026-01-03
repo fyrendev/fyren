@@ -29,6 +29,9 @@ export * from "./incident-template";
 export * from "./maintenance";
 export * from "./maintenance-component";
 
+// Subscriber Groups (must be before subscribers to avoid circular dependency)
+export * from "./subscriber-group";
+
 // Subscribers
 export * from "./subscriber";
 
