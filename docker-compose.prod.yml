@@ -1,7 +1,7 @@
 version: "3.8"
 
 # Fyren Production Docker Compose
-# Usage: docker compose -f docker/docker-compose.prod.yml up -d
+# Usage: docker compose -f docker-compose.prod.yml up -d
 
 services:
   # ===================================
@@ -77,7 +77,7 @@ services:
   # ===================================
   api:
     build:
-      context: ..
+      context: .
       dockerfile: apps/api/Dockerfile
     container_name: fyren-api
     restart: unless-stopped
@@ -123,7 +123,7 @@ services:
   # ===================================
   worker:
     build:
-      context: ..
+      context: .
       dockerfile: apps/api/Dockerfile
     container_name: fyren-worker
     restart: unless-stopped
@@ -154,7 +154,7 @@ services:
   # ===================================
   web:
     build:
-      context: ..
+      context: .
       dockerfile: apps/web/Dockerfile
     container_name: fyren-web
     restart: unless-stopped
