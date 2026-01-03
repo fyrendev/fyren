@@ -1,21 +1,32 @@
 import { createTransport, type Transporter } from "nodemailer";
 import type { EmailProvider, EmailMessage, EmailResult } from "../types";
 
+export interface SMTPConfig {
+  host: string;
+  port: number;
+  user?: string;
+  password?: string;
+  secure?: boolean;
+}
+
 export class SMTPProvider implements EmailProvider {
   private transporter: Transporter;
   private fromAddress: string;
 
-  constructor() {
+  constructor(config: SMTPConfig, fromAddress: string) {
     this.transporter = createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || "587", 10),
-      secure: process.env.SMTP_SECURE === "true",
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
+      host: config.host,
+      port: config.port,
+      secure: config.secure ?? true,
+      auth:
+        config.user && config.password
+          ? {
+              user: config.user,
+              pass: config.password,
+            }
+          : undefined,
     });
-    this.fromAddress = process.env.EMAIL_FROM || "noreply@fyren.dev";
+    this.fromAddress = fromAddress;
   }
 
   async send(message: EmailMessage): Promise<EmailResult> {

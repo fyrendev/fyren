@@ -2,7 +2,7 @@ import { Worker, Job } from "bullmq";
 import { bullmqRedis } from "../lib/redis";
 import { db, eq, sql } from "@fyrendev/db";
 import { notificationLogs, webhookEndpoints } from "@fyrendev/db";
-import { getEmailProvider } from "../lib/email";
+import { getEmailProviderForOrg } from "../lib/email";
 import { formatWebhook } from "../lib/webhooks";
 import {
   incidentCreatedTemplate,
@@ -152,8 +152,8 @@ async function processEmailJob(job: Job<NotificationJobData>): Promise<void> {
       throw new Error(`Unknown event type: ${event}`);
   }
 
-  // Send email
-  const provider = getEmailProvider();
+  // Send email using organization's configured provider
+  const provider = await getEmailProviderForOrg(organizationId);
   const result = await provider.send({
     to: email,
     subject: emailContent.subject,

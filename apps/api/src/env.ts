@@ -9,6 +9,13 @@ const envSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.string().url().default("http://localhost:3001"),
   APP_URL: z.string().url().default("http://localhost:3000"),
+  // Encryption key for sensitive data (64 hex chars = 32 bytes)
+  // Required for storing email provider credentials
+  ENCRYPTION_KEY: z
+    .string()
+    .length(64)
+    .regex(/^[0-9a-fA-F]+$/, "Must be hexadecimal")
+    .optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

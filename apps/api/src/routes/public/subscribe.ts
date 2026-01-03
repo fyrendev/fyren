@@ -3,7 +3,7 @@ import { db, eq, and } from "@fyrendev/db";
 import { subscribers, organizations } from "@fyrendev/db";
 import { randomBytes } from "crypto";
 import { z } from "zod";
-import { getEmailProvider } from "../../lib/email";
+import { getEmailProviderForOrg } from "../../lib/email";
 import { verificationTemplate } from "../../lib/email/templates/verification";
 import { errorResponse, ValidationError, NotFoundError } from "../../lib/errors";
 import { env } from "../../env";
@@ -70,7 +70,7 @@ subscribeRoutes.post("/:slug/subscribe", async (c) => {
       verificationUrl,
     });
 
-    const provider = getEmailProvider();
+    const provider = await getEmailProviderForOrg(org.id);
     await provider.send({
       to: email,
       subject: emailContent.subject,

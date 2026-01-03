@@ -1,9 +1,12 @@
+import { apiKeys, eq, organizations, userOrganizations } from "@fyrendev/db";
 import { Hono } from "hono";
 import { z } from "zod";
-import { db } from "../../lib/db";
-import { organizations, apiKeys, userOrganizations, eq } from "@fyrendev/db";
 import { generateApiKey } from "../../lib/api-key";
-import { NotFoundError, ForbiddenError, errorResponse } from "../../lib/errors";
+import type { AuthUser } from "../../lib/auth";
+import { db } from "../../lib/db";
+import { clearProviderCache, getEmailProviderForOrg } from "../../lib/email";
+import { encryptJson, isEncryptionAvailable } from "../../lib/encryption";
+import { BadRequestError, errorResponse, ForbiddenError, NotFoundError } from "../../lib/errors";
 import { sanitizeCustomCss, sanitizeTwitterHandle } from "../../lib/sanitize";
 
 const adminOrganizations = new Hono();
@@ -37,6 +40,10 @@ function serializeOrganization(org: typeof organizations.$inferSelect) {
     supportUrl: org.supportUrl,
     // Settings
     timezone: org.timezone,
+    // Email Configuration (never expose encrypted credentials)
+    emailProvider: org.emailProvider,
+    emailFromAddress: org.emailFromAddress,
+    emailConfigured: !!org.emailConfig, // Just indicate if configured, not the actual config
     // Timestamps
     createdAt: org.createdAt.toISOString(),
     updatedAt: org.updatedAt.toISOString(),
@@ -52,6 +59,32 @@ const createOrganizationSchema = z.object({
     .regex(slugRegex, "Slug must be lowercase alphanumeric with hyphens, 3-50 chars"),
   timezone: z.string().max(50).default("UTC"),
 });
+
+// Email provider configuration schemas
+const smtpConfigSchema = z.object({
+  host: z.string().min(1),
+  port: z.coerce.number().min(1).max(65535),
+  user: z.string().optional(),
+  password: z.string().optional(),
+  secure: z.boolean().default(true),
+});
+
+const sendgridConfigSchema = z.object({
+  apiKey: z.string().min(1),
+});
+
+const sesConfigSchema = z.object({
+  region: z.string().min(1),
+  accessKeyId: z.string().min(1),
+  secretAccessKey: z.string().min(1),
+});
+
+z.discriminatedUnion("provider", [
+  z.object({ provider: z.literal("console") }),
+  z.object({ provider: z.literal("smtp"), config: smtpConfigSchema }),
+  z.object({ provider: z.literal("sendgrid"), config: sendgridConfigSchema }),
+  z.object({ provider: z.literal("ses"), config: sesConfigSchema }),
+]);
 
 const updateOrganizationSchema = z.object({
   // Basic info
@@ -90,6 +123,14 @@ const updateOrganizationSchema = z.object({
 
   // Settings
   timezone: z.string().max(50).optional(),
+
+  // Email Configuration
+  emailProvider: z.enum(["console", "smtp", "sendgrid", "ses"]).optional(),
+  emailFromAddress: z.string().email().max(255).nullable().optional(),
+  emailConfig: z
+    .union([smtpConfigSchema, sendgridConfigSchema, sesConfigSchema])
+    .nullable()
+    .optional(),
 });
 
 // POST /organizations - Create organization
@@ -189,7 +230,23 @@ adminOrganizations.put("/:id", async (c) => {
     const body = await c.req.json();
     const data = updateOrganizationSchema.parse(body);
 
-    // Sanitize custom CSS if provided
+    // Handle email config encryption
+    let encryptedEmailConfig: string | null | undefined = undefined;
+    if (data.emailConfig !== undefined) {
+      if (data.emailConfig === null) {
+        encryptedEmailConfig = null;
+      } else {
+        // Require encryption key for storing email credentials
+        if (!isEncryptionAvailable()) {
+          throw new BadRequestError(
+            "Email configuration requires ENCRYPTION_KEY environment variable to be set"
+          );
+        }
+        encryptedEmailConfig = encryptJson(data.emailConfig);
+      }
+    }
+
+    // Sanitize and prepare data for update
     const sanitizedData = {
       ...data,
       // Sanitize custom CSS to prevent XSS
@@ -206,6 +263,8 @@ adminOrganizations.put("/:id", async (c) => {
             ? sanitizeTwitterHandle(data.twitterHandle)
             : null
           : undefined,
+      // Replace emailConfig with encrypted version
+      emailConfig: encryptedEmailConfig,
     };
 
     const [org] = await db
@@ -221,9 +280,59 @@ adminOrganizations.put("/:id", async (c) => {
       throw new NotFoundError("Organization not found");
     }
 
+    // Clear cached email provider if email settings changed
+    if (
+      data.emailProvider !== undefined ||
+      data.emailFromAddress !== undefined ||
+      data.emailConfig !== undefined
+    ) {
+      clearProviderCache(id);
+    }
+
     return c.json({
       organization: serializeOrganization(org),
     });
+  } catch (error) {
+    return errorResponse(c, error);
+  }
+});
+
+// POST /organizations/:id/test-email - Send test email (auth required)
+adminOrganizations.post("/:id/test-email", async (c) => {
+  try {
+    const orgId = c.get("organizationId");
+    if (!orgId) {
+      throw new ForbiddenError("Authentication required");
+    }
+    const id = c.req.param("id");
+
+    // Verify the user has access to this organization
+    if (orgId !== id) {
+      throw new ForbiddenError("You don't have access to this organization");
+    }
+
+    // Get the current user's email
+    const user = c.get("user") as AuthUser | undefined;
+    if (!user?.email) {
+      throw new BadRequestError("No email address found for current user");
+    }
+
+    // Get email provider for this organization
+    const provider = await getEmailProviderForOrg(id);
+
+    // Send test email
+    await provider.send({
+      to: user.email,
+      subject: "Test Email from Fyren",
+      html: `
+        <h1>Email Configuration Test</h1>
+        <p>This is a test email to verify your email configuration is working correctly.</p>
+        <p>If you received this email, your email provider is configured properly.</p>
+        <p><em>Sent from Fyren</em></p>
+      `,
+    });
+
+    return c.json({ success: true, message: `Test email sent to ${user.email}` });
   } catch (error) {
     return errorResponse(c, error);
   }

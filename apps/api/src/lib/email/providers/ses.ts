@@ -1,19 +1,25 @@
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import type { EmailProvider, EmailMessage, EmailResult } from "../types";
 
+export interface SESConfig {
+  region: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+}
+
 export class SESProvider implements EmailProvider {
   private client: SESClient;
   private fromAddress: string;
 
-  constructor() {
+  constructor(config: SESConfig, fromAddress: string) {
     this.client = new SESClient({
-      region: process.env.AWS_REGION || "us-east-1",
+      region: config.region,
       credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+        accessKeyId: config.accessKeyId,
+        secretAccessKey: config.secretAccessKey,
       },
     });
-    this.fromAddress = process.env.EMAIL_FROM || "noreply@fyren.dev";
+    this.fromAddress = fromAddress;
   }
 
   async send(message: EmailMessage): Promise<EmailResult> {

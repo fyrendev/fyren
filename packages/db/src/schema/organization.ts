@@ -35,6 +35,11 @@ export const organizations = pgTable(
     // Settings
     timezone: varchar("timezone", { length: 50 }).notNull().default("UTC"),
 
+    // Email Configuration
+    emailProvider: varchar("email_provider", { length: 20 }).notNull().default("console"), // console, smtp, sendgrid, ses
+    emailFromAddress: varchar("email_from_address", { length: 255 }),
+    emailConfig: text("email_config"), // Encrypted JSON with provider-specific settings
+
     // Timestamps
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),

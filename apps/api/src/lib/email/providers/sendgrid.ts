@@ -1,12 +1,16 @@
 import type { EmailProvider, EmailMessage, EmailResult } from "../types";
 
+export interface SendGridConfig {
+  apiKey: string;
+}
+
 export class SendGridProvider implements EmailProvider {
   private apiKey: string;
   private fromAddress: string;
 
-  constructor() {
-    this.apiKey = process.env.SENDGRID_API_KEY!;
-    this.fromAddress = process.env.EMAIL_FROM || "noreply@fyren.dev";
+  constructor(config: SendGridConfig, fromAddress: string) {
+    this.apiKey = config.apiKey;
+    this.fromAddress = fromAddress;
   }
 
   async send(message: EmailMessage): Promise<EmailResult> {

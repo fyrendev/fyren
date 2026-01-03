@@ -142,15 +142,49 @@ export interface Invite {
   createdAt: string;
 }
 
+export type EmailProvider = "console" | "smtp" | "sendgrid" | "ses";
+
+export interface SMTPConfig {
+  host: string;
+  port: number;
+  user?: string;
+  password?: string;
+  secure?: boolean;
+}
+
+export interface SendGridConfig {
+  apiKey: string;
+}
+
+export interface SESConfig {
+  region: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+}
+
+export type EmailConfig = SMTPConfig | SendGridConfig | SESConfig;
+
 export interface Organization {
   id: string;
   name: string;
   slug: string;
   logoUrl: string | null;
+  logoLightUrl: string | null;
+  faviconUrl: string | null;
   brandColor: string | null;
-  websiteUrl: string | null;
+  accentColor: string | null;
+  customCss: string | null;
   customDomain: string | null;
+  customDomainVerified: boolean;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  twitterHandle: string | null;
+  supportUrl: string | null;
   timezone: string;
+  // Email configuration
+  emailProvider: EmailProvider;
+  emailFromAddress: string | null;
+  emailConfigured: boolean; // True if credentials are set (never exposes actual credentials)
   createdAt: string;
   updatedAt: string;
 }
@@ -357,11 +391,20 @@ export const api = {
     const orgId = getCurrentOrgId();
     return apiClient<{ organization: Organization }>(`/api/v1/admin/organizations/${orgId}`);
   },
-  updateOrganization: (data: Partial<Organization>) => {
+  updateOrganization: (data: Partial<Organization> & { emailConfig?: EmailConfig | null }) => {
     const orgId = getCurrentOrgId();
     return apiClient<{ organization: Organization }>(`/api/v1/admin/organizations/${orgId}`, {
       method: "PUT",
       body: JSON.stringify(data),
     });
+  },
+  testEmail: () => {
+    const orgId = getCurrentOrgId();
+    return apiClient<{ success: boolean; message: string }>(
+      `/api/v1/admin/organizations/${orgId}/test-email`,
+      {
+        method: "POST",
+      }
+    );
   },
 };
