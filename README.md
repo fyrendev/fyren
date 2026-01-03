@@ -33,7 +33,7 @@ git clone https://github.com/fyrendev/fyren.git
 cd fyren
 
 # Start database and cache
-docker compose -f docker/docker-compose.yml up -d
+docker compose up -d
 
 # Install dependencies
 bun install
