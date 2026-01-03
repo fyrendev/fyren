@@ -123,11 +123,11 @@ jobs:
         run: echo "API uses Bun runtime, no build step needed"
 
       - name: Build Web
-        run: |
-          cd apps/web
-          npm run build
+        working-directory: apps/web
+        run: bun run build
         env:
           API_URL: http://localhost:3001
+          NEXT_PUBLIC_API_URL: http://localhost:3001
 
   # ===================================
   # E2E Tests (on PR only)
