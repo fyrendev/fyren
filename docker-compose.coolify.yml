@@ -132,14 +132,22 @@ services:
       NEXT_PUBLIC_API_URL: ${APP_URL}/api
     labels:
       - "traefik.enable=true"
+      # Default port for any auto-discovered services
+      - "traefik.http.services.web.loadbalancer.server.port=3000"
+      # Our explicit router with high priority
       - "traefik.http.routers.fyren-web.rule=Host(`status.dotly.se`)"
       - "traefik.http.routers.fyren-web.entrypoints=https"
       - "traefik.http.routers.fyren-web.tls=true"
       - "traefik.http.routers.fyren-web.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.fyren-web.service=fyren-web"
-      - "traefik.http.services.fyren-web.loadbalancer.server.port=3000"
-      # High priority to override Coolify's auto-generated routers
+      - "traefik.http.routers.fyren-web.service=web"
       - "traefik.http.routers.fyren-web.priority=1000"
+      # HTTP router for redirect (also high priority)
+      - "traefik.http.routers.fyren-web-http.rule=Host(`status.dotly.se`)"
+      - "traefik.http.routers.fyren-web-http.entrypoints=http"
+      - "traefik.http.routers.fyren-web-http.middlewares=redirect-to-https"
+      - "traefik.http.routers.fyren-web-http.priority=1000"
+      # Redirect middleware
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
     networks:
       - internal
       - coolify
