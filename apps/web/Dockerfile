@@ -79,7 +79,7 @@ ENV HOSTNAME="0.0.0.0"
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://0.0.0.0:3000/ || exit 1
 
 # Start the Next.js server
 CMD ["bun", "run", "server.js"]
