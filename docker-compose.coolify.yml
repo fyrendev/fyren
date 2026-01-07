@@ -5,7 +5,7 @@ services:
   # ===================================
   # PostgreSQL Database
   # ===================================
-  postgres:
+  fyren-postgres:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
@@ -46,14 +46,14 @@ services:
       dockerfile: apps/api/Dockerfile
     restart: unless-stopped
     depends_on:
-      postgres:
+      fyren-postgres:
         condition: service_healthy
       fyren-redis:
         condition: service_healthy
     environment:
       NODE_ENV: production
       PORT: 3001
-      DATABASE_URL: postgres://${POSTGRES_USER:-fyren}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-fyren}
+      DATABASE_URL: postgres://${POSTGRES_USER:-fyren}:${POSTGRES_PASSWORD}@fyren-postgres:5432/${POSTGRES_DB:-fyren}
       REDIS_URL: redis://:${REDIS_PASSWORD}@fyren-redis:6379
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
       BETTER_AUTH_URL: ${APP_URL:?APP_URL is required}
@@ -97,7 +97,7 @@ services:
         condition: service_healthy
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgres://${POSTGRES_USER:-fyren}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-fyren}
+      DATABASE_URL: postgres://${POSTGRES_USER:-fyren}:${POSTGRES_PASSWORD}@fyren-postgres:5432/${POSTGRES_DB:-fyren}
       REDIS_URL: redis://:${REDIS_PASSWORD}@fyren-redis:6379
       RUN_MIGRATIONS: "false"
       EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
