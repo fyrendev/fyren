@@ -70,13 +70,13 @@ services:
     labels:
       - "traefik.enable=true"
       # API routes
-      - "traefik.http.routers.fyren-api.rule=Host(`${APP_DOMAIN:?APP_DOMAIN is required}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.fyren-api.rule=Host(`status.dotly.se`) && PathPrefix(`/api`)"
       - "traefik.http.routers.fyren-api.entrypoints=https"
       - "traefik.http.routers.fyren-api.tls=true"
       - "traefik.http.routers.fyren-api.tls.certresolver=letsencrypt"
       - "traefik.http.services.fyren-api.loadbalancer.server.port=3001"
       # Health endpoint
-      - "traefik.http.routers.fyren-health.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/health`)"
+      - "traefik.http.routers.fyren-health.rule=Host(`status.dotly.se`) && PathPrefix(`/health`)"
       - "traefik.http.routers.fyren-health.entrypoints=https"
       - "traefik.http.routers.fyren-health.tls=true"
       - "traefik.http.routers.fyren-health.tls.certresolver=letsencrypt"
@@ -128,7 +128,7 @@ services:
       NEXT_PUBLIC_API_URL: ${APP_URL}/api
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.fyren-web.rule=Host(`${APP_DOMAIN}`)"
+      - "traefik.http.routers.fyren-web.rule=Host(`status.dotly.se`)"
       - "traefik.http.routers.fyren-web.entrypoints=https"
       - "traefik.http.routers.fyren-web.tls=true"
       - "traefik.http.routers.fyren-web.tls.certresolver=letsencrypt"
