@@ -28,13 +28,10 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
-    # Disable persistence temporarily to avoid stale ACL data
-    command: >
-      sh -c 'redis-server --save "" --appendonly no --requirepass "$${REDIS_PASSWORD}"'
+    # TEMPORARY: hardcoded password to debug env var issues
+    command: redis-server --save "" --appendonly no --requirepass waddup
     healthcheck:
-      test: ["CMD", "sh", "-c", 'redis-cli -a "$${REDIS_PASSWORD}" ping']
+      test: ["CMD", "redis-cli", "-a", "waddup", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
