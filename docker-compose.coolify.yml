@@ -67,23 +67,6 @@ services:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
       SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
-    labels:
-      - "traefik.enable=true"
-      # API routes (priority 100 - highest for most specific paths)
-      - "traefik.http.routers.fyren-api.rule=Host(`status.dotly.se`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.fyren-api.entrypoints=https"
-      - "traefik.http.routers.fyren-api.tls=true"
-      - "traefik.http.routers.fyren-api.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.fyren-api.service=fyren-api"
-      - "traefik.http.routers.fyren-api.priority=2000"
-      - "traefik.http.services.fyren-api.loadbalancer.server.port=3001"
-      # Health endpoint (priority 100 - same as API)
-      - "traefik.http.routers.fyren-health.rule=Host(`status.dotly.se`) && PathPrefix(`/health`)"
-      - "traefik.http.routers.fyren-health.entrypoints=https"
-      - "traefik.http.routers.fyren-health.tls=true"
-      - "traefik.http.routers.fyren-health.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.fyren-health.service=fyren-api"
-      - "traefik.http.routers.fyren-health.priority=2000"
     networks:
       - internal
       - coolify
@@ -130,23 +113,6 @@ services:
       NODE_ENV: production
       API_URL: http://api:3001
       NEXT_PUBLIC_API_URL: ${APP_URL}/api
-    labels:
-      - "traefik.enable=true"
-      # Service definition with explicit port
-      - "traefik.http.services.web.loadbalancer.server.port=3000"
-      # Our main HTTPS router with high priority
-      - "traefik.http.routers.fyren-web.rule=Host(`status.dotly.se`)"
-      - "traefik.http.routers.fyren-web.entrypoints=https"
-      - "traefik.http.routers.fyren-web.tls=true"
-      - "traefik.http.routers.fyren-web.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.fyren-web.service=web"
-      - "traefik.http.routers.fyren-web.priority=10000"
-      # HTTP redirect router
-      - "traefik.http.routers.fyren-web-http.rule=Host(`status.dotly.se`)"
-      - "traefik.http.routers.fyren-web-http.entrypoints=http"
-      - "traefik.http.routers.fyren-web-http.middlewares=fyren-redirect-https"
-      - "traefik.http.routers.fyren-web-http.priority=10000"
-      - "traefik.http.middlewares.fyren-redirect-https.redirectscheme.scheme=https"
     networks:
       - internal
       - coolify
