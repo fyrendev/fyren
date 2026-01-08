@@ -39,6 +39,21 @@ export const auth = betterAuth({
 
   // Trusted origins for CORS
   trustedOrigins: [env.APP_URL],
+
+  // Cross-subdomain cookie configuration
+  // Required when API and web app are on different subdomains (e.g., api.example.com and app.example.com)
+  advanced: {
+    crossSubDomainCookies: {
+      enabled: !!env.COOKIE_DOMAIN,
+      domain: env.COOKIE_DOMAIN, // e.g., ".dotly.se" to share cookies across subdomains
+    },
+    defaultCookieAttributes: {
+      // sameSite "none" is required for cross-origin cookies
+      // Only set when using cross-subdomain setup
+      sameSite: env.COOKIE_DOMAIN ? "none" : "lax",
+      secure: env.NODE_ENV === "production",
+    },
+  },
 });
 
 // Export auth types
