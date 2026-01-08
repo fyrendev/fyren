@@ -169,6 +169,7 @@ services:
       NODE_ENV: production
       API_URL: http://api:3001
       NEXT_PUBLIC_API_URL: ${APP_URL}/api
+      NEXT_PUBLIC_APP_URL: ${APP_URL}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.web.rule=Host(`${APP_DOMAIN}`)"
