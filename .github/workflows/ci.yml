@@ -36,6 +36,43 @@ jobs:
         run: bun run lint
 
   # ===================================
+  # Migration Check
+  # ===================================
+  migrations:
+    name: Check Migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Check migrations are up to date
+        working-directory: packages/db
+        run: |
+          # Generate migrations (won't prompt in CI since there's no TTY)
+          bunx drizzle-kit generate 2>&1 || true
+
+          # Check if any new migration files were created
+          if git status --porcelain | grep -q "drizzle/"; then
+            echo "❌ Schema changes detected without migrations!"
+            echo ""
+            echo "The following migration files would be generated:"
+            git status --porcelain | grep "drizzle/"
+            echo ""
+            echo "Please run 'bun run db:generate' locally and commit the migration files."
+            exit 1
+          fi
+
+          echo "✅ Migrations are up to date with schema"
+
+  # ===================================
   # Unit & Integration Tests
   # ===================================
   test:
@@ -212,7 +249,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     if: github.ref == 'refs/heads/main'
-    needs: [lint, test, build]
+    needs: [lint, test, build, migrations]
     steps:
       - uses: actions/checkout@v4
 
