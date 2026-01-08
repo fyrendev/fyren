@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
-import { getStatus } from "@/lib/api";
+import { getStatus, getDefaultOrg } from "@/lib/api";
 
 interface Props {
-  params: Promise<{ slug: string }>;
   searchParams: Promise<{ theme?: string; style?: string }>;
 }
 
@@ -35,9 +34,16 @@ const STATUS_COLORS: Record<string, { bg: string; dot: string; text: string }> =
   },
 };
 
-export default async function WidgetPage({ params, searchParams }: Props) {
-  const { slug } = await params;
+export default async function WidgetPage({ searchParams }: Props) {
   const { theme = "light", style = "compact" } = await searchParams;
+
+  let slug: string;
+  try {
+    const { organization } = await getDefaultOrg();
+    slug = organization.slug;
+  } catch {
+    notFound();
+  }
 
   let data;
   try {
@@ -112,7 +118,7 @@ export default async function WidgetPage({ params, searchParams }: Props) {
       </head>
       <body>
         <a
-          href={`/${slug}`}
+          href="/"
           target="_blank"
           rel="noopener noreferrer"
           className="widget"

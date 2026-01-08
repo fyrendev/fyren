@@ -1,6 +1,6 @@
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { getStatus, getUptime } from "@/lib/api";
+import { redirect, notFound } from "next/navigation";
+import { getStatus, getUptime, getSetupStatus, getDefaultOrg } from "@/lib/api";
 import { Header } from "@/components/ui/Header";
 import { Footer } from "@/components/ui/Footer";
 import { StatusBanner } from "@/components/status/StatusBanner";
@@ -11,14 +11,15 @@ import { SubscribeForm } from "@/components/subscribe/SubscribeForm";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import Link from "next/link";
 
-interface Props {
-  params: Promise<{ slug: string }>;
-}
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
+export async function generateMetadata(): Promise<Metadata> {
   try {
-    const data = await getStatus(slug);
+    const setupStatus = await getSetupStatus();
+    if (setupStatus.needsSetup) {
+      return { title: "Setup Required" };
+    }
+
+    const { organization } = await getDefaultOrg();
+    const data = await getStatus(organization.slug);
     return {
       title: `${data.organization.name} Status`,
       description: `Current status: ${data.status.description}`,
@@ -32,8 +33,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function StatusPage({ params }: Props) {
-  const { slug } = await params;
+export default async function StatusPage() {
+  // Check if setup is needed
+  const setupStatus = await getSetupStatus();
+  if (setupStatus.needsSetup) {
+    redirect("/setup");
+  }
+
+  // Get the default organization
+  let org;
+  try {
+    const { organization } = await getDefaultOrg();
+    org = organization;
+  } catch {
+    notFound();
+  }
+
+  const slug = org.slug;
 
   let data;
   let uptime;
@@ -92,10 +108,7 @@ export default async function StatusPage({ params }: Props) {
 
           {/* Past Incidents Link */}
           <section className="mt-8">
-            <Link
-              href={`/${slug}/incidents`}
-              className="text-navy-300 hover:text-white transition-colors"
-            >
+            <Link href="/incidents" className="text-navy-300 hover:text-white transition-colors">
               View incident history →
             </Link>
           </section>

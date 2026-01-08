@@ -2,18 +2,17 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { getIncidents, getStatus } from "@/lib/api";
+import { getIncidents, getStatus, getDefaultOrg } from "@/lib/api";
 import { IncidentList } from "@/components/incidents/IncidentList";
 
 interface Props {
-  params: Promise<{ slug: string }>;
   searchParams: Promise<{ page?: string }>;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
+export async function generateMetadata(): Promise<Metadata> {
   try {
-    const data = await getStatus(slug);
+    const { organization } = await getDefaultOrg();
+    const data = await getStatus(organization.slug);
     return {
       title: `Incident History | ${data.organization.name} Status`,
       description: `Past incidents and status updates for ${data.organization.name}`,
@@ -23,12 +22,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function IncidentsPage({ params, searchParams }: Props) {
-  const { slug } = await params;
+export default async function IncidentsPage({ searchParams }: Props) {
   const { page: pageParam } = await searchParams;
   const page = parseInt(pageParam || "1", 10);
   const limit = 10;
   const offset = (page - 1) * limit;
+
+  let slug: string;
+  try {
+    const { organization } = await getDefaultOrg();
+    slug = organization.slug;
+  } catch {
+    notFound();
+  }
 
   let incidents;
   let pagination;
@@ -51,7 +57,7 @@ export default async function IncidentsPage({ params, searchParams }: Props) {
     <div className="min-h-screen">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <Link
-          href={`/${slug}`}
+          href="/"
           className="inline-flex items-center gap-2 text-navy-400 hover:text-white mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -71,7 +77,7 @@ export default async function IncidentsPage({ params, searchParams }: Props) {
               <div className="flex justify-center gap-2 mt-8">
                 {page > 1 && (
                   <Link
-                    href={`/${slug}/incidents?page=${page - 1}`}
+                    href={`/incidents?page=${page - 1}`}
                     className="px-4 py-2 bg-navy-800 rounded hover:bg-navy-700"
                   >
                     Previous
@@ -82,7 +88,7 @@ export default async function IncidentsPage({ params, searchParams }: Props) {
                 </span>
                 {page < totalPages && (
                   <Link
-                    href={`/${slug}/incidents?page=${page + 1}`}
+                    href={`/incidents?page=${page + 1}`}
                     className="px-4 py-2 bg-navy-800 rounded hover:bg-navy-700"
                   >
                     Next

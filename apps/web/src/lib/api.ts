@@ -64,3 +64,30 @@ export async function getIncident(slug: string, incidentId: string): Promise<Inc
 export async function getMaintenance(slug: string): Promise<MaintenanceResponse> {
   return fetchAPI<MaintenanceResponse>(`/api/v1/status/${slug}/maintenance`);
 }
+
+// Setup and default org helpers
+
+export interface SetupStatusResponse {
+  needsSetup: boolean;
+  hasUsers: boolean;
+  hasOrganization: boolean;
+}
+
+export interface DefaultOrgResponse {
+  organization: {
+    name: string;
+    slug: string;
+    logoUrl: string | null;
+    brandColor: string | null;
+  };
+}
+
+export async function getSetupStatus(): Promise<SetupStatusResponse> {
+  return fetchAPI<SetupStatusResponse>("/api/v1/setup/status", {
+    next: { revalidate: 0 }, // Always fresh for setup status
+  });
+}
+
+export async function getDefaultOrg(): Promise<DefaultOrgResponse> {
+  return fetchAPI<DefaultOrgResponse>("/api/v1/org/default");
+}

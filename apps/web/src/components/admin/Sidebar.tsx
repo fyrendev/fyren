@@ -17,7 +17,6 @@ import {
   UserCog,
   ExternalLink,
 } from "lucide-react";
-import { useOrganization } from "@/contexts/OrganizationContext";
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -35,7 +34,6 @@ const navigation = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { organization } = useOrganization();
 
   return (
     <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
@@ -77,7 +75,7 @@ export function Sidebar() {
         {/* View Status Page Link */}
         <div className="p-3 border-t border-navy-800">
           <Link
-            href={organization ? `/${organization.slug}` : "/"}
+            href="/"
             target="_blank"
             className="flex items-center gap-2 px-3 py-2 text-sm text-navy-400 hover:text-white transition-colors"
           >

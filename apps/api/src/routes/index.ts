@@ -11,6 +11,7 @@ import { subscribeRoutes } from "./public/subscribe";
 import { rssRoutes } from "./public/rss";
 import { badgeRoutes } from "./public/badge";
 import { widgetRoutes } from "./public/widget";
+import { setupRoutes as publicSetupRoutes } from "./public/setup";
 
 // Admin routes
 import { adminOrganizations } from "./admin/organizations";
@@ -44,6 +45,7 @@ export function setupRoutes(app: Hono) {
   });
 
   // Public routes (no auth)
+  app.route("/api/v1/setup", publicSetupRoutes);
   app.route("/api/v1/org", publicOrganizations);
   app.route("/api/v1/org", publicComponents);
   app.route("/api/v1/status", publicStatus);

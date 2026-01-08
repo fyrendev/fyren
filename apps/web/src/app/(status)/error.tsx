@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
 
 interface Props {
   error: Error;
@@ -20,20 +19,12 @@ export default function Error({ error, reset }: Props) {
         <p className="text-navy-400 mb-6">
           We couldn't load the status page. Please try again later.
         </p>
-        <div className="flex gap-4 justify-center">
-          <button
-            onClick={reset}
-            className="px-6 py-2 bg-white text-navy-900 font-medium rounded-lg hover:bg-navy-100 transition-colors"
-          >
-            Try again
-          </button>
-          <Link
-            href="/"
-            className="px-6 py-2 bg-navy-800 text-white font-medium rounded-lg hover:bg-navy-700 transition-colors"
-          >
-            Go home
-          </Link>
-        </div>
+        <button
+          onClick={reset}
+          className="px-6 py-2 bg-white text-navy-900 font-medium rounded-lg hover:bg-navy-100 transition-colors"
+        >
+          Try again
+        </button>
       </div>
     </div>
   );

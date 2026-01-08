@@ -2,13 +2,13 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { getIncident, getStatus } from "@/lib/api";
+import { getIncident, getStatus, getDefaultOrg } from "@/lib/api";
 import { IncidentTimeline } from "@/components/incidents/IncidentTimeline";
 import { Badge } from "@/components/ui/Badge";
 import { formatDateTime } from "@/lib/utils";
 
 interface Props {
-  params: Promise<{ slug: string; id: string }>;
+  params: Promise<{ id: string }>;
 }
 
 const severityColors: Record<string, string> = {
@@ -25,8 +25,10 @@ const statusColors: Record<string, string> = {
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug, id } = await params;
+  const { id } = await params;
   try {
+    const { organization } = await getDefaultOrg();
+    const slug = organization.slug;
     const [statusData, incidentData] = await Promise.all([getStatus(slug), getIncident(slug, id)]);
     return {
       title: `${incidentData.incident.title} | ${statusData.organization.name} Status`,
@@ -38,7 +40,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function IncidentPage({ params }: Props) {
-  const { slug, id } = await params;
+  const { id } = await params;
+
+  let slug: string;
+  try {
+    const { organization } = await getDefaultOrg();
+    slug = organization.slug;
+  } catch {
+    notFound();
+  }
 
   let incident;
 
@@ -53,7 +63,7 @@ export default async function IncidentPage({ params }: Props) {
     <div className="min-h-screen">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <Link
-          href={`/${slug}`}
+          href="/"
           className="inline-flex items-center gap-2 text-navy-400 hover:text-white mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
