@@ -124,7 +124,7 @@ services:
   worker:
     build:
       context: .
-      dockerfile: apps/api/Dockerfile
+      dockerfile: apps/api/Dockerfile.worker
     container_name: fyren-worker
     restart: unless-stopped
     depends_on:
@@ -145,7 +145,6 @@ services:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
       SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
-    command: ["bun", "run", "dist/worker.js"]
     networks:
       - fyren-network
 
