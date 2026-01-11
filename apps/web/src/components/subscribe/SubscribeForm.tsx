@@ -2,11 +2,7 @@
 
 import { useState } from "react";
 
-interface Props {
-  slug: string;
-}
-
-export function SubscribeForm({ slug }: Props) {
+export function SubscribeForm() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -16,7 +12,7 @@ export function SubscribeForm({ slug }: Props) {
     setStatus("loading");
 
     try {
-      const res = await fetch(`/api/v1/status/${slug}/subscribe`, {
+      const res = await fetch(`/api/v1/status/subscribe`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -37,11 +33,9 @@ export function SubscribeForm({ slug }: Props) {
   }
 
   return (
-    <div className="bg-navy-900 border border-navy-800 rounded-lg p-6">
+    <div className="theme-card p-6">
       <h3 className="font-medium mb-2">Subscribe to updates</h3>
-      <p className="text-sm text-navy-400 mb-4">
-        Get notified when we create or resolve incidents.
-      </p>
+      <p className="text-sm theme-muted mb-4">Get notified when we create or resolve incidents.</p>
 
       {status === "success" ? (
         <p className="text-green-400">{message}</p>
@@ -53,14 +47,13 @@ export function SubscribeForm({ slug }: Props) {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
             required
-            className="flex-1 px-4 py-2 bg-navy-800 border border-navy-700 rounded-lg
-                       focus:outline-none focus:border-navy-500 placeholder-navy-500"
+            className="flex-1 px-4 py-2 theme-input rounded-lg"
           />
           <button
             type="submit"
             disabled={status === "loading"}
-            className="px-6 py-2 bg-white text-navy-900 font-medium rounded-lg
-                       hover:bg-navy-100 disabled:opacity-50 transition-colors"
+            className="px-6 py-2 brand-button font-medium rounded-lg
+                       disabled:opacity-50 transition-colors"
           >
             {status === "loading" ? "Subscribing..." : "Subscribe"}
           </button>

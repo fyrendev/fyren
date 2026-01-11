@@ -43,16 +43,18 @@ export const auth = betterAuth({
   // Cross-subdomain cookie configuration
   // Required when API and web app are on different subdomains (e.g., api.example.com and app.example.com)
   advanced: {
-    crossSubDomainCookies: {
-      enabled: !!env.COOKIE_DOMAIN,
-      domain: env.COOKIE_DOMAIN, // e.g., ".dotly.se" to share cookies across subdomains
-    },
-    defaultCookieAttributes: {
-      // sameSite "none" is required for cross-origin cookies
-      // Only set when using cross-subdomain setup
-      sameSite: env.COOKIE_DOMAIN ? "none" : "lax",
-      secure: env.NODE_ENV === "production",
-    },
+    // Only enable cross-subdomain cookies when COOKIE_DOMAIN is set
+    ...(env.COOKIE_DOMAIN && {
+      crossSubDomainCookies: {
+        enabled: true,
+        domain: env.COOKIE_DOMAIN, // e.g., ".dotly.se" to share cookies across subdomains
+      },
+      defaultCookieAttributes: {
+        // sameSite "none" is required for cross-origin cookies
+        sameSite: "none" as const,
+        secure: true, // required when sameSite is "none"
+      },
+    }),
   },
 });
 

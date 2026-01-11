@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import { getStatus } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
+
 interface Props {
-  params: Promise<{ slug: string }>;
   searchParams: Promise<{ theme?: string; style?: string }>;
 }
 
@@ -35,13 +36,12 @@ const STATUS_COLORS: Record<string, { bg: string; dot: string; text: string }> =
   },
 };
 
-export default async function WidgetPage({ params, searchParams }: Props) {
-  const { slug } = await params;
+export default async function WidgetPage({ searchParams }: Props) {
   const { theme = "light", style = "compact" } = await searchParams;
 
   let data;
   try {
-    data = await getStatus(slug);
+    data = await getStatus();
   } catch {
     notFound();
   }
@@ -100,7 +100,7 @@ export default async function WidgetPage({ params, searchParams }: Props) {
               function sendHeight() {
                 var height = document.body.scrollHeight;
                 window.parent.postMessage(
-                  JSON.stringify({ type: 'fyren-resize', slug: '${slug}', height: height }),
+                  JSON.stringify({ type: 'fyren-resize', height: height }),
                   '*'
                 );
               }
@@ -112,7 +112,7 @@ export default async function WidgetPage({ params, searchParams }: Props) {
       </head>
       <body>
         <a
-          href={`/${slug}`}
+          href="/"
           target="_blank"
           rel="noopener noreferrer"
           className="widget"

@@ -1,27 +1,32 @@
 import { Hono } from "hono";
-import { db, eq, organizations } from "@fyrendev/db";
+import { db, asc, organizations } from "@fyrendev/db";
 import { env } from "../../env";
 import { widgetCorsHeaders, cacheHeaders } from "../../middleware/security";
 import { badgeRateLimit } from "../../middleware/rateLimit";
 
 export const widgetRoutes = new Hono();
 
+// Helper to get the organization
+async function getOrganization() {
+  const [org] = await db
+    .select()
+    .from(organizations)
+    .orderBy(asc(organizations.createdAt))
+    .limit(1);
+  return org;
+}
+
 // Apply rate limiting, CORS, and caching
 widgetRoutes.use("*", badgeRateLimit);
 widgetRoutes.use("*", widgetCorsHeaders());
 widgetRoutes.use("*", cacheHeaders(3600)); // Cache for 1 hour
 
-// GET /api/v1/status/:slug/widget.js - Widget JavaScript loader
-widgetRoutes.get("/:slug/widget.js", async (c) => {
-  const slug = c.req.param("slug");
+// GET /api/v1/status/widget.js - Widget JavaScript loader
+widgetRoutes.get("/widget.js", async (_c) => {
   const appUrl = env.APP_URL || "http://localhost:3000";
 
   // Verify org exists
-  const [org] = await db
-    .select({ id: organizations.id, name: organizations.name })
-    .from(organizations)
-    .where(eq(organizations.slug, slug))
-    .limit(1);
+  const org = await getOrganization();
 
   if (!org) {
     return new Response("// Organization not found", {
@@ -37,10 +42,10 @@ widgetRoutes.get("/:slug/widget.js", async (c) => {
  *
  * Usage:
  * 1. Add this script to your page:
- *    <script src="${appUrl}/api/v1/status/${slug}/widget.js" async></script>
+ *    <script src="${appUrl}/api/v1/status/widget.js" async></script>
  *
  * 2. Add a container where you want the widget:
- *    <div data-fyren-widget data-slug="${slug}"></div>
+ *    <div data-fyren-widget></div>
  *
  * Options (data attributes):
  * - data-theme="light|dark" - Color theme
@@ -50,12 +55,11 @@ widgetRoutes.get("/:slug/widget.js", async (c) => {
   'use strict';
 
   var FYREN_URL = '${appUrl}';
-  var FYREN_SLUG = '${slug}';
 
   // Widget configuration
   var config = {
-    widgetUrl: FYREN_URL + '/' + FYREN_SLUG + '/widget',
-    statusUrl: FYREN_URL + '/' + FYREN_SLUG,
+    widgetUrl: FYREN_URL + '/widget',
+    statusUrl: FYREN_URL,
     defaultHeight: 80,
     defaultStyle: 'compact'
   };
@@ -81,7 +85,7 @@ widgetRoutes.get("/:slug/widget.js", async (c) => {
       try {
         var data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
 
-        if (data.type === 'fyren-resize' && data.slug === FYREN_SLUG) {
+        if (data.type === 'fyren-resize') {
           iframe.style.height = data.height + 'px';
         }
       } catch (e) {
@@ -165,17 +169,12 @@ widgetRoutes.get("/:slug/widget.js", async (c) => {
   });
 });
 
-// GET /api/v1/status/:slug/embed.html - Embed code snippet page
-widgetRoutes.get("/:slug/embed.html", async (c) => {
-  const slug = c.req.param("slug");
+// GET /api/v1/status/embed.html - Embed code snippet page
+widgetRoutes.get("/embed.html", async (c) => {
   const appUrl = env.APP_URL || "http://localhost:3000";
 
   // Verify org exists
-  const [org] = await db
-    .select({ id: organizations.id, name: organizations.name })
-    .from(organizations)
-    .where(eq(organizations.slug, slug))
-    .limit(1);
+  const org = await getOrganization();
 
   if (!org) {
     return c.text("Organization not found", 404);
@@ -203,12 +202,12 @@ widgetRoutes.get("/:slug/embed.html", async (c) => {
     <h2>Widget</h2>
     <p>Add the following code to your website:</p>
     <div class="code-block">
-      <code>&lt;script src="${appUrl}/api/v1/status/${slug}/widget.js" async&gt;&lt;/script&gt;<br>
-&lt;div data-fyren-widget data-slug="${slug}"&gt;&lt;/div&gt;</code>
+      <code>&lt;script src="${appUrl}/api/v1/status/widget.js" async&gt;&lt;/script&gt;<br>
+&lt;div data-fyren-widget&gt;&lt;/div&gt;</code>
     </div>
     <h3>Preview</h3>
     <div class="preview">
-      <div data-fyren-widget data-slug="${slug}"></div>
+      <div data-fyren-widget></div>
     </div>
   </div>
 
@@ -217,23 +216,23 @@ widgetRoutes.get("/:slug/embed.html", async (c) => {
     <p>Add a status badge to your README or website:</p>
     <h3>Markdown</h3>
     <div class="code-block">
-      <code>[![Status](${appUrl}/api/v1/status/${slug}/badge.svg)](${appUrl}/${slug})</code>
+      <code>[![Status](${appUrl}/api/v1/status/badge.svg)](${appUrl})</code>
     </div>
     <h3>HTML</h3>
     <div class="code-block">
-      <code>&lt;a href="${appUrl}/${slug}"&gt;<br>
-  &lt;img src="${appUrl}/api/v1/status/${slug}/badge.svg" alt="Status"&gt;<br>
+      <code>&lt;a href="${appUrl}"&gt;<br>
+  &lt;img src="${appUrl}/api/v1/status/badge.svg" alt="Status"&gt;<br>
 &lt;/a&gt;</code>
     </div>
     <h3>Preview</h3>
     <div class="preview">
-      <a href="${appUrl}/${slug}">
-        <img src="${appUrl}/api/v1/status/${slug}/badge.svg" alt="Status">
+      <a href="${appUrl}">
+        <img src="${appUrl}/api/v1/status/badge.svg" alt="Status">
       </a>
     </div>
   </div>
 
-  <script src="${appUrl}/api/v1/status/${slug}/widget.js" async></script>
+  <script src="${appUrl}/api/v1/status/widget.js" async></script>
 </body>
 </html>`;
 

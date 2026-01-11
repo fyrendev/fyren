@@ -23,6 +23,9 @@ export interface Organization {
   slug: string;
   logoUrl: string | null;
   brandColor: string | null;
+  accentColor: string | null;
+  backgroundColor: string | null;
+  textColor: string | null;
   websiteUrl: string | null;
 }
 

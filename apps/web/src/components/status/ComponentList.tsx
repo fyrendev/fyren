@@ -4,10 +4,9 @@ import { ComponentRow } from "./ComponentRow";
 interface Props {
   components: Component[];
   uptimeData: ComponentUptime[];
-  slug: string;
 }
 
-export function ComponentList({ components, uptimeData, slug }: Props) {
+export function ComponentList({ components, uptimeData }: Props) {
   // Group by group field
   const grouped = components.reduce(
     (acc, component) => {
@@ -22,11 +21,16 @@ export function ComponentList({ components, uptimeData, slug }: Props) {
   const uptimeMap = new Map(uptimeData.map((u) => [u.id, u.uptime]));
 
   return (
-    <div className="bg-navy-900 rounded-lg border border-navy-800 overflow-hidden">
+    <div className="theme-card overflow-hidden">
       {Object.entries(grouped).map(([group, items]) => (
         <div key={group}>
           {group !== "default" && (
-            <div className="px-4 py-2 bg-navy-800 text-sm font-medium text-navy-300">{group}</div>
+            <div
+              className="px-4 py-2 text-sm font-medium theme-muted"
+              style={{ backgroundColor: "var(--input-bg)" }}
+            >
+              {group}
+            </div>
           )}
           {items
             .sort((a, b) => a.order - b.order)
@@ -35,7 +39,6 @@ export function ComponentList({ components, uptimeData, slug }: Props) {
                 key={component.id}
                 component={component}
                 uptime={uptimeMap.get(component.id)}
-                slug={slug}
               />
             ))}
         </div>

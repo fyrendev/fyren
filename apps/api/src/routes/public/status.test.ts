@@ -16,7 +16,7 @@ describe("Public Status API", () => {
 
   const app = createTestApp();
 
-  describe("GET /api/v1/status/:slug", () => {
+  describe("GET /api/v1/status", () => {
     test("returns organization status summary", async () => {
       const org = await createTestOrganization({
         slug: "acme",
@@ -28,7 +28,7 @@ describe("Public Status API", () => {
         status: "operational",
       });
 
-      const res = await app.request("/api/v1/status/acme");
+      const res = await app.request("/api/v1/status");
 
       expect(res.status).toBe(200);
       const data = await res.json();
@@ -37,8 +37,8 @@ describe("Public Status API", () => {
       expect(data.components).toHaveLength(2);
     });
 
-    test("returns 404 for non-existent organization", async () => {
-      const res = await app.request("/api/v1/status/nonexistent");
+    test("returns 404 when no organization configured", async () => {
+      const res = await app.request("/api/v1/status");
 
       expect(res.status).toBe(404);
     });
@@ -48,7 +48,7 @@ describe("Public Status API", () => {
       await createTestComponent(org.id, { name: "Public", isPublic: true });
       await createTestComponent(org.id, { name: "Private", isPublic: false });
 
-      const res = await app.request("/api/v1/status/test-org");
+      const res = await app.request("/api/v1/status");
 
       expect(res.status).toBe(200);
       const data = await res.json();
@@ -57,7 +57,7 @@ describe("Public Status API", () => {
     });
   });
 
-  describe("GET /api/v1/status/:slug/components", () => {
+  describe("GET /api/v1/status/components", () => {
     test("returns component list with status", async () => {
       const org = await createTestOrganization({ slug: "test-org" });
       await createTestComponent(org.id, {
@@ -71,7 +71,7 @@ describe("Public Status API", () => {
         displayOrder: 2,
       });
 
-      const res = await app.request("/api/v1/status/test-org/components");
+      const res = await app.request("/api/v1/status/components");
 
       expect(res.status).toBe(200);
       const data = await res.json();
@@ -86,7 +86,7 @@ describe("Public Status API", () => {
       await createTestComponent(org.id, { name: "First", displayOrder: 1 });
       await createTestComponent(org.id, { name: "Second", displayOrder: 2 });
 
-      const res = await app.request("/api/v1/status/test-org/components");
+      const res = await app.request("/api/v1/status/components");
 
       expect(res.status).toBe(200);
       const data = await res.json();
@@ -96,7 +96,7 @@ describe("Public Status API", () => {
     });
   });
 
-  describe("GET /api/v1/status/:slug/incidents", () => {
+  describe("GET /api/v1/status/incidents", () => {
     test("returns recent incidents", async () => {
       const org = await createTestOrganization({ slug: "test-org" });
       const component = await createTestComponent(org.id);
@@ -111,7 +111,7 @@ describe("Public Status API", () => {
       });
       await createTestIncidentComponent(incident.id, component.id);
 
-      const res = await app.request("/api/v1/status/test-org/incidents");
+      const res = await app.request("/api/v1/status/incidents");
 
       expect(res.status).toBe(200);
       const data = await res.json();
@@ -124,7 +124,7 @@ describe("Public Status API", () => {
     test("returns empty array when no incidents", async () => {
       await createTestOrganization({ slug: "test-org" });
 
-      const res = await app.request("/api/v1/status/test-org/incidents");
+      const res = await app.request("/api/v1/status/incidents");
 
       expect(res.status).toBe(200);
       const data = await res.json();
@@ -132,7 +132,7 @@ describe("Public Status API", () => {
     });
   });
 
-  describe("GET /api/v1/status/:slug/incidents/:id", () => {
+  describe("GET /api/v1/status/incidents/:id", () => {
     test("returns incident details with updates", async () => {
       const org = await createTestOrganization({ slug: "test-org" });
       const incident = await createTestIncident(org.id, {
@@ -147,7 +147,7 @@ describe("Public Status API", () => {
         status: "identified",
       });
 
-      const res = await app.request(`/api/v1/status/test-org/incidents/${incident.id}`);
+      const res = await app.request(`/api/v1/status/incidents/${incident.id}`);
 
       expect(res.status).toBe(200);
       const data = await res.json();
@@ -159,14 +159,14 @@ describe("Public Status API", () => {
       await createTestOrganization({ slug: "test-org" });
 
       const res = await app.request(
-        "/api/v1/status/test-org/incidents/00000000-0000-0000-0000-000000000000"
+        "/api/v1/status/incidents/00000000-0000-0000-0000-000000000000"
       );
 
       expect(res.status).toBe(404);
     });
   });
 
-  describe("GET /api/v1/status/:slug/maintenance", () => {
+  describe("GET /api/v1/status/maintenance", () => {
     test("returns upcoming maintenance windows", async () => {
       const org = await createTestOrganization({ slug: "test-org" });
       const component = await createTestComponent(org.id);
@@ -176,7 +176,7 @@ describe("Public Status API", () => {
       });
       await createTestMaintenanceComponent(maint.id, component.id);
 
-      const res = await app.request("/api/v1/status/test-org/maintenance");
+      const res = await app.request("/api/v1/status/maintenance");
 
       expect(res.status).toBe(200);
       const data = await res.json();
@@ -187,7 +187,7 @@ describe("Public Status API", () => {
     test("returns empty array when no maintenance scheduled", async () => {
       await createTestOrganization({ slug: "test-org" });
 
-      const res = await app.request("/api/v1/status/test-org/maintenance");
+      const res = await app.request("/api/v1/status/maintenance");
 
       expect(res.status).toBe(200);
       const data = await res.json();

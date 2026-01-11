@@ -1,6 +1,6 @@
 {
-  "id": "85fbc053-c271-4cb4-8779-95774e972bdc",
-  "prevId": "b53be1c4-2be3-418f-9ee3-cfcb4c3a2969",
+  "id": "06044c76-6f62-46c7-b2f5-66bd3ddb9d13",
+  "prevId": "5d53669b-71e1-430a-a666-ba4f639b3a2a",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -451,9 +451,45 @@
           "primaryKey": false,
           "notNull": false
         },
+        "logo_light_url": {
+          "name": "logo_light_url",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "favicon_url": {
+          "name": "favicon_url",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "brand_color": {
           "name": "brand_color",
           "type": "varchar(7)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "accent_color": {
+          "name": "accent_color",
+          "type": "varchar(7)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "background_color": {
+          "name": "background_color",
+          "type": "varchar(7)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "text_color": {
+          "name": "text_color",
+          "type": "varchar(7)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "custom_css": {
+          "name": "custom_css",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -463,12 +499,62 @@
           "primaryKey": false,
           "notNull": false
         },
+        "custom_domain_verified": {
+          "name": "custom_domain_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "meta_title": {
+          "name": "meta_title",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "meta_description": {
+          "name": "meta_description",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "twitter_handle": {
+          "name": "twitter_handle",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "support_url": {
+          "name": "support_url",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "timezone": {
           "name": "timezone",
           "type": "varchar(50)",
           "primaryKey": false,
           "notNull": true,
           "default": "'UTC'"
+        },
+        "email_provider": {
+          "name": "email_provider",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'console'"
+        },
+        "email_from_address": {
+          "name": "email_from_address",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email_config": {
+          "name": "email_config",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -986,6 +1072,20 @@
           "notNull": true,
           "default": true
         },
+        "create_incident_on_failure": {
+          "name": "create_incident_on_failure",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "auto_resolve_incident": {
+          "name": "auto_resolve_incident",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
         "last_checked_at": {
           "name": "last_checked_at",
           "type": "timestamp",
@@ -1202,6 +1302,12 @@
           "notNull": true,
           "default": "'minor'"
         },
+        "triggered_by_monitor_id": {
+          "name": "triggered_by_monitor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "started_at": {
           "name": "started_at",
           "type": "timestamp",
@@ -1275,6 +1381,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "incidents_triggered_by_monitor_id_idx": {
+          "name": "incidents_triggered_by_monitor_id_idx",
+          "columns": [
+            {
+              "expression": "triggered_by_monitor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -1289,6 +1410,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "incidents_triggered_by_monitor_id_monitors_id_fk": {
+          "name": "incidents_triggered_by_monitor_id_monitors_id_fk",
+          "tableFrom": "incidents",
+          "tableTo": "monitors",
+          "columnsFrom": [
+            "triggered_by_monitor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
@@ -1327,6 +1461,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -1380,6 +1520,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "incident_updates_created_by_users_id_fk": {
+          "name": "incident_updates_created_by_users_id_fk",
+          "tableFrom": "incident_updates",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
@@ -1449,6 +1602,109 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.incident_templates": {
+      "name": "incident_templates",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar(200)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "severity": {
+          "name": "severity",
+          "type": "incident_severity",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'major'"
+        },
+        "initial_message": {
+          "name": "initial_message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "default_component_ids": {
+          "name": "default_component_ids",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'[]'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "incident_templates_organization_id_idx": {
+          "name": "incident_templates_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "incident_templates_organization_id_organizations_id_fk": {
+          "name": "incident_templates_organization_id_organizations_id_fk",
+          "tableFrom": "incident_templates",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.maintenances": {
       "name": "maintenances",
       "schema": "",
@@ -1486,27 +1742,47 @@
           "notNull": true,
           "default": "'scheduled'"
         },
-        "scheduled_start": {
-          "name": "scheduled_start",
+        "scheduled_start_at": {
+          "name": "scheduled_start_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true
         },
-        "scheduled_end": {
-          "name": "scheduled_end",
+        "scheduled_end_at": {
+          "name": "scheduled_end_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true
         },
-        "actual_start": {
-          "name": "actual_start",
+        "started_at": {
+          "name": "started_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },
-        "actual_end": {
-          "name": "actual_end",
+        "completed_at": {
+          "name": "completed_at",
           "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "auto_start": {
+          "name": "auto_start",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "auto_complete": {
+          "name": "auto_complete",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -1556,11 +1832,11 @@
           "method": "btree",
           "with": {}
         },
-        "maintenances_scheduled_start_idx": {
-          "name": "maintenances_scheduled_start_idx",
+        "maintenances_scheduled_start_at_idx": {
+          "name": "maintenances_scheduled_start_at_idx",
           "columns": [
             {
-              "expression": "scheduled_start",
+              "expression": "scheduled_start_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1585,6 +1861,19 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
+        },
+        "maintenances_created_by_users_id_fk": {
+          "name": "maintenances_created_by_users_id_fk",
+          "tableFrom": "maintenances",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1608,6 +1897,13 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {},
@@ -1653,6 +1949,110 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.subscriber_groups": {
+      "name": "subscriber_groups",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "component_ids": {
+          "name": "component_ids",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'null'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "subscriber_groups_organization_id_idx": {
+          "name": "subscriber_groups_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "subscriber_groups_name_idx": {
+          "name": "subscriber_groups_name_idx",
+          "columns": [
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "subscriber_groups_organization_id_organizations_id_fk": {
+          "name": "subscriber_groups_organization_id_organizations_id_fk",
+          "tableFrom": "subscriber_groups",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.subscribers": {
       "name": "subscribers",
       "schema": "",
@@ -1672,12 +2072,18 @@
         },
         "email": {
           "name": "email",
-          "type": "varchar(255)",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "is_verified": {
-          "name": "is_verified",
+        "group_id": {
+          "name": "group_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "verified": {
+          "name": "verified",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
@@ -1685,22 +2091,56 @@
         },
         "verification_token": {
           "name": "verification_token",
-          "type": "varchar(64)",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "subscribed_at": {
-          "name": "subscribed_at",
+        "verified_at": {
+          "name": "verified_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unsubscribe_token": {
+          "name": "unsubscribe_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "component_ids": {
+          "name": "component_ids",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'null'::jsonb"
+        },
+        "notify_on_incident": {
+          "name": "notify_on_incident",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "notify_on_maintenance": {
+          "name": "notify_on_maintenance",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         },
-        "unsubscribed_at": {
-          "name": "unsubscribed_at",
+        "updated_at": {
+          "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {
@@ -1733,6 +2173,51 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "subscribers_group_id_idx": {
+          "name": "subscribers_group_id_idx",
+          "columns": [
+            {
+              "expression": "group_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "subscribers_verification_token_idx": {
+          "name": "subscribers_verification_token_idx",
+          "columns": [
+            {
+              "expression": "verification_token",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "subscribers_unsubscribe_token_idx": {
+          "name": "subscribers_unsubscribe_token_idx",
+          "columns": [
+            {
+              "expression": "unsubscribe_token",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -1747,6 +2232,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "subscribers_group_id_subscriber_groups_id_fk": {
+          "name": "subscribers_group_id_subscriber_groups_id_fk",
+          "tableFrom": "subscribers",
+          "tableTo": "subscriber_groups",
+          "columnsFrom": [
+            "group_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
@@ -1784,13 +2282,7 @@
         },
         "name": {
           "name": "name",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "url": {
-          "name": "url",
-          "type": "varchar(2000)",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -1801,18 +2293,71 @@
           "primaryKey": false,
           "notNull": true
         },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "secret": {
           "name": "secret",
-          "type": "varchar(255)",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "is_active": {
-          "name": "is_active",
+        "notify_on_incident": {
+          "name": "notify_on_incident",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
           "default": true
+        },
+        "notify_on_maintenance": {
+          "name": "notify_on_maintenance",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "notify_on_component_change": {
+          "name": "notify_on_component_change",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "component_ids": {
+          "name": "component_ids",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'null'::jsonb"
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "last_triggered_at": {
+          "name": "last_triggered_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error": {
+          "name": "last_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "consecutive_failures": {
+          "name": "consecutive_failures",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
         },
         "created_at": {
           "name": "created_at",
@@ -1835,6 +2380,21 @@
           "columns": [
             {
               "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "webhook_endpoints_enabled_idx": {
+          "name": "webhook_endpoints_enabled_idx",
+          "columns": [
+            {
+              "expression": "enabled",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1994,27 +2554,8 @@
         },
         "type": {
           "name": "type",
-          "type": "notification_type",
+          "type": "notification_delivery_type",
           "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reference_id": {
-          "name": "reference_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "channel": {
-          "name": "channel",
-          "type": "notification_channel",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "recipient": {
-          "name": "recipient",
-          "type": "varchar(500)",
           "primaryKey": false,
           "notNull": true
         },
@@ -2026,15 +2567,39 @@
           "notNull": true,
           "default": "'pending'"
         },
-        "sent_at": {
-          "name": "sent_at",
-          "type": "timestamp",
+        "event": {
+          "name": "event",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity_type": {
+          "name": "entity_type",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "error_message": {
-          "name": "error_message",
-          "type": "varchar(1000)",
+        "entity_id": {
+          "name": "entity_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recipient": {
+          "name": "recipient",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payload": {
+          "name": "payload",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -2044,6 +2609,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "sent_at": {
+          "name": "sent_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -2062,11 +2633,11 @@
           "method": "btree",
           "with": {}
         },
-        "notification_logs_reference_id_idx": {
-          "name": "notification_logs_reference_id_idx",
+        "notification_logs_entity_id_idx": {
+          "name": "notification_logs_entity_id_idx",
           "columns": [
             {
-              "expression": "reference_id",
+              "expression": "entity_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2082,6 +2653,36 @@
           "columns": [
             {
               "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "notification_logs_event_idx": {
+          "name": "notification_logs_event_idx",
+          "columns": [
+            {
+              "expression": "event",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "notification_logs_created_at_idx": {
+          "name": "notification_logs_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2160,7 +2761,8 @@
       "values": [
         "scheduled",
         "in_progress",
-        "completed"
+        "completed",
+        "cancelled"
       ]
     },
     "public.monitor_result_status": {
@@ -2180,13 +2782,11 @@
         "ssl_expiry"
       ]
     },
-    "public.notification_channel": {
-      "name": "notification_channel",
+    "public.notification_delivery_type": {
+      "name": "notification_delivery_type",
       "schema": "public",
       "values": [
         "email",
-        "slack",
-        "discord",
         "webhook"
       ]
     },
@@ -2197,15 +2797,6 @@
         "pending",
         "sent",
         "failed"
-      ]
-    },
-    "public.notification_type": {
-      "name": "notification_type",
-      "schema": "public",
-      "values": [
-        "incident",
-        "maintenance",
-        "status_change"
       ]
     },
     "public.org_role": {

@@ -27,7 +27,10 @@ export function IncidentTimeline({ updates }: Props) {
         <div key={update.id} className="relative pl-6">
           {/* Timeline line */}
           {index < updates.length - 1 && (
-            <div className="absolute left-[7px] top-6 bottom-0 w-0.5 bg-navy-700" />
+            <div
+              className="absolute left-[7px] top-6 bottom-0 w-0.5"
+              style={{ backgroundColor: "var(--card-border)" }}
+            />
           )}
 
           {/* Timeline dot */}
@@ -38,9 +41,9 @@ export function IncidentTimeline({ updates }: Props) {
           <div>
             <div className="flex items-center gap-2">
               <Badge className={statusBadgeColors[update.status]}>{update.status}</Badge>
-              <span className="text-sm text-navy-400">{formatDateTime(update.createdAt)}</span>
+              <span className="text-sm theme-muted">{formatDateTime(update.createdAt)}</span>
             </div>
-            <p className="mt-2 text-navy-200">{update.message}</p>
+            <p className="mt-2">{update.message}</p>
           </div>
         </div>
       ))}

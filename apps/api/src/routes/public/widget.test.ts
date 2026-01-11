@@ -6,28 +6,28 @@ describe("Widget API", () => {
 
   const app = createTestApp();
 
-  describe("GET /api/v1/status/:slug/widget.js", () => {
+  describe("GET /api/v1/status/widget.js", () => {
     test("returns JavaScript widget loader", async () => {
       await createTestOrganization({
         slug: "test-org",
         name: "Test Organization",
       });
 
-      const res = await app.request("/api/v1/status/test-org/widget.js");
+      const res = await app.request("/api/v1/status/widget.js");
 
       expect(res.status).toBe(200);
       expect(res.headers.get("Content-Type")).toContain("application/javascript");
       const js = await res.text();
       expect(js).toContain("Fyren Status Widget Loader");
       expect(js).toContain("Test Organization");
-      expect(js).toContain("test-org");
       expect(js).toContain("FyrenWidget");
+      expect(js).toContain("data-fyren-widget");
     });
 
     test("includes widget container selector", async () => {
       await createTestOrganization({ slug: "test-org" });
 
-      const res = await app.request("/api/v1/status/test-org/widget.js");
+      const res = await app.request("/api/v1/status/widget.js");
 
       expect(res.status).toBe(200);
       const js = await res.text();
@@ -37,7 +37,7 @@ describe("Widget API", () => {
     test("includes iframe creation code", async () => {
       await createTestOrganization({ slug: "test-org" });
 
-      const res = await app.request("/api/v1/status/test-org/widget.js");
+      const res = await app.request("/api/v1/status/widget.js");
 
       expect(res.status).toBe(200);
       const js = await res.text();
@@ -47,7 +47,7 @@ describe("Widget API", () => {
     test("includes resize message handler", async () => {
       await createTestOrganization({ slug: "test-org" });
 
-      const res = await app.request("/api/v1/status/test-org/widget.js");
+      const res = await app.request("/api/v1/status/widget.js");
 
       expect(res.status).toBe(200);
       const js = await res.text();
@@ -55,8 +55,8 @@ describe("Widget API", () => {
       expect(js).toContain("addEventListener('message'");
     });
 
-    test("returns 404 for non-existent organization", async () => {
-      const res = await app.request("/api/v1/status/nonexistent/widget.js");
+    test("returns 404 when no organization configured", async () => {
+      const res = await app.request("/api/v1/status/widget.js");
 
       expect(res.status).toBe(404);
       expect(res.headers.get("Content-Type")).toContain("application/javascript");
@@ -67,7 +67,7 @@ describe("Widget API", () => {
     test("sets cache headers", async () => {
       await createTestOrganization({ slug: "test-org" });
 
-      const res = await app.request("/api/v1/status/test-org/widget.js");
+      const res = await app.request("/api/v1/status/widget.js");
 
       expect(res.status).toBe(200);
       // Cache headers are set - exact value may vary based on middleware
@@ -77,7 +77,7 @@ describe("Widget API", () => {
     test("includes MutationObserver for dynamic elements", async () => {
       await createTestOrganization({ slug: "test-org" });
 
-      const res = await app.request("/api/v1/status/test-org/widget.js");
+      const res = await app.request("/api/v1/status/widget.js");
 
       expect(res.status).toBe(200);
       const js = await res.text();
@@ -85,14 +85,14 @@ describe("Widget API", () => {
     });
   });
 
-  describe("GET /api/v1/status/:slug/embed.html", () => {
+  describe("GET /api/v1/status/embed.html", () => {
     test("returns embed code snippet page", async () => {
       await createTestOrganization({
         slug: "test-org",
         name: "Test Organization",
       });
 
-      const res = await app.request("/api/v1/status/test-org/embed.html");
+      const res = await app.request("/api/v1/status/embed.html");
 
       expect(res.status).toBe(200);
       const html = await res.text();
@@ -103,17 +103,17 @@ describe("Widget API", () => {
     test("includes widget script tag", async () => {
       await createTestOrganization({ slug: "test-org" });
 
-      const res = await app.request("/api/v1/status/test-org/embed.html");
+      const res = await app.request("/api/v1/status/embed.html");
 
       expect(res.status).toBe(200);
       const html = await res.text();
-      expect(html).toContain("/api/v1/status/test-org/widget.js");
+      expect(html).toContain("/api/v1/status/widget.js");
     });
 
     test("includes badge markdown example", async () => {
       await createTestOrganization({ slug: "test-org" });
 
-      const res = await app.request("/api/v1/status/test-org/embed.html");
+      const res = await app.request("/api/v1/status/embed.html");
 
       expect(res.status).toBe(200);
       const html = await res.text();
@@ -124,7 +124,7 @@ describe("Widget API", () => {
     test("includes badge HTML example", async () => {
       await createTestOrganization({ slug: "test-org" });
 
-      const res = await app.request("/api/v1/status/test-org/embed.html");
+      const res = await app.request("/api/v1/status/embed.html");
 
       expect(res.status).toBe(200);
       const html = await res.text();
@@ -132,8 +132,8 @@ describe("Widget API", () => {
       expect(html).toContain("&lt;a href=");
     });
 
-    test("returns 404 for non-existent organization", async () => {
-      const res = await app.request("/api/v1/status/nonexistent/embed.html");
+    test("returns 404 when no organization configured", async () => {
+      const res = await app.request("/api/v1/status/embed.html");
 
       expect(res.status).toBe(404);
       const text = await res.text();

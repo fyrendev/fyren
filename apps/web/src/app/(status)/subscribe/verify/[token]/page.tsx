@@ -7,7 +7,6 @@ import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 
 export default function VerifySubscriptionPage() {
   const params = useParams();
-  const slug = params.slug as string;
   const token = params.token as string;
 
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
@@ -16,7 +15,18 @@ export default function VerifySubscriptionPage() {
   useEffect(() => {
     async function verify() {
       try {
-        const res = await fetch(`/api/v1/status/${slug}/subscribe/verify/${token}`);
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
+        // Get the default org slug
+        const orgRes = await fetch(`${apiUrl}/api/v1/org/default`);
+        if (!orgRes.ok) {
+          throw new Error("Organization not found");
+        }
+        const orgData = await orgRes.json();
+        const slug = orgData.organization.slug;
+
+        // Verify the subscription
+        const res = await fetch(`${apiUrl}/api/v1/status/${slug}/subscribe/verify/${token}`);
         const data = await res.json();
 
         if (!res.ok) {
@@ -32,16 +42,16 @@ export default function VerifySubscriptionPage() {
     }
 
     verify();
-  }, [slug, token]);
+  }, [token]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen status-page-bg flex items-center justify-center">
       <div className="text-center max-w-md mx-auto px-4">
         {status === "loading" && (
           <>
-            <Loader2 className="w-16 h-16 text-navy-400 mx-auto animate-spin mb-4" />
+            <Loader2 className="w-16 h-16 mx-auto animate-spin mb-4 theme-muted" />
             <h1 className="text-2xl font-semibold mb-2">Verifying subscription...</h1>
-            <p className="text-navy-400">Please wait while we verify your email.</p>
+            <p className="theme-muted">Please wait while we verify your email.</p>
           </>
         )}
 
@@ -49,11 +59,8 @@ export default function VerifySubscriptionPage() {
           <>
             <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
             <h1 className="text-2xl font-semibold mb-2">Subscription Confirmed</h1>
-            <p className="text-navy-400 mb-6">{message}</p>
-            <Link
-              href={`/${slug}`}
-              className="px-6 py-2 bg-white text-navy-900 font-medium rounded-lg hover:bg-navy-100 transition-colors inline-block"
-            >
+            <p className="theme-muted mb-6">{message}</p>
+            <Link href="/" className="brand-button inline-block">
               Go to status page
             </Link>
           </>
@@ -63,11 +70,8 @@ export default function VerifySubscriptionPage() {
           <>
             <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h1 className="text-2xl font-semibold mb-2">Verification Failed</h1>
-            <p className="text-navy-400 mb-6">{message}</p>
-            <Link
-              href={`/${slug}`}
-              className="px-6 py-2 bg-white text-navy-900 font-medium rounded-lg hover:bg-navy-100 transition-colors inline-block"
-            >
+            <p className="theme-muted mb-6">{message}</p>
+            <Link href="/" className="brand-button inline-block">
               Go to status page
             </Link>
           </>

@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 interface Props {
   indicator: StatusIndicator;
   description: string;
+  brandColor?: string | null;
 }
 
 const config: Record<
@@ -42,11 +43,17 @@ const config: Record<
   },
 };
 
-export function StatusBanner({ indicator, description }: Props) {
+export function StatusBanner({ indicator, description, brandColor }: Props) {
   const { bg, icon: Icon, text } = config[indicator];
 
+  // Use brand color for operational status, otherwise use the default config color
+  const useBrandColor = indicator === "operational" && brandColor;
+
   return (
-    <div className={cn("rounded-lg p-6 mt-6", bg)}>
+    <div
+      className={cn("rounded-lg p-6 mt-6", !useBrandColor && bg)}
+      style={useBrandColor ? { backgroundColor: brandColor } : undefined}
+    >
       <div className="flex items-center gap-3">
         <Icon className={cn("w-8 h-8", text)} />
         <span className={cn("text-xl font-semibold", text)}>{description}</span>

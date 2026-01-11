@@ -27,6 +27,8 @@ function serializeOrganization(org: typeof organizations.$inferSelect) {
     // Branding - Colors
     brandColor: org.brandColor,
     accentColor: org.accentColor,
+    backgroundColor: org.backgroundColor,
+    textColor: org.textColor,
     // Branding - Custom CSS
     customCss: org.customCss,
     // Custom domain
@@ -104,6 +106,16 @@ const updateOrganizationSchema = z.object({
   accentColor: z
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/, "Accent color must be a valid hex color")
+    .nullable()
+    .optional(),
+  backgroundColor: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Background color must be a valid hex color")
+    .nullable()
+    .optional(),
+  textColor: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Text color must be a valid hex color")
     .nullable()
     .optional(),
 

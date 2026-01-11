@@ -5,21 +5,21 @@ import { NotFoundError, errorResponse } from "../../lib/errors";
 
 const publicComponents = new Hono();
 
-// GET /api/v1/org/:slug/components - Get public components for an organization
-publicComponents.get("/:slug/components", async (c) => {
+// Helper to get the organization
+async function getOrganization() {
+  const [org] = await db
+    .select()
+    .from(organizations)
+    .orderBy(asc(organizations.createdAt))
+    .limit(1);
+  if (!org) throw new NotFoundError("No organization configured");
+  return org;
+}
+
+// GET /api/v1/org/components - Get public components for the organization
+publicComponents.get("/components", async (c) => {
   try {
-    const slug = c.req.param("slug");
-
-    // First, find the organization
-    const [org] = await db
-      .select({ id: organizations.id })
-      .from(organizations)
-      .where(eq(organizations.slug, slug.toLowerCase()))
-      .limit(1);
-
-    if (!org) {
-      throw new NotFoundError("Organization not found");
-    }
+    const org = await getOrganization();
 
     // Get public components
     const result = await db

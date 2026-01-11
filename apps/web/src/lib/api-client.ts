@@ -189,6 +189,8 @@ export interface Organization {
   faviconUrl: string | null;
   brandColor: string | null;
   accentColor: string | null;
+  backgroundColor: string | null;
+  textColor: string | null;
   customCss: string | null;
   customDomain: string | null;
   customDomainVerified: boolean;

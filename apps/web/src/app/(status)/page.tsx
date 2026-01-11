@@ -1,6 +1,8 @@
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { getStatus, getUptime } from "@/lib/api";
+import { redirect, notFound } from "next/navigation";
+import { getStatus, getUptime, getSetupStatus } from "@/lib/api";
+
+export const dynamic = "force-dynamic";
 import { Header } from "@/components/ui/Header";
 import { Footer } from "@/components/ui/Footer";
 import { StatusBanner } from "@/components/status/StatusBanner";
@@ -9,16 +11,17 @@ import { IncidentList } from "@/components/incidents/IncidentList";
 import { MaintenanceCard } from "@/components/maintenance/MaintenanceCard";
 import { SubscribeForm } from "@/components/subscribe/SubscribeForm";
 import { AutoRefresh } from "@/components/AutoRefresh";
+import { OrganizationTheme } from "@/components/status/ThemeProvider";
 import Link from "next/link";
 
-interface Props {
-  params: Promise<{ slug: string }>;
-}
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
+export async function generateMetadata(): Promise<Metadata> {
   try {
-    const data = await getStatus(slug);
+    const setupStatus = await getSetupStatus();
+    if (setupStatus.needsSetup) {
+      return { title: "Setup Required" };
+    }
+
+    const data = await getStatus();
     return {
       title: `${data.organization.name} Status`,
       description: `Current status: ${data.status.description}`,
@@ -32,34 +35,42 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function StatusPage({ params }: Props) {
-  const { slug } = await params;
+export default async function StatusPage() {
+  // Check if setup is needed
+  const setupStatus = await getSetupStatus();
+  if (setupStatus.needsSetup) {
+    redirect("/setup");
+  }
 
   let data;
   let uptime;
 
   try {
-    [data, uptime] = await Promise.all([getStatus(slug), getUptime(slug)]);
+    [data, uptime] = await Promise.all([getStatus(), getUptime()]);
   } catch {
     notFound();
   }
 
   return (
-    <>
+    <OrganizationTheme organization={data.organization}>
       {/* Client component for auto-refresh */}
       <AutoRefresh interval={60000} />
 
-      <div className="min-h-screen">
+      <div className="min-h-screen status-page-bg">
         <div className="max-w-4xl mx-auto px-4 py-8">
           <Header organization={data.organization} />
 
-          <StatusBanner indicator={data.status.indicator} description={data.status.description} />
+          <StatusBanner
+            indicator={data.status.indicator}
+            description={data.status.description}
+            brandColor={data.organization.brandColor}
+          />
 
           {/* Active Incidents */}
           {data.activeIncidents.length > 0 && (
             <section className="mt-8">
               <h2 className="text-xl font-semibold mb-4">Active Incidents</h2>
-              <IncidentList incidents={data.activeIncidents} slug={slug} />
+              <IncidentList incidents={data.activeIncidents} />
             </section>
           )}
 
@@ -79,35 +90,28 @@ export default async function StatusPage({ params }: Props) {
           <section className="mt-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Components</h2>
-              <span className="text-sm text-navy-400">
+              <span className="text-sm theme-muted">
                 {uptime.overall.month.toFixed(2)}% uptime this month
               </span>
             </div>
-            <ComponentList
-              components={data.components}
-              uptimeData={uptime.components}
-              slug={slug}
-            />
+            <ComponentList components={data.components} uptimeData={uptime.components} />
           </section>
 
           {/* Past Incidents Link */}
           <section className="mt-8">
-            <Link
-              href={`/${slug}/incidents`}
-              className="text-navy-300 hover:text-white transition-colors"
-            >
+            <Link href="/incidents" className="brand-link transition-colors">
               View incident history →
             </Link>
           </section>
 
           {/* Subscribe */}
           <section className="mt-12">
-            <SubscribeForm slug={slug} />
+            <SubscribeForm />
           </section>
 
-          <Footer organization={data.organization} rssUrl={`/api/v1/status/${slug}/rss`} />
+          <Footer organization={data.organization} rssUrl="/api/v1/status/rss" />
         </div>
       </div>
-    </>
+    </OrganizationTheme>
   );
 }

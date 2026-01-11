@@ -11,12 +11,12 @@ describe("Badge API", () => {
 
   const app = createTestApp();
 
-  describe("GET /api/v1/status/:slug/badge.svg", () => {
+  describe("GET /api/v1/status/badge.svg", () => {
     test("returns SVG badge for operational status", async () => {
       const org = await createTestOrganization({ slug: "test-org" });
       await createTestComponent(org.id, { status: "operational", isPublic: true });
 
-      const res = await app.request("/api/v1/status/test-org/badge.svg");
+      const res = await app.request("/api/v1/status/badge.svg");
 
       expect(res.status).toBe(200);
       expect(res.headers.get("Content-Type")).toBe("image/svg+xml");
@@ -29,7 +29,7 @@ describe("Badge API", () => {
       const org = await createTestOrganization({ slug: "test-org" });
       await createTestComponent(org.id, { status: "degraded", isPublic: true });
 
-      const res = await app.request("/api/v1/status/test-org/badge.svg");
+      const res = await app.request("/api/v1/status/badge.svg");
 
       expect(res.status).toBe(200);
       const svg = await res.text();
@@ -41,7 +41,7 @@ describe("Badge API", () => {
       await createTestComponent(org.id, { status: "operational", isPublic: true });
       await createTestComponent(org.id, { status: "major_outage", isPublic: true });
 
-      const res = await app.request("/api/v1/status/test-org/badge.svg");
+      const res = await app.request("/api/v1/status/badge.svg");
 
       expect(res.status).toBe(200);
       const svg = await res.text();
@@ -51,15 +51,15 @@ describe("Badge API", () => {
     test("returns operational badge when no components exist", async () => {
       await createTestOrganization({ slug: "test-org" });
 
-      const res = await app.request("/api/v1/status/test-org/badge.svg");
+      const res = await app.request("/api/v1/status/badge.svg");
 
       expect(res.status).toBe(200);
       const svg = await res.text();
       expect(svg).toContain("Operational");
     });
 
-    test("returns error badge for non-existent organization", async () => {
-      const res = await app.request("/api/v1/status/nonexistent/badge.svg");
+    test("returns error badge when no organization configured", async () => {
+      const res = await app.request("/api/v1/status/badge.svg");
 
       expect(res.status).toBe(404);
       const svg = await res.text();
@@ -70,7 +70,7 @@ describe("Badge API", () => {
       const org = await createTestOrganization({ slug: "test-org" });
       await createTestComponent(org.id, { status: "operational", isPublic: true });
 
-      const res = await app.request("/api/v1/status/test-org/badge.svg?label=uptime");
+      const res = await app.request("/api/v1/status/badge.svg?label=uptime");
 
       expect(res.status).toBe(200);
       const svg = await res.text();
@@ -81,7 +81,7 @@ describe("Badge API", () => {
       const org = await createTestOrganization({ slug: "test-org" });
       await createTestComponent(org.id, { status: "operational", isPublic: true });
 
-      const res = await app.request("/api/v1/status/test-org/badge.svg?style=flat-square");
+      const res = await app.request("/api/v1/status/badge.svg?style=flat-square");
 
       expect(res.status).toBe(200);
       const svg = await res.text();
@@ -93,7 +93,7 @@ describe("Badge API", () => {
       const org = await createTestOrganization({ slug: "test-org" });
       await createTestComponent(org.id, { status: "operational", isPublic: true });
 
-      const res = await app.request("/api/v1/status/test-org/badge.svg");
+      const res = await app.request("/api/v1/status/badge.svg");
 
       expect(res.status).toBe(200);
       expect(res.headers.get("Cache-Control")).toContain("max-age=60");
@@ -104,7 +104,7 @@ describe("Badge API", () => {
       await createTestComponent(org.id, { status: "operational", isPublic: true });
       await createTestComponent(org.id, { status: "major_outage", isPublic: false });
 
-      const res = await app.request("/api/v1/status/test-org/badge.svg");
+      const res = await app.request("/api/v1/status/badge.svg");
 
       expect(res.status).toBe(200);
       const svg = await res.text();
@@ -113,7 +113,7 @@ describe("Badge API", () => {
     });
   });
 
-  describe("GET /api/v1/status/:slug/badge.json", () => {
+  describe("GET /api/v1/status/badge.json", () => {
     test("returns JSON badge data", async () => {
       const org = await createTestOrganization({
         slug: "test-org",
@@ -121,7 +121,7 @@ describe("Badge API", () => {
       });
       await createTestComponent(org.id, { status: "operational", isPublic: true });
 
-      const res = await app.request("/api/v1/status/test-org/badge.json");
+      const res = await app.request("/api/v1/status/badge.json");
 
       expect(res.status).toBe(200);
       const data = await res.json();
@@ -137,26 +137,26 @@ describe("Badge API", () => {
       const org = await createTestOrganization({ slug: "test-org" });
       await createTestComponent(org.id, { status: "degraded", isPublic: true });
 
-      const res = await app.request("/api/v1/status/test-org/badge.json");
+      const res = await app.request("/api/v1/status/badge.json");
 
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.indicator).toBe("minor");
     });
 
-    test("returns 404 for non-existent organization", async () => {
-      const res = await app.request("/api/v1/status/nonexistent/badge.json");
+    test("returns 404 when no organization configured", async () => {
+      const res = await app.request("/api/v1/status/badge.json");
 
       expect(res.status).toBe(404);
     });
   });
 
-  describe("GET /api/v1/status/:slug/badge", () => {
+  describe("GET /api/v1/status/badge", () => {
     test("redirects to SVG endpoint", async () => {
       const org = await createTestOrganization({ slug: "test-org" });
       await createTestComponent(org.id, { status: "operational", isPublic: true });
 
-      const res = await app.request("/api/v1/status/test-org/badge", {
+      const res = await app.request("/api/v1/status/badge", {
         redirect: "manual",
       });
 
@@ -168,12 +168,9 @@ describe("Badge API", () => {
       const org = await createTestOrganization({ slug: "test-org" });
       await createTestComponent(org.id, { status: "operational", isPublic: true });
 
-      const res = await app.request(
-        "/api/v1/status/test-org/badge?style=flat-square&label=uptime",
-        {
-          redirect: "manual",
-        }
-      );
+      const res = await app.request("/api/v1/status/badge?style=flat-square&label=uptime", {
+        redirect: "manual",
+      });
 
       expect(res.status).toBe(302);
       const location = res.headers.get("Location");
