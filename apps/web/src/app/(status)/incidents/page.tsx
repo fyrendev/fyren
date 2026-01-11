@@ -6,6 +6,8 @@ import { getIncidents, getStatus, getDefaultOrg } from "@/lib/api";
 import { IncidentList } from "@/components/incidents/IncidentList";
 import { OrganizationTheme } from "@/components/status/ThemeProvider";
 
+export const dynamic = "force-dynamic";
+
 interface Props {
   searchParams: Promise<{ page?: string }>;
 }

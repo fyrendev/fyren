@@ -1,6 +1,8 @@
 import { Metadata } from "next";
 import { redirect, notFound } from "next/navigation";
 import { getStatus, getUptime, getSetupStatus, getDefaultOrg } from "@/lib/api";
+
+export const dynamic = "force-dynamic";
 import { Header } from "@/components/ui/Header";
 import { Footer } from "@/components/ui/Footer";
 import { StatusBanner } from "@/components/status/StatusBanner";

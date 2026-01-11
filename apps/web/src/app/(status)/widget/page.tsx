@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { getStatus, getDefaultOrg } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
+
 interface Props {
   searchParams: Promise<{ theme?: string; style?: string }>;
 }

@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/Badge";
 import { formatDateTime } from "@/lib/utils";
 import { OrganizationTheme } from "@/components/status/ThemeProvider";
 
+export const dynamic = "force-dynamic";
+
 interface Props {
   params: Promise<{ id: string }>;
 }
