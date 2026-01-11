@@ -45,13 +45,13 @@ export default function VerifySubscriptionPage() {
   }, [token]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen status-page-bg flex items-center justify-center">
       <div className="text-center max-w-md mx-auto px-4">
         {status === "loading" && (
           <>
-            <Loader2 className="w-16 h-16 text-navy-400 mx-auto animate-spin mb-4" />
+            <Loader2 className="w-16 h-16 mx-auto animate-spin mb-4 theme-muted" />
             <h1 className="text-2xl font-semibold mb-2">Verifying subscription...</h1>
-            <p className="text-navy-400">Please wait while we verify your email.</p>
+            <p className="theme-muted">Please wait while we verify your email.</p>
           </>
         )}
 
@@ -59,11 +59,8 @@ export default function VerifySubscriptionPage() {
           <>
             <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
             <h1 className="text-2xl font-semibold mb-2">Subscription Confirmed</h1>
-            <p className="text-navy-400 mb-6">{message}</p>
-            <Link
-              href="/"
-              className="px-6 py-2 bg-white text-navy-900 font-medium rounded-lg hover:bg-navy-100 transition-colors inline-block"
-            >
+            <p className="theme-muted mb-6">{message}</p>
+            <Link href="/" className="brand-button inline-block">
               Go to status page
             </Link>
           </>
@@ -73,11 +70,8 @@ export default function VerifySubscriptionPage() {
           <>
             <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h1 className="text-2xl font-semibold mb-2">Verification Failed</h1>
-            <p className="text-navy-400 mb-6">{message}</p>
-            <Link
-              href="/"
-              className="px-6 py-2 bg-white text-navy-900 font-medium rounded-lg hover:bg-navy-100 transition-colors inline-block"
-            >
+            <p className="theme-muted mb-6">{message}</p>
+            <Link href="/" className="brand-button inline-block">
               Go to status page
             </Link>
           </>

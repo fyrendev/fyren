@@ -33,12 +33,17 @@ export function UptimeBar({ componentId, slug }: Props) {
   }, [componentId, slug]);
 
   if (loading) {
-    return <div className="h-8 bg-navy-800 rounded animate-pulse" />;
+    return (
+      <div className="h-8 rounded animate-pulse" style={{ backgroundColor: "var(--input-bg)" }} />
+    );
   }
 
   if (history.length === 0) {
     return (
-      <div className="h-8 bg-navy-800 rounded flex items-center justify-center text-sm text-navy-500">
+      <div
+        className="h-8 rounded flex items-center justify-center text-sm theme-muted"
+        style={{ backgroundColor: "var(--input-bg)" }}
+      >
         No data available
       </div>
     );
@@ -63,7 +68,10 @@ export function UptimeBar({ componentId, slug }: Props) {
         ))}
       </div>
       {hoveredDay && (
-        <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-navy-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap z-10">
+        <div
+          className="absolute -top-10 left-1/2 transform -translate-x-1/2 text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap z-10"
+          style={{ backgroundColor: "var(--card-bg)", color: "var(--text-color)" }}
+        >
           {hoveredDay.date}: {hoveredDay.uptime.toFixed(2)}% uptime
         </div>
       )}

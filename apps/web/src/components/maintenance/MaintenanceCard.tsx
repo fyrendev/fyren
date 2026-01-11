@@ -15,7 +15,7 @@ const statusColors: Record<string, string> = {
 
 export function MaintenanceCard({ maintenance }: Props) {
   return (
-    <div className="bg-navy-900 border border-navy-800 rounded-lg p-4">
+    <div className="theme-card p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className="p-2 bg-blue-500/20 rounded-lg">
@@ -24,7 +24,7 @@ export function MaintenanceCard({ maintenance }: Props) {
           <div>
             <h3 className="font-medium">{maintenance.title}</h3>
             {maintenance.description && (
-              <p className="text-sm text-navy-400 mt-1">{maintenance.description}</p>
+              <p className="text-sm theme-muted mt-1">{maintenance.description}</p>
             )}
           </div>
         </div>
@@ -33,19 +33,19 @@ export function MaintenanceCard({ maintenance }: Props) {
         </Badge>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-4 text-sm text-navy-400">
+      <div className="mt-4 flex flex-wrap gap-4 text-sm theme-muted">
         <div>
-          <span className="text-navy-500">Starts: </span>
+          <span className="opacity-70">Starts: </span>
           {formatDateTime(maintenance.scheduledStartAt)}
         </div>
         <div>
-          <span className="text-navy-500">Ends: </span>
+          <span className="opacity-70">Ends: </span>
           {formatDateTime(maintenance.scheduledEndAt)}
         </div>
       </div>
 
       {maintenance.affectedComponents.length > 0 && (
-        <div className="mt-3 text-sm text-navy-500">
+        <div className="mt-3 text-sm theme-muted opacity-70">
           Affecting: {maintenance.affectedComponents.map((c) => c.name).join(", ")}
         </div>
       )}

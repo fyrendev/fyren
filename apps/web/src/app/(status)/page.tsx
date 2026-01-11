@@ -9,6 +9,7 @@ import { IncidentList } from "@/components/incidents/IncidentList";
 import { MaintenanceCard } from "@/components/maintenance/MaintenanceCard";
 import { SubscribeForm } from "@/components/subscribe/SubscribeForm";
 import { AutoRefresh } from "@/components/AutoRefresh";
+import { OrganizationTheme } from "@/components/status/ThemeProvider";
 import Link from "next/link";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -61,15 +62,19 @@ export default async function StatusPage() {
   }
 
   return (
-    <>
+    <OrganizationTheme organization={data.organization}>
       {/* Client component for auto-refresh */}
       <AutoRefresh interval={60000} />
 
-      <div className="min-h-screen">
+      <div className="min-h-screen status-page-bg">
         <div className="max-w-4xl mx-auto px-4 py-8">
           <Header organization={data.organization} />
 
-          <StatusBanner indicator={data.status.indicator} description={data.status.description} />
+          <StatusBanner
+            indicator={data.status.indicator}
+            description={data.status.description}
+            brandColor={data.organization.brandColor}
+          />
 
           {/* Active Incidents */}
           {data.activeIncidents.length > 0 && (
@@ -95,7 +100,7 @@ export default async function StatusPage() {
           <section className="mt-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Components</h2>
-              <span className="text-sm text-navy-400">
+              <span className="text-sm theme-muted">
                 {uptime.overall.month.toFixed(2)}% uptime this month
               </span>
             </div>
@@ -108,7 +113,7 @@ export default async function StatusPage() {
 
           {/* Past Incidents Link */}
           <section className="mt-8">
-            <Link href="/incidents" className="text-navy-300 hover:text-white transition-colors">
+            <Link href="/incidents" className="brand-link transition-colors">
               View incident history →
             </Link>
           </section>
@@ -121,6 +126,6 @@ export default async function StatusPage() {
           <Footer organization={data.organization} rssUrl={`/api/v1/status/${slug}/rss`} />
         </div>
       </div>
-    </>
+    </OrganizationTheme>
   );
 }

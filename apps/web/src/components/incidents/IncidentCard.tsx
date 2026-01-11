@@ -26,12 +26,12 @@ export function IncidentCard({ incident }: Props) {
 
   return (
     <Link href={`/incidents/${incident.id}`}>
-      <div className="bg-navy-900 border border-navy-800 rounded-lg p-4 hover:border-navy-700 transition-colors">
+      <div className="theme-card p-4 hover:opacity-90 transition-opacity">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <h3 className="font-medium">{incident.title}</h3>
             {latestUpdate && (
-              <p className="text-sm text-navy-400 mt-1 line-clamp-2">{latestUpdate.message}</p>
+              <p className="text-sm theme-muted mt-1 line-clamp-2">{latestUpdate.message}</p>
             )}
           </div>
           <div className="flex gap-2 shrink-0">
@@ -40,7 +40,7 @@ export function IncidentCard({ incident }: Props) {
           </div>
         </div>
 
-        <div className="flex items-center gap-4 mt-3 text-sm text-navy-500">
+        <div className="flex items-center gap-4 mt-3 text-sm theme-muted">
           <span>{formatRelativeTime(incident.createdAt)}</span>
           {incident.affectedComponents.length > 0 && (
             <span>Affecting: {incident.affectedComponents.map((c) => c.name).join(", ")}</span>

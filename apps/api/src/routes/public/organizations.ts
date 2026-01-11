@@ -15,6 +15,9 @@ publicOrganizations.get("/default", async (c) => {
         slug: organizations.slug,
         logoUrl: organizations.logoUrl,
         brandColor: organizations.brandColor,
+        accentColor: organizations.accentColor,
+        backgroundColor: organizations.backgroundColor,
+        textColor: organizations.textColor,
       })
       .from(organizations)
       .orderBy(asc(organizations.createdAt))
@@ -43,6 +46,9 @@ publicOrganizations.get("/:slug", async (c) => {
         slug: organizations.slug,
         logoUrl: organizations.logoUrl,
         brandColor: organizations.brandColor,
+        accentColor: organizations.accentColor,
+        backgroundColor: organizations.backgroundColor,
+        textColor: organizations.textColor,
       })
       .from(organizations)
       .where(eq(organizations.slug, slug.toLowerCase()))

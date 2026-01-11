@@ -6,6 +6,7 @@ import { getIncident, getStatus, getDefaultOrg } from "@/lib/api";
 import { IncidentTimeline } from "@/components/incidents/IncidentTimeline";
 import { Badge } from "@/components/ui/Badge";
 import { formatDateTime } from "@/lib/utils";
+import { OrganizationTheme } from "@/components/status/ThemeProvider";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -42,13 +43,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function IncidentPage({ params }: Props) {
   const { id } = await params;
 
-  let slug: string;
+  let org;
   try {
     const { organization } = await getDefaultOrg();
-    slug = organization.slug;
+    org = organization;
   } catch {
     notFound();
   }
+
+  const slug = org.slug;
 
   let incident;
 
@@ -60,49 +63,48 @@ export default async function IncidentPage({ params }: Props) {
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-navy-400 hover:text-white mb-6"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to status
-        </Link>
+    <OrganizationTheme organization={org}>
+      <div className="min-h-screen status-page-bg">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <Link href="/" className="inline-flex items-center gap-2 brand-link mb-6">
+            <ArrowLeft className="w-4 h-4" />
+            Back to status
+          </Link>
 
-        <div className="bg-navy-900 border border-navy-800 rounded-lg p-6">
-          <div className="flex items-start justify-between gap-4">
-            <h1 className="text-2xl font-semibold">{incident.title}</h1>
-            <div className="flex gap-2">
-              <Badge className={severityColors[incident.severity]}>{incident.severity}</Badge>
-              <Badge className={statusColors[incident.status]}>{incident.status}</Badge>
+          <div className="theme-card p-6">
+            <div className="flex items-start justify-between gap-4">
+              <h1 className="text-2xl font-semibold">{incident.title}</h1>
+              <div className="flex gap-2">
+                <Badge className={severityColors[incident.severity]}>{incident.severity}</Badge>
+                <Badge className={statusColors[incident.status]}>{incident.status}</Badge>
+              </div>
             </div>
-          </div>
 
-          <div className="flex flex-wrap gap-4 mt-4 text-sm text-navy-400">
-            <span>Started: {formatDateTime(incident.startedAt)}</span>
-            {incident.resolvedAt && <span>Resolved: {formatDateTime(incident.resolvedAt)}</span>}
-          </div>
-
-          {incident.affectedComponents.length > 0 && (
-            <div className="mt-4">
-              <span className="text-sm text-navy-500">Affected components: </span>
-              <span className="text-sm">
-                {incident.affectedComponents.map((c) => c.name).join(", ")}
-              </span>
+            <div className="flex flex-wrap gap-4 mt-4 text-sm theme-muted">
+              <span>Started: {formatDateTime(incident.startedAt)}</span>
+              {incident.resolvedAt && <span>Resolved: {formatDateTime(incident.resolvedAt)}</span>}
             </div>
-          )}
 
-          <hr className="border-navy-700 my-6" />
+            {incident.affectedComponents.length > 0 && (
+              <div className="mt-4">
+                <span className="text-sm theme-muted opacity-70">Affected components: </span>
+                <span className="text-sm">
+                  {incident.affectedComponents.map((c) => c.name).join(", ")}
+                </span>
+              </div>
+            )}
 
-          <h2 className="text-lg font-medium mb-4">Updates</h2>
-          {incident.updates.length > 0 ? (
-            <IncidentTimeline updates={incident.updates} />
-          ) : (
-            <p className="text-navy-400">No updates yet.</p>
-          )}
+            <hr className="my-6" style={{ borderColor: "var(--card-border)" }} />
+
+            <h2 className="text-lg font-medium mb-4">Updates</h2>
+            {incident.updates.length > 0 ? (
+              <IncidentTimeline updates={incident.updates} />
+            ) : (
+              <p className="theme-muted">No updates yet.</p>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </OrganizationTheme>
   );
 }

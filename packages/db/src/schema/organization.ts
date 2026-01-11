@@ -16,6 +16,8 @@ export const organizations = pgTable(
     // Branding - Colors
     brandColor: varchar("brand_color", { length: 7 }),
     accentColor: varchar("accent_color", { length: 7 }),
+    backgroundColor: varchar("background_color", { length: 7 }),
+    textColor: varchar("text_color", { length: 7 }),
 
     // Branding - Custom CSS
     customCss: text("custom_css"),

@@ -31,6 +31,9 @@ export default function SettingsPage() {
     slug: "",
     logoUrl: "",
     brandColor: "",
+    accentColor: "",
+    backgroundColor: "",
+    textColor: "",
     customDomain: "",
     timezone: "",
   });
@@ -74,6 +77,9 @@ export default function SettingsPage() {
         slug: data.organization.slug || "",
         logoUrl: data.organization.logoUrl || "",
         brandColor: data.organization.brandColor || "",
+        accentColor: data.organization.accentColor || "",
+        backgroundColor: data.organization.backgroundColor || "",
+        textColor: data.organization.textColor || "",
         customDomain: data.organization.customDomain || "",
         timezone: data.organization.timezone || "UTC",
       });
@@ -224,23 +230,99 @@ export default function SettingsPage() {
               onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
               placeholder="https://example.com/logo.png"
             />
-            <div>
-              <label className="block text-sm font-medium text-navy-300 mb-1">Brand Color</label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="color"
-                  value={formData.brandColor || "#f59e0b"}
-                  onChange={(e) => setFormData({ ...formData, brandColor: e.target.value })}
-                  className="w-10 h-10 rounded cursor-pointer"
-                />
-                <Input
-                  value={formData.brandColor}
-                  onChange={(e) => setFormData({ ...formData, brandColor: e.target.value })}
-                  placeholder="#f59e0b"
-                  className="flex-1"
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-navy-300 mb-1">Brand Color</label>
+                <p className="text-xs text-navy-400 mb-2">
+                  Primary color for buttons, links, and accents
+                </p>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={formData.brandColor || "#f59e0b"}
+                    onChange={(e) => setFormData({ ...formData, brandColor: e.target.value })}
+                    className="w-10 h-10 rounded cursor-pointer"
+                  />
+                  <Input
+                    value={formData.brandColor}
+                    onChange={(e) => setFormData({ ...formData, brandColor: e.target.value })}
+                    placeholder="#f59e0b"
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-navy-300 mb-1">Accent Color</label>
+                <p className="text-xs text-navy-400 mb-2">Secondary color for highlights</p>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={formData.accentColor || "#3b82f6"}
+                    onChange={(e) => setFormData({ ...formData, accentColor: e.target.value })}
+                    className="w-10 h-10 rounded cursor-pointer"
+                  />
+                  <Input
+                    value={formData.accentColor}
+                    onChange={(e) => setFormData({ ...formData, accentColor: e.target.value })}
+                    placeholder="#3b82f6"
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-navy-300 mb-1">
+                  Background Color
+                </label>
+                <p className="text-xs text-navy-400 mb-2">Status page background</p>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={formData.backgroundColor || "#0a1628"}
+                    onChange={(e) => setFormData({ ...formData, backgroundColor: e.target.value })}
+                    className="w-10 h-10 rounded cursor-pointer"
+                  />
+                  <Input
+                    value={formData.backgroundColor}
+                    onChange={(e) => setFormData({ ...formData, backgroundColor: e.target.value })}
+                    placeholder="#0a1628"
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-navy-300 mb-1">Text Color</label>
+                <p className="text-xs text-navy-400 mb-2">Main text color</p>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={formData.textColor || "#ffffff"}
+                    onChange={(e) => setFormData({ ...formData, textColor: e.target.value })}
+                    className="w-10 h-10 rounded cursor-pointer"
+                  />
+                  <Input
+                    value={formData.textColor}
+                    onChange={(e) => setFormData({ ...formData, textColor: e.target.value })}
+                    placeholder="#ffffff"
+                    className="flex-1"
+                  />
+                </div>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() =>
+                setFormData({
+                  ...formData,
+                  brandColor: "#f59e0b",
+                  accentColor: "#3b82f6",
+                  backgroundColor: "#0a1628",
+                  textColor: "#ffffff",
+                })
+              }
+              className="text-sm text-navy-400 hover:text-white transition-colors"
+            >
+              Reset colors to defaults
+            </button>
           </div>
         </Card>
 

@@ -201,6 +201,9 @@ publicStatus.get("/:slug", async (c) => {
         slug: org.slug,
         logoUrl: org.logoUrl,
         brandColor: org.brandColor,
+        accentColor: org.accentColor,
+        backgroundColor: org.backgroundColor,
+        textColor: org.textColor,
         websiteUrl: org.customDomain ? `https://${org.customDomain}` : null,
       },
       status: {
