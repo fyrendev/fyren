@@ -9,6 +9,22 @@ Deploy Fyren on your own infrastructure.
 - A domain with DNS access
 - (Optional) Email service (AWS SES, SendGrid, or SMTP)
 
+## Docker Images
+
+Official images are published to GitHub Container Registry:
+
+| Image  | Registry                        |
+| ------ | ------------------------------- |
+| API    | `ghcr.io/fyrendev/fyren-api`    |
+| Worker | `ghcr.io/fyrendev/fyren-worker` |
+| Web    | `ghcr.io/fyrendev/fyren-web`    |
+
+### Available Tags
+
+- `latest` - Latest stable release from main branch
+- `1.0.0`, `1.0`, `1` - Semantic version tags
+- `sha-abc123` - Specific commit SHA
+
 ## Architecture
 
 The production deployment includes:
@@ -22,7 +38,59 @@ The production deployment includes:
 | **worker**   | Background job processor (monitors, notifications) |
 | **web**      | Next.js frontend                                   |
 
-## Quick Start with Docker Compose
+## Quick Start with Pre-built Images (Recommended)
+
+The fastest way to deploy Fyren using official pre-built images.
+
+### 1. Download Compose File
+
+```bash
+# Download the compose file for pre-built images
+curl -O https://raw.githubusercontent.com/fyrendev/fyren/main/docker-compose.images.yml
+```
+
+### 2. Configure Environment
+
+Create your environment file:
+
+```bash
+cat > .env << 'EOF'
+# Required - Your domain configuration
+APP_URL=https://status.example.com
+APP_DOMAIN=status.example.com
+ACME_EMAIL=admin@example.com
+
+# Required - Database credentials
+POSTGRES_PASSWORD=your-secure-password-here
+REDIS_PASSWORD=your-redis-password-here
+
+# Required - Auth secret (generate with: openssl rand -base64 32)
+BETTER_AUTH_SECRET=your-32-char-minimum-secret-here
+
+# Optional - Pin to specific version (default: latest)
+# FYREN_VERSION=1.0.0
+
+# Optional - Email provider (ses, sendgrid, smtp, or console)
+EMAIL_PROVIDER=console
+EMAIL_FROM=noreply@example.com
+EOF
+```
+
+### 3. Start Services
+
+```bash
+docker compose -f docker-compose.images.yml up -d
+```
+
+### 4. Create Your First Organization
+
+Open `https://your-domain.com/admin/register` to create an account and your first organization.
+
+---
+
+## Alternative: Build from Source
+
+If you prefer to build images locally (useful for development or custom modifications).
 
 ### 1. Clone the Repository
 
@@ -59,18 +127,19 @@ EMAIL_PROVIDER=console
 EMAIL_FROM=noreply@example.com
 ```
 
-### 3. Start Services
+### 3. Build and Start Services
 
 ```bash
-docker compose -f docker-compose.prod.yml --env-file docker/.env.prod up -d
+docker compose -f docker-compose.prod.yml --env-file docker/.env.prod up -d --build
 ```
 
 This will:
 
-1. Start PostgreSQL and Redis
-2. Run database migrations automatically
-3. Start the API server, worker, and web frontend
-4. Configure Traefik with automatic HTTPS
+1. Build all images from source
+2. Start PostgreSQL and Redis
+3. Run database migrations automatically
+4. Start the API server, worker, and web frontend
+5. Configure Traefik with automatic HTTPS
 
 ### 4. Create Your First Organization
 
@@ -164,7 +233,23 @@ docker cp fyren-redis:/data/dump.rdb ./redis-backup.rdb
 
 ## Updating
 
-### Pull Latest and Rebuild
+### Using Pre-built Images
+
+```bash
+# Pull latest images
+docker compose -f docker-compose.images.yml pull
+
+# Restart with new images
+docker compose -f docker-compose.images.yml up -d
+```
+
+Or pin to a specific version in your `.env`:
+
+```bash
+FYREN_VERSION=1.2.0
+```
+
+### Building from Source
 
 ```bash
 cd fyren

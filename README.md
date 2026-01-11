@@ -4,6 +4,7 @@
 
 [![License](https://img.shields.io/badge/license-ELv2-blue)](LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/fyrendev/fyren)](https://github.com/fyrendev/fyren)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io%2Ffyrendev-blue?logo=docker)](https://ghcr.io/fyrendev/fyren-api)
 
 An open source, self-hosted status page and incident management platform.
 
@@ -52,19 +53,37 @@ Open http://localhost:3000 for the web app and http://localhost:3001 for the API
 
 ### Production Deployment
 
+**Using Pre-built Images (Recommended):**
+
+```bash
+# Download compose file
+curl -O https://raw.githubusercontent.com/fyrendev/fyren/main/docker-compose.images.yml
+
+# Create .env with your configuration (see docs/self-hosting.md)
+# Then start services:
+docker compose -f docker-compose.images.yml up -d
+```
+
+**Building from Source:**
+
 ```bash
 # Configure environment
 cp docker/.env.prod.example docker/.env.prod
 # Edit docker/.env.prod with your settings
 
-# Start with Docker Compose
-docker compose -f docker-compose.prod.yml --env-file docker/.env.prod up -d
-
-# Run migrations
-docker compose -f docker-compose.prod.yml exec api bun run db:migrate
+# Build and start with Docker Compose
+docker compose -f docker-compose.prod.yml --env-file docker/.env.prod up -d --build
 ```
 
 See [Self-Hosting Guide](docs/self-hosting.md) for detailed deployment instructions.
+
+### Docker Images
+
+| Image  | Registry                        |
+| ------ | ------------------------------- |
+| API    | `ghcr.io/fyrendev/fyren-api`    |
+| Worker | `ghcr.io/fyrendev/fyren-worker` |
+| Web    | `ghcr.io/fyrendev/fyren-web`    |
 
 ## Documentation
 
