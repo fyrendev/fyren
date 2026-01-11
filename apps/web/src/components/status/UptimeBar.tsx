@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   componentId: string;
-  slug: string;
 }
 
 const colors: Record<string, string> = {
@@ -17,20 +16,20 @@ const colors: Record<string, string> = {
   under_maintenance: "bg-blue-500",
 };
 
-export function UptimeBar({ componentId, slug }: Props) {
+export function UptimeBar({ componentId }: Props) {
   const [history, setHistory] = useState<UptimeHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [hoveredDay, setHoveredDay] = useState<UptimeHistory | null>(null);
 
   useEffect(() => {
-    fetch(`/api/v1/status/${slug}/uptime/${componentId}/history?days=90`)
+    fetch(`/api/v1/status/uptime/${componentId}/history?days=90`)
       .then((res) => res.json())
       .then((data) => {
         setHistory(data.history || []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [componentId, slug]);
+  }, [componentId]);
 
   if (loading) {
     return (

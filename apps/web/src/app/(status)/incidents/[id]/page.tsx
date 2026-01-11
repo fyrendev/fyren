@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { getIncident, getStatus, getDefaultOrg } from "@/lib/api";
+import { getIncident, getStatus } from "@/lib/api";
 import { IncidentTimeline } from "@/components/incidents/IncidentTimeline";
 import { Badge } from "@/components/ui/Badge";
 import { formatDateTime } from "@/lib/utils";
@@ -30,9 +30,7 @@ const statusColors: Record<string, string> = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   try {
-    const { organization } = await getDefaultOrg();
-    const slug = organization.slug;
-    const [statusData, incidentData] = await Promise.all([getStatus(slug), getIncident(slug, id)]);
+    const [statusData, incidentData] = await Promise.all([getStatus(), getIncident(id)]);
     return {
       title: `${incidentData.incident.title} | ${statusData.organization.name} Status`,
       description: incidentData.incident.updates[0]?.message,
@@ -45,27 +43,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function IncidentPage({ params }: Props) {
   const { id } = await params;
 
-  let org;
-  try {
-    const { organization } = await getDefaultOrg();
-    org = organization;
-  } catch {
-    notFound();
-  }
-
-  const slug = org.slug;
-
+  let statusData;
   let incident;
 
   try {
-    const data = await getIncident(slug, id);
-    incident = data.incident;
+    const [status, incidentData] = await Promise.all([getStatus(), getIncident(id)]);
+    statusData = status;
+    incident = incidentData.incident;
   } catch {
     notFound();
   }
 
   return (
-    <OrganizationTheme organization={org}>
+    <OrganizationTheme organization={statusData.organization}>
       <div className="min-h-screen status-page-bg">
         <div className="max-w-4xl mx-auto px-4 py-8">
           <Link href="/" className="inline-flex items-center gap-2 brand-link mb-6">

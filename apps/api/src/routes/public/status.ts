@@ -28,10 +28,14 @@ import { calculateUptime, getOverallStatus } from "../../services/monitor.servic
 
 export const publicStatus = new Hono();
 
-// Helper to get organization by slug
-async function getOrgBySlug(slug: string) {
-  const [org] = await db.select().from(organizations).where(eq(organizations.slug, slug)).limit(1);
-  if (!org) throw new NotFoundError("Organization not found");
+// Helper to get the organization
+async function getOrganization() {
+  const [org] = await db
+    .select()
+    .from(organizations)
+    .orderBy(asc(organizations.createdAt))
+    .limit(1);
+  if (!org) throw new NotFoundError("No organization configured");
   return org;
 }
 
@@ -171,18 +175,17 @@ async function getUpcomingMaintenance(orgId: string) {
   return maintenanceWithComponents;
 }
 
-// GET /api/v1/status/:slug - Full status summary
-publicStatus.get("/:slug", async (c) => {
+// GET /api/v1/status - Full status summary
+publicStatus.get("/", async (c) => {
   try {
-    const slug = c.req.param("slug");
-    const org = await getOrgBySlug(slug);
+    const org = await getOrganization();
 
     // Try cache first for components
-    let componentList = await getCachedComponentStatus(slug);
+    let componentList = await getCachedComponentStatus(org.slug);
 
     if (!componentList) {
       componentList = await getOrgComponents(org.id);
-      await cacheComponentStatus(slug, componentList);
+      await cacheComponentStatus(org.slug, componentList);
     }
 
     // Calculate overall status
@@ -227,18 +230,17 @@ publicStatus.get("/:slug", async (c) => {
   }
 });
 
-// GET /api/v1/status/:slug/components - Components with status
-publicStatus.get("/:slug/components", async (c) => {
+// GET /api/v1/status/components - Components with status
+publicStatus.get("/components", async (c) => {
   try {
-    const slug = c.req.param("slug");
-    const org = await getOrgBySlug(slug);
+    const org = await getOrganization();
 
     // Try cache first
-    let componentList = await getCachedComponentStatus(slug);
+    let componentList = await getCachedComponentStatus(org.slug);
 
     if (!componentList) {
       componentList = await getOrgComponents(org.id);
-      await cacheComponentStatus(slug, componentList);
+      await cacheComponentStatus(org.slug, componentList);
     }
 
     return c.json({
@@ -256,11 +258,10 @@ publicStatus.get("/:slug/components", async (c) => {
   }
 });
 
-// GET /api/v1/status/:slug/uptime - Uptime percentages
-publicStatus.get("/:slug/uptime", async (c) => {
+// GET /api/v1/status/uptime - Uptime percentages
+publicStatus.get("/uptime", async (c) => {
   try {
-    const slug = c.req.param("slug");
-    const org = await getOrgBySlug(slug);
+    const org = await getOrganization();
 
     // Get all public components
     const orgComponents = await db
@@ -330,15 +331,14 @@ publicStatus.get("/:slug/uptime", async (c) => {
   }
 });
 
-// GET /api/v1/status/:slug/uptime/:componentId/history - Daily uptime history (90 days)
-publicStatus.get("/:slug/uptime/:componentId/history", async (c) => {
+// GET /api/v1/status/uptime/:componentId/history - Daily uptime history (90 days)
+publicStatus.get("/uptime/:componentId/history", async (c) => {
   try {
-    const slug = c.req.param("slug");
     const componentId = c.req.param("componentId");
     const daysParam = c.req.query("days");
     const days = daysParam ? Math.min(parseInt(daysParam, 10), 90) : 90;
 
-    const org = await getOrgBySlug(slug);
+    const org = await getOrganization();
 
     // Verify component belongs to org
     const [component] = await db
@@ -442,10 +442,9 @@ publicStatus.get("/:slug/uptime/:componentId/history", async (c) => {
   }
 });
 
-// GET /api/v1/status/:slug/incidents - Recent incidents
-publicStatus.get("/:slug/incidents", async (c) => {
+// GET /api/v1/status/incidents - Recent incidents
+publicStatus.get("/incidents", async (c) => {
   try {
-    const slug = c.req.param("slug");
     const statusFilter = c.req.query("status");
     const limitParam = c.req.query("limit");
     const offsetParam = c.req.query("offset");
@@ -453,7 +452,7 @@ publicStatus.get("/:slug/incidents", async (c) => {
     const limit = Math.min(parseInt(limitParam || "10", 10), 50);
     const offset = parseInt(offsetParam || "0", 10);
 
-    const org = await getOrgBySlug(slug);
+    const org = await getOrganization();
 
     // Build where clause
     const whereConditions = [eq(incidents.organizationId, org.id)];
@@ -549,13 +548,12 @@ publicStatus.get("/:slug/incidents", async (c) => {
   }
 });
 
-// GET /api/v1/status/:slug/incidents/:id - Single incident with timeline
-publicStatus.get("/:slug/incidents/:id", async (c) => {
+// GET /api/v1/status/incidents/:id - Single incident with timeline
+publicStatus.get("/incidents/:id", async (c) => {
   try {
-    const slug = c.req.param("slug");
     const incidentId = c.req.param("id");
 
-    const org = await getOrgBySlug(slug);
+    const org = await getOrganization();
 
     // Get incident
     const [incident] = await db
@@ -623,11 +621,10 @@ publicStatus.get("/:slug/incidents/:id", async (c) => {
   }
 });
 
-// GET /api/v1/status/:slug/maintenance - Upcoming and in-progress maintenance
-publicStatus.get("/:slug/maintenance", async (c) => {
+// GET /api/v1/status/maintenance - Upcoming and in-progress maintenance
+publicStatus.get("/maintenance", async (c) => {
   try {
-    const slug = c.req.param("slug");
-    const org = await getOrgBySlug(slug);
+    const org = await getOrganization();
 
     const maintenanceList = await getUpcomingMaintenance(org.id);
 

@@ -2,11 +2,7 @@
 
 import { useState } from "react";
 
-interface Props {
-  slug: string;
-}
-
-export function SubscribeForm({ slug }: Props) {
+export function SubscribeForm() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -16,7 +12,7 @@ export function SubscribeForm({ slug }: Props) {
     setStatus("loading");
 
     try {
-      const res = await fetch(`/api/v1/status/${slug}/subscribe`, {
+      const res = await fetch(`/api/v1/status/subscribe`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

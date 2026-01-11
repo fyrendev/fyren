@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { redirect, notFound } from "next/navigation";
-import { getStatus, getUptime, getSetupStatus, getDefaultOrg } from "@/lib/api";
+import { getStatus, getUptime, getSetupStatus } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 import { Header } from "@/components/ui/Header";
@@ -21,8 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
       return { title: "Setup Required" };
     }
 
-    const { organization } = await getDefaultOrg();
-    const data = await getStatus(organization.slug);
+    const data = await getStatus();
     return {
       title: `${data.organization.name} Status`,
       description: `Current status: ${data.status.description}`,
@@ -43,22 +42,11 @@ export default async function StatusPage() {
     redirect("/setup");
   }
 
-  // Get the default organization
-  let org;
-  try {
-    const { organization } = await getDefaultOrg();
-    org = organization;
-  } catch {
-    notFound();
-  }
-
-  const slug = org.slug;
-
   let data;
   let uptime;
 
   try {
-    [data, uptime] = await Promise.all([getStatus(slug), getUptime(slug)]);
+    [data, uptime] = await Promise.all([getStatus(), getUptime()]);
   } catch {
     notFound();
   }
@@ -82,7 +70,7 @@ export default async function StatusPage() {
           {data.activeIncidents.length > 0 && (
             <section className="mt-8">
               <h2 className="text-xl font-semibold mb-4">Active Incidents</h2>
-              <IncidentList incidents={data.activeIncidents} slug={slug} />
+              <IncidentList incidents={data.activeIncidents} />
             </section>
           )}
 
@@ -106,11 +94,7 @@ export default async function StatusPage() {
                 {uptime.overall.month.toFixed(2)}% uptime this month
               </span>
             </div>
-            <ComponentList
-              components={data.components}
-              uptimeData={uptime.components}
-              slug={slug}
-            />
+            <ComponentList components={data.components} uptimeData={uptime.components} />
           </section>
 
           {/* Past Incidents Link */}
@@ -122,10 +106,10 @@ export default async function StatusPage() {
 
           {/* Subscribe */}
           <section className="mt-12">
-            <SubscribeForm slug={slug} />
+            <SubscribeForm />
           </section>
 
-          <Footer organization={data.organization} rssUrl={`/api/v1/status/${slug}/rss`} />
+          <Footer organization={data.organization} rssUrl="/api/v1/status/rss" />
         </div>
       </div>
     </OrganizationTheme>

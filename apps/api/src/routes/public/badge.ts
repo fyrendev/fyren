@@ -1,9 +1,10 @@
 import { Hono } from "hono";
-import { db, eq, and, organizations, components } from "@fyrendev/db";
+import { db, eq, and, asc, organizations, components } from "@fyrendev/db";
 import type { ComponentStatus } from "@fyrendev/db";
 import { errorResponse, NotFoundError } from "../../lib/errors";
 import { widgetCorsHeaders, cacheHeaders } from "../../middleware/security";
 import { badgeRateLimit } from "../../middleware/rateLimit";
+import { env } from "../../env";
 
 export const badgeRoutes = new Hono();
 
@@ -16,10 +17,14 @@ const STATUS_COLORS = {
   maintenance: { color: "#3b82f6", label: "Maintenance" },
 } as const;
 
-// Helper to get organization by slug
-async function getOrgBySlug(slug: string) {
-  const [org] = await db.select().from(organizations).where(eq(organizations.slug, slug)).limit(1);
-  if (!org) throw new NotFoundError("Organization not found");
+// Helper to get the organization
+async function getOrganization() {
+  const [org] = await db
+    .select()
+    .from(organizations)
+    .orderBy(asc(organizations.createdAt))
+    .limit(1);
+  if (!org) throw new NotFoundError("No organization configured");
   return org;
 }
 
@@ -106,14 +111,13 @@ badgeRoutes.use("*", badgeRateLimit);
 badgeRoutes.use("*", widgetCorsHeaders());
 badgeRoutes.use("*", cacheHeaders(60)); // Cache for 60 seconds
 
-// GET /api/v1/status/:slug/badge.svg - SVG status badge
-badgeRoutes.get("/:slug/badge.svg", async (c) => {
+// GET /api/v1/status/badge.svg - SVG status badge
+badgeRoutes.get("/badge.svg", async (c) => {
   try {
-    const slug = c.req.param("slug");
     const style = (c.req.query("style") as "flat" | "flat-square" | "plastic") || "flat";
     const label = c.req.query("label") || "status";
 
-    const org = await getOrgBySlug(slug);
+    const org = await getOrganization();
 
     // Get all public components
     const orgComponents = await db
@@ -145,12 +149,10 @@ badgeRoutes.get("/:slug/badge.svg", async (c) => {
   }
 });
 
-// GET /api/v1/status/:slug/badge.json - JSON badge data (for custom implementations)
-badgeRoutes.get("/:slug/badge.json", async (c) => {
+// GET /api/v1/status/badge.json - JSON badge data (for custom implementations)
+badgeRoutes.get("/badge.json", async (c) => {
   try {
-    const slug = c.req.param("slug");
-
-    const org = await getOrgBySlug(slug);
+    const org = await getOrganization();
 
     // Get all public components
     const orgComponents = await db
@@ -170,7 +172,7 @@ badgeRoutes.get("/:slug/badge.json", async (c) => {
       indicator: overall.indicator,
       page: {
         name: org.name,
-        url: `${process.env.APP_URL || ""}/${slug}`,
+        url: env.APP_URL,
       },
     });
   } catch (error) {
@@ -178,10 +180,9 @@ badgeRoutes.get("/:slug/badge.json", async (c) => {
   }
 });
 
-// GET /api/v1/status/:slug/badge - Redirect to SVG
-badgeRoutes.get("/:slug/badge", async (c) => {
-  const slug = c.req.param("slug");
+// GET /api/v1/status/badge - Redirect to SVG
+badgeRoutes.get("/badge", async (c) => {
   const query = c.req.query();
   const queryString = new URLSearchParams(query as Record<string, string>).toString();
-  return c.redirect(`/api/v1/status/${slug}/badge.svg${queryString ? `?${queryString}` : ""}`);
+  return c.redirect(`/api/v1/status/badge.svg${queryString ? `?${queryString}` : ""}`);
 });

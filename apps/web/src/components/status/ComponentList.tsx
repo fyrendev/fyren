@@ -4,10 +4,9 @@ import { ComponentRow } from "./ComponentRow";
 interface Props {
   components: Component[];
   uptimeData: ComponentUptime[];
-  slug: string;
 }
 
-export function ComponentList({ components, uptimeData, slug }: Props) {
+export function ComponentList({ components, uptimeData }: Props) {
   // Group by group field
   const grouped = components.reduce(
     (acc, component) => {
@@ -40,7 +39,6 @@ export function ComponentList({ components, uptimeData, slug }: Props) {
                 key={component.id}
                 component={component}
                 uptime={uptimeMap.get(component.id)}
-                slug={slug}
               />
             ))}
         </div>

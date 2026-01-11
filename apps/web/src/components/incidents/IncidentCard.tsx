@@ -5,7 +5,6 @@ import { formatRelativeTime } from "@/lib/utils";
 
 interface Props {
   incident: Incident;
-  slug?: string; // No longer used for routing but kept for backwards compatibility
 }
 
 const severityColors: Record<string, string> = {

@@ -5,7 +5,6 @@ import { UptimeBar } from "./UptimeBar";
 interface Props {
   component: Component;
   uptime?: UptimeData;
-  slug: string;
 }
 
 const statusLabels: Record<string, string> = {
@@ -18,7 +17,7 @@ const statusLabels: Record<string, string> = {
   under_maintenance: "Under Maintenance",
 };
 
-export function ComponentRow({ component, uptime, slug }: Props) {
+export function ComponentRow({ component, uptime }: Props) {
   return (
     <div
       className="px-4 py-4 last:border-b-0"
@@ -39,7 +38,7 @@ export function ComponentRow({ component, uptime, slug }: Props) {
 
       {/* Uptime bar - loads via client component */}
       <div className="mt-3">
-        <UptimeBar componentId={component.id} slug={slug} />
+        <UptimeBar componentId={component.id} />
       </div>
     </div>
   );

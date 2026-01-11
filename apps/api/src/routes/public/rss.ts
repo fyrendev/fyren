@@ -1,9 +1,20 @@
 import { Hono } from "hono";
-import { db, eq, desc } from "@fyrendev/db";
+import { db, eq, desc, asc } from "@fyrendev/db";
 import { organizations, incidents, incidentUpdates } from "@fyrendev/db";
 import { env } from "../../env";
 
 export const rssRoutes = new Hono();
+
+// Helper to get the organization
+async function getOrganization() {
+  const [org] = await db
+    .select()
+    .from(organizations)
+    .orderBy(asc(organizations.createdAt))
+    .limit(1);
+  if (!org) return null;
+  return org;
+}
 
 function escapeXml(str: string): string {
   return str
@@ -15,15 +26,11 @@ function escapeXml(str: string): string {
 }
 
 // RSS feed for incidents
-rssRoutes.get("/:slug/rss", async (c) => {
-  const slug = c.req.param("slug");
-
-  const org = await db.query.organizations.findFirst({
-    where: eq(organizations.slug, slug),
-  });
+rssRoutes.get("/rss", async (c) => {
+  const org = await getOrganization();
 
   if (!org) {
-    return c.json({ error: { message: "Organization not found" } }, 404);
+    return c.json({ error: { message: "No organization configured" } }, 404);
   }
 
   // Get recent incidents
@@ -34,7 +41,7 @@ rssRoutes.get("/:slug/rss", async (c) => {
     .orderBy(desc(incidents.createdAt))
     .limit(20);
 
-  const statusPageUrl = `${env.APP_URL}/${slug}`;
+  const statusPageUrl = env.APP_URL;
 
   // Build items with latest update for each incident
   const items: string[] = [];

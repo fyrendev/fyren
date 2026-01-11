@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getStatus, getDefaultOrg } from "@/lib/api";
+import { getStatus } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
@@ -39,17 +39,9 @@ const STATUS_COLORS: Record<string, { bg: string; dot: string; text: string }> =
 export default async function WidgetPage({ searchParams }: Props) {
   const { theme = "light", style = "compact" } = await searchParams;
 
-  let slug: string;
-  try {
-    const { organization } = await getDefaultOrg();
-    slug = organization.slug;
-  } catch {
-    notFound();
-  }
-
   let data;
   try {
-    data = await getStatus(slug);
+    data = await getStatus();
   } catch {
     notFound();
   }
@@ -108,7 +100,7 @@ export default async function WidgetPage({ searchParams }: Props) {
               function sendHeight() {
                 var height = document.body.scrollHeight;
                 window.parent.postMessage(
-                  JSON.stringify({ type: 'fyren-resize', slug: '${slug}', height: height }),
+                  JSON.stringify({ type: 'fyren-resize', height: height }),
                   '*'
                 );
               }

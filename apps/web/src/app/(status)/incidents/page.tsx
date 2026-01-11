@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { getIncidents, getStatus, getDefaultOrg } from "@/lib/api";
+import { getIncidents, getStatus } from "@/lib/api";
 import { IncidentList } from "@/components/incidents/IncidentList";
 import { OrganizationTheme } from "@/components/status/ThemeProvider";
 
@@ -14,8 +14,7 @@ interface Props {
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const { organization } = await getDefaultOrg();
-    const data = await getStatus(organization.slug);
+    const data = await getStatus();
     return {
       title: `Incident History | ${data.organization.name} Status`,
       description: `Past incidents and status updates for ${data.organization.name}`,
@@ -31,27 +30,22 @@ export default async function IncidentsPage({ searchParams }: Props) {
   const limit = 10;
   const offset = (page - 1) * limit;
 
-  let org;
-  try {
-    const { organization } = await getDefaultOrg();
-    org = organization;
-  } catch {
-    notFound();
-  }
-
-  const slug = org.slug;
-
+  let statusData;
   let incidents;
   let pagination;
 
   try {
-    const data = await getIncidents(slug, {
-      limit,
-      offset,
-      status: "all",
-    });
-    incidents = data.incidents;
-    pagination = data.pagination;
+    const [status, incidentsData] = await Promise.all([
+      getStatus(),
+      getIncidents({
+        limit,
+        offset,
+        status: "all",
+      }),
+    ]);
+    statusData = status;
+    incidents = incidentsData.incidents;
+    pagination = incidentsData.pagination;
   } catch {
     notFound();
   }
@@ -59,7 +53,7 @@ export default async function IncidentsPage({ searchParams }: Props) {
   const totalPages = Math.ceil(pagination.total / limit);
 
   return (
-    <OrganizationTheme organization={org}>
+    <OrganizationTheme organization={statusData.organization}>
       <div className="min-h-screen status-page-bg">
         <div className="max-w-4xl mx-auto px-4 py-8">
           <Link href="/" className="inline-flex items-center gap-2 brand-link mb-6">
@@ -73,7 +67,7 @@ export default async function IncidentsPage({ searchParams }: Props) {
             <p className="theme-muted">No incidents to display.</p>
           ) : (
             <>
-              <IncidentList incidents={incidents} slug={slug} />
+              <IncidentList incidents={incidents} />
 
               {/* Pagination */}
               {totalPages > 1 && (
