@@ -28,6 +28,7 @@ import { adminMaintenance } from "./admin/maintenance";
 import { adminSubscribers } from "./admin/subscribers";
 import { subscriberGroupsRouter } from "./admin/subscriber-groups";
 import { adminWebhooks } from "./admin/webhooks";
+import { adminSystem } from "./admin/system";
 
 // Health routes
 import { health } from "./health";
@@ -115,6 +116,11 @@ export function setupRoutes(app: Hono) {
   app.use("/api/v1/admin/webhooks", authMiddleware);
   app.use("/api/v1/admin/webhooks/*", authMiddleware);
   app.route("/api/v1/admin/webhooks", adminWebhooks);
+
+  // Protected system routes (owner-only access)
+  app.use("/api/v1/admin/system", authMiddleware);
+  app.use("/api/v1/admin/system/*", authMiddleware);
+  app.route("/api/v1/admin/system", adminSystem);
 
   // Test routes (only enabled in dev/test environments)
   app.route("/api/v1/test", testRoutes);

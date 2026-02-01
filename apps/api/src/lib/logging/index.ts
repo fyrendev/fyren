@@ -15,12 +15,14 @@ import { OtlpLogProvider } from "./providers/otlp";
 
 let globalProvider: ILogProvider | null = null;
 let globalConfig: LoggerConfig | null = null;
+let configSource: "env" | "database" = "env";
 
 /**
  * Initialize the logging system with configuration
  */
-export function initializeLogger(config: LoggerConfig): void {
+export function initializeLogger(config: LoggerConfig, source: "env" | "database" = "env"): void {
   globalConfig = config;
+  configSource = source;
 
   switch (config.provider) {
     case "loki":
@@ -44,6 +46,38 @@ export function initializeLogger(config: LoggerConfig): void {
       globalProvider = new ConsoleLogProvider();
       break;
   }
+}
+
+/**
+ * Reinitialize the logger with new configuration (hot-reload support)
+ *
+ * This gracefully shuts down the current provider before initializing the new one.
+ */
+export async function reinitializeLogger(
+  config: LoggerConfig,
+  source: "env" | "database" = "database"
+): Promise<void> {
+  // Flush and shutdown existing provider
+  if (globalProvider) {
+    try {
+      await globalProvider.flush();
+      await globalProvider.shutdown();
+    } catch (error) {
+      console.warn("[Logger] Error during provider shutdown:", error);
+    }
+  }
+
+  // Initialize with new config
+  initializeLogger(config, source);
+
+  console.log(`[Logger] Reinitialized with provider: ${config.provider}, source: ${source}`);
+}
+
+/**
+ * Get the current logging configuration
+ */
+export function getLoggerConfig(): { config: LoggerConfig | null; source: "env" | "database" } {
+  return { config: globalConfig, source: configSource };
 }
 
 /**
@@ -207,5 +241,6 @@ export const logger = {
   },
 };
 
-// Re-export types
+// Re-export types and config loader
 export type { LogLevel, LogContext, LogEntry, ILogProvider, LoggerConfig } from "./types";
+export { loadConfig, loadConfigFromDb, loadConfigFromEnv } from "./config";

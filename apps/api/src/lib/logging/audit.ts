@@ -59,6 +59,9 @@ export const AuditAction = {
   USER_INVITE: "user.invite",
   USER_REMOVE: "user.remove",
   USER_ROLE_CHANGE: "user.role_change",
+
+  // System Settings
+  SETTINGS_UPDATE: "settings.update",
 } as const;
 
 export type AuditActionType = (typeof AuditAction)[keyof typeof AuditAction];
@@ -77,6 +80,7 @@ export const EntityType = {
   WEBHOOK: "webhook",
   API_KEY: "api_key",
   USER: "user",
+  SETTINGS: "settings",
 } as const;
 
 export type EntityTypeValue = (typeof EntityType)[keyof typeof EntityType];
@@ -223,6 +227,15 @@ export function createAuditLogger(context: {
         entityType: EntityType.INCIDENT_UPDATE,
         entityId: updateId,
         metadata: { incidentId, ...metadata },
+      });
+    },
+
+    settingsUpdated(scope: string, setting: string, changes?: Record<string, unknown>) {
+      this.log({
+        action: AuditAction.SETTINGS_UPDATE,
+        entityType: EntityType.SETTINGS,
+        entityId: `${scope}:${setting}`,
+        changes,
       });
     },
   };

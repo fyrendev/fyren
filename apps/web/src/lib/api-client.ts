@@ -213,6 +213,42 @@ export interface Pagination {
   offset: number;
 }
 
+// Logging Configuration Types
+export type LogProvider = "console" | "loki" | "otlp";
+export type LogLevel = "debug" | "info" | "warn" | "error";
+
+export interface LokiConfigInput {
+  username?: string;
+  password?: string;
+  tenantId?: string;
+}
+
+export interface OtlpConfigInput {
+  headers?: Record<string, string>;
+}
+
+export interface LoggingConfig {
+  logProvider: LogProvider;
+  logLevel: LogLevel;
+  logServiceName: string;
+  lokiUrl: string | null;
+  lokiConfigured: boolean;
+  otlpEndpoint: string | null;
+  otlpConfigured: boolean;
+  updatedAt: string;
+  updatedBy: string | null;
+}
+
+export interface LoggingConfigInput {
+  logProvider: LogProvider;
+  logLevel: LogLevel;
+  logServiceName?: string;
+  lokiUrl?: string | null;
+  lokiConfig?: LokiConfigInput | null;
+  otlpEndpoint?: string | null;
+  otlpConfig?: OtlpConfigInput | null;
+}
+
 // Typed API methods
 export const api = {
   // Components
@@ -485,4 +521,35 @@ export const api = {
       }
     );
   },
+
+  // System Settings
+  getLoggingConfig: () =>
+    apiClient<{
+      config: LoggingConfig;
+      currentSource: "env" | "database";
+      currentProvider: string;
+    }>("/api/v1/admin/system/logging"),
+  updateLoggingConfig: (data: LoggingConfigInput) =>
+    apiClient<{ config: LoggingConfig; message: string }>("/api/v1/admin/system/logging", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  testLoggingConfig: () =>
+    apiClient<{ success: boolean; message: string }>("/api/v1/admin/system/logging/test", {
+      method: "POST",
+    }),
+  reloadLoggingConfig: () =>
+    apiClient<{ success: boolean; message: string; provider: string; source: string }>(
+      "/api/v1/admin/system/logging/reload",
+      {
+        method: "POST",
+      }
+    ),
+  resetLoggingConfig: () =>
+    apiClient<{ success: boolean; message: string; provider: string; source: string }>(
+      "/api/v1/admin/system/logging/reset",
+      {
+        method: "POST",
+      }
+    ),
 };

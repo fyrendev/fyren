@@ -15,21 +15,12 @@ import {
 import { rescheduleMaintenanceJobs } from "./services/maintenance-startup.service";
 import { securityHeaders } from "./middleware/security";
 import { runMigrations } from "@fyrendev/db";
-import { initializeLogger, logger } from "./lib/logging";
+import { initializeLogger, logger, loadConfig, loadConfigFromEnv } from "./lib/logging";
 import { loggingMiddleware } from "./middleware/logging";
 
-// Initialize logger before anything else
-initializeLogger({
-  provider: env.LOG_PROVIDER,
-  level: env.LOG_LEVEL,
-  serviceName: env.LOG_SERVICE_NAME,
-  lokiUrl: env.LOKI_URL,
-  lokiUsername: env.LOKI_USERNAME,
-  lokiPassword: env.LOKI_PASSWORD,
-  lokiTenantId: env.LOKI_TENANT_ID,
-  otlpEndpoint: env.OTLP_ENDPOINT,
-  otlpHeaders: env.OTLP_HEADERS ? JSON.parse(env.OTLP_HEADERS) : undefined,
-});
+// Initialize logger with environment config first (before DB is ready)
+// This will be re-initialized with DB config after migrations run
+initializeLogger(loadConfigFromEnv(), "env");
 
 const app = new Hono();
 
@@ -95,6 +86,17 @@ async function startServer() {
       });
       // Don't exit - migrations might already be applied
     }
+  }
+
+  // Re-initialize logger with database config (if available)
+  try {
+    const { config, source } = await loadConfig();
+    initializeLogger(config, source);
+    logger.info(`Logger initialized from ${source}`, { provider: config.provider });
+  } catch (err) {
+    logger.warn("Failed to load logging config from database, using environment config", {
+      errorName: err instanceof Error ? err.name : "Unknown",
+    });
   }
 
   logger.info(`Starting Fyren API on port ${env.PORT}`);

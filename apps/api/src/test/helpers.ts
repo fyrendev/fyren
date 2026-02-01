@@ -14,6 +14,7 @@ import {
   subscribers,
   subscriberGroups,
   webhookEndpoints,
+  systemSettings,
 } from "@fyrendev/db";
 import { generateApiKey } from "../lib/api-key";
 
@@ -352,4 +353,24 @@ export function jsonAuthHeaders(apiKey: string): Record<string, string> {
     "Content-Type": "application/json",
     Authorization: `Bearer ${apiKey}`,
   };
+}
+
+/**
+ * Create or get system settings.
+ */
+export async function createTestSystemSettings(
+  overrides: Partial<typeof systemSettings.$inferInsert> = {}
+) {
+  const [settings] = await db
+    .insert(systemSettings)
+    .values({
+      logProvider: overrides.logProvider || "console",
+      logLevel: overrides.logLevel || "info",
+      logServiceName: overrides.logServiceName || "fyren-api",
+      ...overrides,
+    })
+    .returning();
+
+  if (!settings) throw new Error("Failed to create test system settings");
+  return settings;
 }
