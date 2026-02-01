@@ -1,4 +1,5 @@
 import type { Context } from "hono";
+import { logger } from "./logging";
 
 export class AppError extends Error {
   constructor(
@@ -112,7 +113,13 @@ export function errorResponse(c: Context, error: unknown) {
     );
   }
 
-  console.error("Unhandled error:", error);
+  logger.error("Unhandled error", {
+    requestId: c.get("requestId"),
+    errorName: error instanceof Error ? error.name : "Unknown",
+    stack: error instanceof Error ? error.stack : undefined,
+    path: c.req.path,
+    method: c.req.method,
+  });
   return c.json(
     {
       error: {

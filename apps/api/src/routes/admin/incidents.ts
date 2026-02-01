@@ -9,6 +9,7 @@ import {
   updateAffectedComponentsSchema,
 } from "../../validators/incident";
 import { ValidationError, NotFoundError, errorResponse } from "../../lib/errors";
+import { createAuditLogger } from "../../lib/logging/audit";
 
 export const adminIncidents = new Hono();
 
@@ -124,6 +125,17 @@ adminIncidents.post("/", async (c) => {
       throw new Error("Failed to create incident");
     }
 
+    // Audit log
+    const auditLogger = createAuditLogger({
+      userId: user?.id,
+      organizationId: orgId,
+      requestId: c.get("requestId"),
+    });
+    auditLogger.incidentCreated(incident.id, {
+      title: incident.title,
+      severity: incident.severity,
+    });
+
     return c.json(
       {
         incident: {
@@ -162,6 +174,15 @@ adminIncidents.put("/:id", async (c) => {
     if (!incident) {
       throw new NotFoundError("Incident not found");
     }
+
+    // Audit log
+    const user = c.get("user");
+    const auditLogger = createAuditLogger({
+      userId: user?.id,
+      organizationId: orgId,
+      requestId: c.get("requestId"),
+    });
+    auditLogger.incidentUpdated(incidentId, data);
 
     return c.json({
       incident: {
@@ -206,6 +227,14 @@ adminIncidents.post("/:id/updates", async (c) => {
       throw new Error("Failed to create incident update");
     }
 
+    // Audit log
+    const auditLogger = createAuditLogger({
+      userId: user?.id,
+      organizationId: orgId,
+      requestId: c.get("requestId"),
+    });
+    auditLogger.incidentUpdateAdded(update.id, incidentId, { status: update.status });
+
     return c.json(
       {
         update: {
@@ -249,6 +278,14 @@ adminIncidents.patch("/:id/resolve", async (c) => {
     if (!update) {
       throw new Error("Failed to resolve incident");
     }
+
+    // Audit log
+    const auditLogger = createAuditLogger({
+      userId: user?.id,
+      organizationId: orgId,
+      requestId: c.get("requestId"),
+    });
+    auditLogger.incidentResolved(incidentId);
 
     return c.json({
       update: {
@@ -304,6 +341,15 @@ adminIncidents.delete("/:id", async (c) => {
     if (!result) {
       throw new NotFoundError("Incident not found");
     }
+
+    // Audit log
+    const user = c.get("user");
+    const auditLogger = createAuditLogger({
+      userId: user?.id,
+      organizationId: orgId,
+      requestId: c.get("requestId"),
+    });
+    auditLogger.incidentDeleted(incidentId);
 
     return c.json({ success: true });
   } catch (error) {
