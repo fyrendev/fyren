@@ -43,6 +43,8 @@ export {
   isNull,
   isNotNull,
   inArray,
+  gt,
   gte,
+  lt,
   lte,
 } from "drizzle-orm";

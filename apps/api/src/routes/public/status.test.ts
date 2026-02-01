@@ -335,5 +335,104 @@ describe("Public Status API", () => {
       const data = await res.json();
       expect(data.history[0].incidents).toBe(1);
     });
+
+    test("correctly filters results by day boundaries", async () => {
+      // This test verifies that the SQL date comparisons work correctly
+      // by creating results across multiple days and checking isolation
+      const org = await createTestOrganization({ slug: "test-org" });
+      const component = await createTestComponent(org.id, { name: "API" });
+      const monitor = await createTestMonitor(component.id);
+
+      // Set up dates for today, yesterday, and 2 days ago
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 0, 0);
+      const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+      const twoDaysAgo = new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000);
+
+      // Today: 2 up, 0 down = 100%
+      await createTestMonitorResult(monitor.id, { status: "up", checkedAt: today });
+      await createTestMonitorResult(monitor.id, {
+        status: "up",
+        checkedAt: new Date(today.getTime() + 60000),
+      });
+
+      // Yesterday: 1 up, 1 down = 50%
+      await createTestMonitorResult(monitor.id, { status: "up", checkedAt: yesterday });
+      await createTestMonitorResult(monitor.id, {
+        status: "down",
+        checkedAt: new Date(yesterday.getTime() + 60000),
+      });
+
+      // 2 days ago: 0 up, 2 down = 0%
+      await createTestMonitorResult(monitor.id, { status: "down", checkedAt: twoDaysAgo });
+      await createTestMonitorResult(monitor.id, {
+        status: "down",
+        checkedAt: new Date(twoDaysAgo.getTime() + 60000),
+      });
+
+      const res = await app.request(`/api/v1/status/uptime/${component.id}/history?days=3`);
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.history).toHaveLength(3);
+
+      // History is ordered from most recent (index 0) to oldest
+      // Day 0 (today): 100% uptime
+      expect(data.history[0].uptime).toBe(100);
+      // Day 1 (yesterday): 50% uptime
+      expect(data.history[1].uptime).toBe(50);
+      // Day 2 (2 days ago): 0% uptime
+      expect(data.history[2].uptime).toBe(0);
+    });
+
+    test("handles results at day boundaries correctly", async () => {
+      // Test edge case: results right at midnight boundaries
+      const org = await createTestOrganization({ slug: "test-org" });
+      const component = await createTestComponent(org.id, { name: "API" });
+      const monitor = await createTestMonitor(component.id);
+
+      const now = new Date();
+      // Start of today (midnight)
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+      // End of yesterday (23:59:59.999)
+      const yesterdayEnd = new Date(todayStart.getTime() - 1);
+      // Start of yesterday
+      const yesterdayStart = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() - 1,
+        0,
+        0,
+        0
+      );
+
+      // Result at very start of today - should count for today
+      await createTestMonitorResult(monitor.id, {
+        status: "up",
+        checkedAt: new Date(todayStart.getTime() + 1000),
+      });
+
+      // Result at very end of yesterday - should count for yesterday
+      await createTestMonitorResult(monitor.id, {
+        status: "down",
+        checkedAt: new Date(yesterdayEnd.getTime() - 1000),
+      });
+
+      // Result at start of yesterday - should count for yesterday
+      await createTestMonitorResult(monitor.id, {
+        status: "down",
+        checkedAt: new Date(yesterdayStart.getTime() + 1000),
+      });
+
+      const res = await app.request(`/api/v1/status/uptime/${component.id}/history?days=2`);
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+
+      // Today: 1 up = 100%
+      expect(data.history[0].uptime).toBe(100);
+      // Yesterday: 2 down = 0%
+      expect(data.history[1].uptime).toBe(0);
+    });
   });
 });
