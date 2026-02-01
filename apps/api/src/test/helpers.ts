@@ -6,6 +6,7 @@ import {
   users,
   userOrganizations,
   monitors,
+  monitorResults,
   incidents,
   incidentUpdates,
   incidentComponents,
@@ -162,6 +163,29 @@ export async function createTestMonitor(
 
   if (!monitor) throw new Error("Failed to create test monitor");
   return monitor;
+}
+
+/**
+ * Create a test monitor result.
+ */
+export async function createTestMonitorResult(
+  monitorId: string,
+  overrides: Partial<typeof monitorResults.$inferInsert> = {}
+) {
+  const [result] = await db
+    .insert(monitorResults)
+    .values({
+      monitorId,
+      status: overrides.status || "up",
+      responseTimeMs: overrides.responseTimeMs ?? 100,
+      statusCode: overrides.statusCode ?? 200,
+      checkedAt: overrides.checkedAt || new Date(),
+      ...overrides,
+    })
+    .returning();
+
+  if (!result) throw new Error("Failed to create test monitor result");
+  return result;
 }
 
 /**
