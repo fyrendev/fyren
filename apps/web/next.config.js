@@ -1,4 +1,7 @@
 /** @type {import('next').NextConfig} */
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
 const nextConfig = {
   // Enable standalone output for Docker
   output: "standalone",
@@ -8,7 +11,7 @@ const nextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: `${process.env.API_URL || "http://localhost:3001"}/api/:path*`,
+        destination: `${API_URL}/api/:path*`,
       },
     ];
   },
