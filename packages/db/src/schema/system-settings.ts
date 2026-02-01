@@ -25,7 +25,7 @@ export const systemSettings = pgTable("system_settings", {
 
   // Metadata
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  updatedBy: uuid("updated_by"), // User ID who last updated
+  updatedBy: text("updated_by"), // User ID who last updated
 });
 
 export const insertSystemSettingsSchema = createInsertSchema(systemSettings);

@@ -1,5 +1,5 @@
 {
-  "id": "fd805786-62ff-4a7d-a738-891f1aa343e9",
+  "id": "57ce85a6-e8ec-44a0-b22b-ad339bde8938",
   "prevId": "06044c76-6f62-46c7-b2f5-66bd3ddb9d13",
   "version": "7",
   "dialect": "postgresql",
@@ -2780,7 +2780,7 @@
         },
         "updated_by": {
           "name": "updated_by",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         }

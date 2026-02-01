@@ -15,6 +15,7 @@ import { Input } from "@/components/admin/ui/Input";
 export default function SystemPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingAndApplying, setSavingAndApplying] = useState(false);
   const [testing, setTesting] = useState(false);
   const [reloading, setReloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +85,54 @@ export default function SystemPage() {
     }
   }
 
+  function buildLoggingInput() {
+    const input: {
+      logProvider: LogProvider;
+      logLevel: LogLevel;
+      logServiceName?: string;
+      lokiUrl?: string | null;
+      lokiConfig?: LokiConfigInput | null;
+      otlpEndpoint?: string | null;
+      otlpConfig?: OtlpConfigInput | null;
+    } = {
+      logProvider: formData.logProvider,
+      logLevel: formData.logLevel,
+      logServiceName: formData.logServiceName,
+    };
+
+    // Add Loki config if using Loki
+    if (formData.logProvider === "loki") {
+      input.lokiUrl = formData.lokiUrl || null;
+      const lokiHasSecrets =
+        formData.lokiConfig.username ||
+        formData.lokiConfig.password ||
+        formData.lokiConfig.tenantId;
+      input.lokiConfig = lokiHasSecrets
+        ? {
+            username: formData.lokiConfig.username || undefined,
+            password: formData.lokiConfig.password || undefined,
+            tenantId: formData.lokiConfig.tenantId || undefined,
+          }
+        : null;
+    } else {
+      input.lokiUrl = null;
+      input.lokiConfig = null;
+    }
+
+    // Add OTLP config if using OTLP
+    if (formData.logProvider === "otlp") {
+      input.otlpEndpoint = formData.otlpEndpoint || null;
+      const hasHeaders =
+        formData.otlpConfig.headers && Object.keys(formData.otlpConfig.headers).length > 0;
+      input.otlpConfig = hasHeaders ? { headers: formData.otlpConfig.headers } : null;
+    } else {
+      input.otlpEndpoint = null;
+      input.otlpConfig = null;
+    }
+
+    return input;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -92,51 +141,7 @@ export default function SystemPage() {
     setTestResult(null);
 
     try {
-      // Build the input object
-      const input: {
-        logProvider: LogProvider;
-        logLevel: LogLevel;
-        logServiceName?: string;
-        lokiUrl?: string | null;
-        lokiConfig?: LokiConfigInput | null;
-        otlpEndpoint?: string | null;
-        otlpConfig?: OtlpConfigInput | null;
-      } = {
-        logProvider: formData.logProvider,
-        logLevel: formData.logLevel,
-        logServiceName: formData.logServiceName,
-      };
-
-      // Add Loki config if using Loki
-      if (formData.logProvider === "loki") {
-        input.lokiUrl = formData.lokiUrl || null;
-        const lokiHasSecrets =
-          formData.lokiConfig.username ||
-          formData.lokiConfig.password ||
-          formData.lokiConfig.tenantId;
-        input.lokiConfig = lokiHasSecrets
-          ? {
-              username: formData.lokiConfig.username || undefined,
-              password: formData.lokiConfig.password || undefined,
-              tenantId: formData.lokiConfig.tenantId || undefined,
-            }
-          : null;
-      } else {
-        input.lokiUrl = null;
-        input.lokiConfig = null;
-      }
-
-      // Add OTLP config if using OTLP
-      if (formData.logProvider === "otlp") {
-        input.otlpEndpoint = formData.otlpEndpoint || null;
-        const hasHeaders =
-          formData.otlpConfig.headers && Object.keys(formData.otlpConfig.headers).length > 0;
-        input.otlpConfig = hasHeaders ? { headers: formData.otlpConfig.headers } : null;
-      } else {
-        input.otlpEndpoint = null;
-        input.otlpConfig = null;
-      }
-
+      const input = buildLoggingInput();
       const result = await api.updateLoggingConfig(input);
       setSuccess(result.message);
       setTimeout(() => setSuccess(null), 5000);
@@ -145,6 +150,31 @@ export default function SystemPage() {
       setError(message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSaveAndApply(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingAndApplying(true);
+    setError(null);
+    setSuccess(null);
+    setTestResult(null);
+
+    try {
+      const input = buildLoggingInput();
+      await api.updateLoggingConfig(input);
+
+      // Immediately reload the logger
+      const reloadResult = await api.reloadLoggingConfig();
+      setCurrentSource(reloadResult.source as "env" | "database");
+      setCurrentProvider(reloadResult.provider);
+      setSuccess(`Configuration saved and applied. Now using ${reloadResult.provider} provider.`);
+      setTimeout(() => setSuccess(null), 5000);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to save and apply configuration";
+      setError(message);
+    } finally {
+      setSavingAndApplying(false);
     }
   }
 
@@ -296,8 +326,8 @@ export default function SystemPage() {
           </CardHeader>
           <div className="space-y-4">
             <p className="text-sm text-navy-400">
-              Configure where logs are sent. Changes are saved but not applied until you click
-              &quot;Apply Database Config&quot;.
+              Configure where logs are sent. Use &quot;Save &amp; Apply&quot; to immediately
+              activate your changes, or &quot;Save Only&quot; to save without applying.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -484,9 +514,24 @@ export default function SystemPage() {
               <Button type="button" variant="secondary" onClick={handleTest} loading={testing}>
                 Test Configuration
               </Button>
-              <Button type="submit" loading={saving}>
-                Save Configuration
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  loading={saving}
+                  disabled={savingAndApplying}
+                >
+                  Save Only
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleSaveAndApply}
+                  loading={savingAndApplying}
+                  disabled={saving}
+                >
+                  Save & Apply
+                </Button>
+              </div>
             </div>
           </div>
         </Card>

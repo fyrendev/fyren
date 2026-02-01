@@ -8,5 +8,5 @@ CREATE TABLE "system_settings" (
 	"otlp_endpoint" varchar(500),
 	"otlp_config" text,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"updated_by" uuid
+	"updated_by" text
 );
