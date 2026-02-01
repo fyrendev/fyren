@@ -3,6 +3,7 @@ import {
   and,
   asc,
   components,
+  count,
   db,
   desc,
   eq,
@@ -17,7 +18,6 @@ import {
   monitors,
   or,
   organizations,
-  sql,
 } from "@fyrendev/db";
 import { Hono } from "hono";
 import { errorResponse, NotFoundError } from "../../lib/errors";
@@ -413,7 +413,7 @@ publicStatus.get("/uptime/:componentId/history", async (c) => {
 
       // Count incidents for this day
       const incidentCount = await db
-        .select({ count: sql<number>`count(*)::int` })
+        .select({ count: count() })
         .from(incidents)
         .innerJoin(incidentComponents, eq(incidents.id, incidentComponents.incidentId))
         .where(
@@ -470,10 +470,10 @@ publicStatus.get("/incidents", async (c) => {
 
     // Get total count
     const countResult = await db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ total: count() })
       .from(incidents)
       .where(and(...whereConditions));
-    const count = countResult[0]?.count ?? 0;
+    const totalCount = countResult[0]?.total ?? 0;
 
     // Get incidents
     const incidentList = await db
@@ -540,7 +540,7 @@ publicStatus.get("/incidents", async (c) => {
     return c.json({
       incidents: incidentsWithDetails,
       pagination: {
-        total: count,
+        total: totalCount,
         limit,
         offset,
       },
