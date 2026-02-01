@@ -390,8 +390,8 @@ publicStatus.get("/uptime/:componentId/history", async (c) => {
           .where(
             and(
               eq(monitorResults.monitorId, monitor.id),
-              sql`${monitorResults.checkedAt} >= ${dayStart.toISOString()}`,
-              sql`${monitorResults.checkedAt} < ${dayEnd.toISOString()}`
+              sql`${monitorResults.checkedAt} >= ${dayStart.toISOString()}::timestamp`,
+              sql`${monitorResults.checkedAt} < ${dayEnd.toISOString()}::timestamp`
             )
           );
 
@@ -417,8 +417,8 @@ publicStatus.get("/uptime/:componentId/history", async (c) => {
         .where(
           and(
             eq(incidentComponents.componentId, componentId),
-            sql`${incidents.startedAt} >= ${dayStart.toISOString()}`,
-            sql`${incidents.startedAt} < ${dayEnd.toISOString()}`
+            sql`${incidents.startedAt} >= ${dayStart.toISOString()}::timestamp`,
+            sql`${incidents.startedAt} < ${dayEnd.toISOString()}::timestamp`
           )
         );
 
