@@ -1,10 +1,12 @@
-/** @type {import('next').NextConfig} */
+import type { NextConfig } from "next";
 
-const API_URL = process.env.API_URL || "http://localhost:3001";
+const API_URL = process.env.NEXT_PUBLIC_INTERNAL_API_URL;
 
-console.log("Next config - API_URL", API_URL);
+if (!API_URL) {
+  throw new Error("NEXT_PUBLIC_INTERNAL_API_URL is not set");
+}
 
-const nextConfig = {
+const nextConfig: NextConfig = {
   // Enable standalone output for Docker
   output: "standalone",
 
@@ -27,4 +29,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;

@@ -39,6 +39,8 @@ jobs:
           - image: web
             dockerfile: apps/web/Dockerfile
             image_name: fyren-web
+            extra_build_args: |
+              NEXT_PUBLIC_INTERNAL_API_URL=http://localhost:3001
 
     steps:
       - name: Checkout
@@ -91,6 +93,7 @@ jobs:
             BUILDTIME=${{ github.event.head_commit.timestamp }}
             VERSION=${{ steps.meta.outputs.version }}
             REVISION=${{ github.sha }}
+            ${{ matrix.extra_build_args }}
 
   # ===================================
   # Create Release Summary

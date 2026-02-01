@@ -62,13 +62,15 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_INTERNAL_API_URL: http://api:3001
     container_name: fyren-web
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - API_URL=http://api:3001
+      - NEXT_PUBLIC_INTERNAL_API_URL=http://api:3001
       - NEXT_PUBLIC_API_URL=http://localhost:3001
     depends_on:
       - api

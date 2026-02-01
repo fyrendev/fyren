@@ -163,7 +163,7 @@ jobs:
         working-directory: apps/web
         run: bun run build
         env:
-          API_URL: http://localhost:3001
+          NEXT_PUBLIC_INTERNAL_API_URL: http://localhost:3001
           NEXT_PUBLIC_API_URL: http://localhost:3001
 
   # ===================================
@@ -239,7 +239,7 @@ jobs:
           NODE_ENV: test
           BETTER_AUTH_SECRET: test-secret-for-ci-minimum-32-chars
           APP_URL: http://localhost:3000
-          API_URL: http://localhost:3001
+          NEXT_PUBLIC_INTERNAL_API_URL: http://localhost:3001
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
@@ -276,7 +276,11 @@ jobs:
 
       - name: Build Web image
         uses: docker/build-push-action@v5
+        env:
+          NEXT_PUBLIC_INTERNAL_API_URL: http://localhost:3001
         with:
+          build-args: |
+            NEXT_PUBLIC_INTERNAL_API_URL=http://localhost:3001
           context: .
           file: apps/web/Dockerfile
           push: false
