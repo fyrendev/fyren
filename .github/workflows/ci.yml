@@ -223,6 +223,7 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('apps/web/package.json') }}
 
       - name: Install Playwright browsers
+        working-directory: apps/web
         run: npx playwright install --with-deps chromium
 
       - name: Push database schema
