@@ -1,5 +1,6 @@
 import type { Context, Next } from "hono";
 import { redis } from "../lib/redis";
+import { logger } from "../lib/logging";
 
 export interface RateLimitConfig {
   /** Maximum requests allowed in the window */
@@ -96,7 +97,7 @@ export function rateLimit(config: RateLimitConfig) {
 
       if (!results) {
         // Redis error - allow request but log warning
-        console.warn("Rate limit Redis pipeline returned null");
+        logger.warn("Rate limit Redis pipeline returned null");
         return next();
       }
 
@@ -133,7 +134,10 @@ export function rateLimit(config: RateLimitConfig) {
       return next();
     } catch (error) {
       // On Redis error, log and allow the request (fail open)
-      console.error("Rate limiting error:", error);
+      logger.error("Rate limiting error", {
+        errorName: error instanceof Error ? error.name : "Unknown",
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return next();
     }
   };

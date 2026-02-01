@@ -1,5 +1,6 @@
 import Redis from "ioredis";
 import { env } from "../env";
+import { logger } from "./logging";
 
 // Standard Redis client for caching and general use
 export const redis = new Redis(env.REDIS_URL, {
@@ -8,11 +9,14 @@ export const redis = new Redis(env.REDIS_URL, {
 });
 
 redis.on("error", (err) => {
-  console.error("Redis connection error:", err);
+  logger.error("Redis connection error", {
+    errorName: err.name,
+    errorMessage: err.message,
+  });
 });
 
 redis.on("connect", () => {
-  console.log("Connected to Redis");
+  logger.info("Connected to Redis");
 });
 
 // BullMQ compatible Redis client (requires maxRetriesPerRequest: null)
@@ -22,9 +26,12 @@ export const bullmqRedis = new Redis(env.REDIS_URL, {
 });
 
 bullmqRedis.on("error", (err) => {
-  console.error("BullMQ Redis connection error:", err);
+  logger.error("BullMQ Redis connection error", {
+    errorName: err.name,
+    errorMessage: err.message,
+  });
 });
 
 bullmqRedis.on("connect", () => {
-  console.log("Connected to Redis (BullMQ)");
+  logger.info("Connected to Redis (BullMQ)");
 });

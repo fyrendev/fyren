@@ -6,6 +6,7 @@ import { ConsoleProvider } from "./providers/console";
 import { db } from "../db";
 import { organizations, eq } from "@fyrendev/db";
 import { decryptJson, isEncryptionAvailable } from "../encryption";
+import { logger } from "../logging";
 
 // Cache of email providers by organization ID
 const providerCache = new Map<string, { provider: EmailProvider; createdAt: number }>();
@@ -27,7 +28,7 @@ export async function getEmailProviderForOrg(orgId: string): Promise<EmailProvid
   const [org] = await db.select().from(organizations).where(eq(organizations.id, orgId)).limit(1);
 
   if (!org) {
-    console.warn(`Organization ${orgId} not found, using console provider`);
+    logger.warn(`Organization ${orgId} not found, using console provider`, { orgId });
     return new ConsoleProvider();
   }
 
@@ -39,12 +40,14 @@ export async function getEmailProviderForOrg(orgId: string): Promise<EmailProvid
   switch (providerType) {
     case "smtp": {
       if (!org.emailConfig) {
-        console.warn(`SMTP config missing for org ${orgId}, using console provider`);
+        logger.warn(`SMTP config missing for org ${orgId}, using console provider`, { orgId });
         provider = new ConsoleProvider(fromAddress);
         break;
       }
       if (!isEncryptionAvailable()) {
-        console.error(`Cannot decrypt SMTP config for org ${orgId}, ENCRYPTION_KEY not set`);
+        logger.error(`Cannot decrypt SMTP config for org ${orgId}, ENCRYPTION_KEY not set`, {
+          orgId,
+        });
         provider = new ConsoleProvider(fromAddress);
         break;
       }
@@ -54,12 +57,14 @@ export async function getEmailProviderForOrg(orgId: string): Promise<EmailProvid
     }
     case "sendgrid": {
       if (!org.emailConfig) {
-        console.warn(`SendGrid config missing for org ${orgId}, using console provider`);
+        logger.warn(`SendGrid config missing for org ${orgId}, using console provider`, { orgId });
         provider = new ConsoleProvider(fromAddress);
         break;
       }
       if (!isEncryptionAvailable()) {
-        console.error(`Cannot decrypt SendGrid config for org ${orgId}, ENCRYPTION_KEY not set`);
+        logger.error(`Cannot decrypt SendGrid config for org ${orgId}, ENCRYPTION_KEY not set`, {
+          orgId,
+        });
         provider = new ConsoleProvider(fromAddress);
         break;
       }
@@ -69,12 +74,14 @@ export async function getEmailProviderForOrg(orgId: string): Promise<EmailProvid
     }
     case "ses": {
       if (!org.emailConfig) {
-        console.warn(`SES config missing for org ${orgId}, using console provider`);
+        logger.warn(`SES config missing for org ${orgId}, using console provider`, { orgId });
         provider = new ConsoleProvider(fromAddress);
         break;
       }
       if (!isEncryptionAvailable()) {
-        console.error(`Cannot decrypt SES config for org ${orgId}, ENCRYPTION_KEY not set`);
+        logger.error(`Cannot decrypt SES config for org ${orgId}, ENCRYPTION_KEY not set`, {
+          orgId,
+        });
         provider = new ConsoleProvider(fromAddress);
         break;
       }

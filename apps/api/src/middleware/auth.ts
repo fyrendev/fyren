@@ -5,6 +5,7 @@ import { extractKeyPrefix, isValidApiKeyFormat, verifyApiKey } from "../lib/api-
 import type { AuthUser, Session } from "../lib/auth";
 import { ForbiddenError, UnauthorizedError, errorResponse } from "../lib/errors";
 import { getSession } from "./session";
+import { logger } from "../lib/logging";
 
 declare module "hono" {
   interface ContextVariableMap {
@@ -52,7 +53,11 @@ export const authMiddleware = createMiddleware(async (c, next) => {
                 .set({ lastUsedAt: new Date() })
                 .where(eq(apiKeys.id, apiKeyRecord.id))
                 .execute()
-                .catch(console.error);
+                .catch((err) =>
+                  logger.error("Failed to update API key last used timestamp", {
+                    errorMessage: err.message,
+                  })
+                );
 
               c.set("organizationId", apiKeyRecord.organizationId);
               c.set("apiKeyId", apiKeyRecord.id);
@@ -142,7 +147,11 @@ export const optionalAuthMiddleware = createMiddleware(async (c, next) => {
                 .set({ lastUsedAt: new Date() })
                 .where(eq(apiKeys.id, apiKeyRecord.id))
                 .execute()
-                .catch(console.error);
+                .catch((err) =>
+                  logger.error("Failed to update API key last used timestamp", {
+                    errorMessage: err.message,
+                  })
+                );
 
               c.set("organizationId", apiKeyRecord.organizationId);
               c.set("apiKeyId", apiKeyRecord.id);

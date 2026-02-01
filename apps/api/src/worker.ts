@@ -2,48 +2,55 @@ import { db, eq, monitors } from "@fyrendev/db";
 import { initializeMonitorSchedules, monitorQueue } from "./lib/queue";
 import { bullmqRedis } from "./lib/redis";
 import { closeWorker } from "./workers/monitor.worker";
+import { initializeLogger, logger, loadConfigFromEnv } from "./lib/logging";
+
+// Initialize logger for the worker process
+initializeLogger(loadConfigFromEnv(), "env");
 
 async function main() {
-  console.log("🔧 Starting Fyren workers...");
+  logger.info("Starting Fyren workers...");
 
   // Wait for Redis connection
   await bullmqRedis.ping();
-  console.log("✅ Connected to Redis");
+  logger.info("Connected to Redis");
 
   // Fetch all active monitors
   const activeMonitors = await db.select().from(monitors).where(eq(monitors.isActive, true));
 
-  console.log(`📊 Found ${activeMonitors.length} active monitors`);
+  logger.info(`Found ${activeMonitors.length} active monitors`);
 
   // Initialize schedules for existing monitors
   await initializeMonitorSchedules(activeMonitors);
-  console.log("📅 Monitor schedules initialized");
+  logger.info("Monitor schedules initialized");
 
   // Worker is already listening (started on import)
-  console.log("👷 Monitor worker running");
-  console.log("");
-  console.log("Press Ctrl+C to stop");
+  logger.info("Monitor worker running - Press Ctrl+C to stop");
 
   // Graceful shutdown
   const shutdown = async () => {
-    console.log("\n🛑 Shutting down workers...");
+    logger.info("Shutting down workers...");
 
     try {
       // Close the worker
       await closeWorker();
-      console.log("✅ Worker closed");
+      logger.info("Worker closed");
 
       // Close the queue
       await monitorQueue.close();
-      console.log("✅ Queue closed");
+      logger.info("Queue closed");
 
       // Close Redis connection
       await bullmqRedis.quit();
-      console.log("✅ Redis connection closed");
+      logger.info("Redis connection closed");
 
+      await logger.flush();
+      await logger.shutdown();
       process.exit(0);
     } catch (err) {
-      console.error("Error during shutdown:", err);
+      logger.error("Error during shutdown", {
+        errorName: err instanceof Error ? err.name : "Unknown",
+        stack: err instanceof Error ? err.stack : undefined,
+      });
       process.exit(1);
     }
   };
@@ -53,6 +60,9 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("Failed to start workers:", err);
+  logger.error("Failed to start workers", {
+    errorName: err instanceof Error ? err.name : "Unknown",
+    stack: err instanceof Error ? err.stack : undefined,
+  });
   process.exit(1);
 });

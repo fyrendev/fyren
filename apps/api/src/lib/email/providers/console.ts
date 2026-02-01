@@ -1,3 +1,4 @@
+import { logger } from "../../logging";
 import type { EmailProvider, EmailMessage, EmailResult } from "../types";
 
 // For development - just logs emails to console
@@ -9,12 +10,12 @@ export class ConsoleProvider implements EmailProvider {
   }
 
   async send(message: EmailMessage): Promise<EmailResult> {
-    console.log("========== EMAIL ==========");
-    console.log(`From: ${message.from || this.fromAddress}`);
-    console.log(`To: ${message.to}`);
-    console.log(`Subject: ${message.subject}`);
-    console.log(`Body: ${message.text || message.html.substring(0, 500)}...`);
-    console.log("===========================");
+    logger.info("Sending email", {
+      from: message.from || this.fromAddress,
+      to: message.to,
+      subject: message.subject,
+      text: message.text || message.html.substring(0, 500),
+    });
 
     return { success: true, messageId: `console-${Date.now()}` };
   }
