@@ -8,6 +8,7 @@ import { clearProviderCache, getEmailProviderForOrg } from "../../lib/email";
 import { encryptJson, isEncryptionAvailable } from "../../lib/encryption";
 import { BadRequestError, errorResponse, ForbiddenError, NotFoundError } from "../../lib/errors";
 import { sanitizeCustomCss, sanitizeTwitterHandle } from "../../lib/sanitize";
+import { createAuditLogger } from "../../lib/logging/audit";
 
 const adminOrganizations = new Hono();
 
@@ -185,6 +186,14 @@ adminOrganizations.post("/", async (c) => {
       keyPrefix: apiKeyData.keyPrefix,
     });
 
+    // Audit log
+    const auditLogger = createAuditLogger({
+      userId: user?.id,
+      organizationId: org.id,
+      requestId: c.get("requestId"),
+    });
+    auditLogger.orgCreated(org.id, { name: org.name, slug: org.slug });
+
     return c.json(
       {
         organization: serializeOrganization(org),
@@ -300,6 +309,15 @@ adminOrganizations.put("/:id", async (c) => {
     ) {
       clearProviderCache(id);
     }
+
+    // Audit log
+    const user = c.get("user") as AuthUser | undefined;
+    const auditLogger = createAuditLogger({
+      userId: user?.id,
+      organizationId: id,
+      requestId: c.get("requestId"),
+    });
+    auditLogger.orgUpdated(id, data);
 
     return c.json({
       organization: serializeOrganization(org),

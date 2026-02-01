@@ -14,6 +14,7 @@ declare module "hono" {
     organizationId?: string | null;
     apiKeyId?: string | null;
     authMethod?: "session" | "api_key" | null;
+    requestId?: string;
   }
 }
 

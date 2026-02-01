@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "../../lib/db";
 import { components, componentStatusEnum, eq, and } from "@fyrendev/db";
 import { NotFoundError, errorResponse } from "../../lib/errors";
+import { createAuditLogger } from "../../lib/logging/audit";
 
 const adminComponents = new Hono();
 
@@ -86,6 +87,15 @@ adminComponents.post("/", async (c) => {
       throw new Error("Failed to create component");
     }
 
+    // Audit log
+    const user = c.get("user");
+    const auditLogger = createAuditLogger({
+      userId: user?.id,
+      organizationId: orgId,
+      requestId: c.get("requestId"),
+    });
+    auditLogger.componentCreated(comp.id, { name: comp.name });
+
     return c.json(
       {
         component: {
@@ -160,6 +170,15 @@ adminComponents.put("/:id", async (c) => {
       throw new NotFoundError("Component not found");
     }
 
+    // Audit log
+    const user = c.get("user");
+    const auditLogger = createAuditLogger({
+      userId: user?.id,
+      organizationId: orgId,
+      requestId: c.get("requestId"),
+    });
+    auditLogger.componentUpdated(id, data);
+
     return c.json({
       component: {
         id: comp.id,
@@ -198,6 +217,15 @@ adminComponents.patch("/:id/status", async (c) => {
       throw new NotFoundError("Component not found");
     }
 
+    // Audit log
+    const user = c.get("user");
+    const auditLogger = createAuditLogger({
+      userId: user?.id,
+      organizationId: orgId,
+      requestId: c.get("requestId"),
+    });
+    auditLogger.componentStatusChanged(id, { from: "unknown", to: data.status });
+
     return c.json({
       component: {
         id: comp.id,
@@ -229,6 +257,15 @@ adminComponents.delete("/:id", async (c) => {
     if (!comp) {
       throw new NotFoundError("Component not found");
     }
+
+    // Audit log
+    const user = c.get("user");
+    const auditLogger = createAuditLogger({
+      userId: user?.id,
+      organizationId: orgId,
+      requestId: c.get("requestId"),
+    });
+    auditLogger.componentDeleted(id);
 
     return c.json({ success: true });
   } catch (error) {

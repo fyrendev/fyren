@@ -1,6 +1,7 @@
 import { Worker, Job } from "bullmq";
 import { bullmqRedis } from "../lib/redis";
 import { MaintenanceService } from "../services/maintenance.service";
+import { logger } from "../lib/logging";
 
 const QUEUE_NAME = "maintenance";
 
@@ -11,7 +12,11 @@ interface MaintenanceJobData {
 export const maintenanceWorker = new Worker<MaintenanceJobData>(
   QUEUE_NAME,
   async (job: Job<MaintenanceJobData>) => {
-    console.log(`[MaintenanceWorker] Processing job: ${job.name} - ${job.id}`);
+    logger.worker("MaintenanceWorker", `Processing job: ${job.name}`, {
+      jobId: job.id,
+      jobName: job.name,
+      maintenanceId: job.data.maintenanceId,
+    });
 
     const { maintenanceId } = job.data;
 
@@ -19,21 +24,34 @@ export const maintenanceWorker = new Worker<MaintenanceJobData>(
       switch (job.name) {
         case "start":
           await MaintenanceService.autoStart(maintenanceId);
-          console.log(`[MaintenanceWorker] Auto-started maintenance: ${maintenanceId}`);
+          logger.worker("MaintenanceWorker", `Auto-started maintenance: ${maintenanceId}`, {
+            jobId: job.id,
+            maintenanceId,
+          });
           break;
 
         case "complete":
           await MaintenanceService.autoComplete(maintenanceId);
-          console.log(`[MaintenanceWorker] Auto-completed maintenance: ${maintenanceId}`);
+          logger.worker("MaintenanceWorker", `Auto-completed maintenance: ${maintenanceId}`, {
+            jobId: job.id,
+            maintenanceId,
+          });
           break;
 
         default:
-          console.warn(`[MaintenanceWorker] Unknown job type: ${job.name}`);
+          logger.warn(`Unknown job type: ${job.name}`, {
+            workerName: "MaintenanceWorker",
+            jobId: job.id,
+            jobName: job.name,
+          });
       }
 
       return { status: "completed", maintenanceId, action: job.name };
     } catch (error) {
-      console.error(`[MaintenanceWorker] Error processing job ${job.id}:`, error);
+      logger.workerError("MaintenanceWorker", `Error processing job ${job.id}`, error as Error, {
+        jobId: job.id,
+        maintenanceId,
+      });
       throw error;
     }
   },
@@ -47,18 +65,22 @@ export const maintenanceWorker = new Worker<MaintenanceJobData>(
 
 // Event handlers
 maintenanceWorker.on("completed", (job, result) => {
-  console.log(`[MaintenanceWorker] Job ${job.id} completed:`, result?.status);
+  logger.worker("MaintenanceWorker", `Job completed: ${result?.status}`, {
+    jobId: job.id,
+  });
 });
 
 maintenanceWorker.on("failed", (job, err) => {
-  console.error(`[MaintenanceWorker] Job ${job?.id} failed:`, err.message);
+  logger.workerError("MaintenanceWorker", `Job ${job?.id} failed`, err, {
+    jobId: job?.id,
+  });
 });
 
 maintenanceWorker.on("error", (err) => {
-  console.error("[MaintenanceWorker] Worker error:", err);
+  logger.workerError("MaintenanceWorker", "Worker error", err);
 });
 
 export async function closeMaintenanceWorker(): Promise<void> {
   await maintenanceWorker.close();
-  console.log("[MaintenanceWorker] Maintenance worker closed");
+  logger.worker("MaintenanceWorker", "Maintenance worker closed");
 }

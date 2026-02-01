@@ -16,13 +16,19 @@ import {
 } from "../lib/email/templates/maintenance";
 import { env } from "../env";
 import type { NotificationJobData } from "../services/notification.service";
+import { logger } from "../lib/logging";
 
 const QUEUE_NAME = "notifications";
 
 export const notificationWorker = new Worker<NotificationJobData>(
   QUEUE_NAME,
   async (job: Job<NotificationJobData>) => {
-    console.log(`[NotificationWorker] Processing job: ${job.name} - ${job.id}`);
+    logger.worker("NotificationWorker", `Processing job: ${job.name}`, {
+      jobId: job.id,
+      jobName: job.name,
+      type: job.data.type,
+      organizationId: job.data.organizationId,
+    });
 
     try {
       if (job.data.type === "email") {
@@ -33,7 +39,11 @@ export const notificationWorker = new Worker<NotificationJobData>(
 
       return { status: "completed", type: job.data.type };
     } catch (error) {
-      console.error(`[NotificationWorker] Error processing job ${job.id}:`, error);
+      logger.workerError("NotificationWorker", `Error processing job ${job.id}`, error as Error, {
+        jobId: job.id,
+        type: job.data.type,
+        organizationId: job.data.organizationId,
+      });
       throw error;
     }
   },
@@ -278,18 +288,22 @@ async function processWebhookJob(job: Job<NotificationJobData>): Promise<void> {
 
 // Event handlers
 notificationWorker.on("completed", (job) => {
-  console.log(`[NotificationWorker] Job ${job.id} completed`);
+  logger.worker("NotificationWorker", "Job completed", {
+    jobId: job.id,
+  });
 });
 
 notificationWorker.on("failed", (job, err) => {
-  console.error(`[NotificationWorker] Job ${job?.id} failed:`, err.message);
+  logger.workerError("NotificationWorker", `Job ${job?.id} failed`, err, {
+    jobId: job?.id,
+  });
 });
 
 notificationWorker.on("error", (err) => {
-  console.error("[NotificationWorker] Worker error:", err);
+  logger.workerError("NotificationWorker", "Worker error", err);
 });
 
 export async function closeNotificationWorker(): Promise<void> {
   await notificationWorker.close();
-  console.log("[NotificationWorker] Notification worker closed");
+  logger.worker("NotificationWorker", "Notification worker closed");
 }

@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import { logger } from "hono/logger";
 import { cors } from "hono/cors";
 import { env } from "./env";
 import { setupRoutes } from "./routes";
@@ -16,10 +15,17 @@ import {
 import { rescheduleMaintenanceJobs } from "./services/maintenance-startup.service";
 import { securityHeaders } from "./middleware/security";
 import { runMigrations } from "@fyrendev/db";
+import { initializeLogger, logger, loadConfig, loadConfigFromEnv } from "./lib/logging";
+import { loggingMiddleware } from "./middleware/logging";
+
+// Initialize logger with environment config first (before DB is ready)
+// This will be re-initialized with DB config after migrations run
+initializeLogger(loadConfigFromEnv(), "env");
 
 const app = new Hono();
 
-app.use("*", logger());
+// Request logging middleware
+app.use("*", loggingMiddleware());
 
 // CORS middleware for cross-origin requests
 app.use(
@@ -54,7 +60,15 @@ app.notFound((c) => {
 
 // Global error handler
 app.onError((err, c) => {
-  console.error("Unhandled error:", err);
+  const requestId = c.get("requestId");
+  logger.error("Unhandled error", {
+    requestId,
+    errorName: err.name,
+    errorCode: "code" in err ? (err as Error & { code?: string }).code : undefined,
+    stack: err.stack,
+    path: c.req.path,
+    method: c.req.method,
+  });
   return errorResponse(c, err);
 });
 
@@ -66,19 +80,33 @@ async function startServer() {
       const migrationsPath = process.env.MIGRATIONS_PATH;
       await runMigrations(migrationsPath);
     } catch (err) {
-      console.error("Migration error:", err);
+      logger.error("Migration error", {
+        errorName: err instanceof Error ? err.name : "Unknown",
+        stack: err instanceof Error ? err.stack : undefined,
+      });
       // Don't exit - migrations might already be applied
     }
   }
 
-  console.log(`Starting Fyren API on port ${env.PORT}...`);
+  // Re-initialize logger with database config (if available)
+  try {
+    const { config, source } = await loadConfig();
+    initializeLogger(config, source);
+    logger.info(`Logger initialized from ${source}`, { provider: config.provider });
+  } catch (err) {
+    logger.warn("Failed to load logging config from database, using environment config", {
+      errorName: err instanceof Error ? err.name : "Unknown",
+    });
+  }
+
+  logger.info(`Starting Fyren API on port ${env.PORT}`);
 
   const server = Bun.serve({
     port: env.PORT,
     fetch: app.fetch,
   });
 
-  console.log(`Fyren API running at http://localhost:${server.port}`);
+  logger.info(`Fyren API running at http://localhost:${server.port}`);
 
   return server;
 }
@@ -86,41 +114,61 @@ async function startServer() {
 const server = await startServer();
 
 // Start workers
-console.log("Maintenance worker started");
-console.log("Notification worker started");
+logger.info("Maintenance worker started");
+logger.info("Notification worker started");
 
 // Reschedule any pending maintenance jobs on startup
 rescheduleMaintenanceJobs().catch((err) => {
-  console.error("Error rescheduling maintenance jobs:", err);
+  logger.error("Error rescheduling maintenance jobs", {
+    errorName: err instanceof Error ? err.name : "Unknown",
+    stack: err instanceof Error ? err.stack : undefined,
+  });
 });
 
 async function shutdown() {
-  console.log("\nShutting down gracefully...");
+  logger.info("Shutting down gracefully...");
 
   try {
     await closeMaintenanceWorker();
-    console.log("Maintenance worker closed");
+    logger.info("Maintenance worker closed");
   } catch (err) {
-    console.error("Error closing maintenance worker:", err);
+    logger.error("Error closing maintenance worker", {
+      errorName: err instanceof Error ? err.name : "Unknown",
+      stack: err instanceof Error ? err.stack : undefined,
+    });
   }
 
   try {
     await closeNotificationWorker();
-    console.log("Notification worker closed");
+    logger.info("Notification worker closed");
   } catch (err) {
-    console.error("Error closing notification worker:", err);
+    logger.error("Error closing notification worker", {
+      errorName: err instanceof Error ? err.name : "Unknown",
+      stack: err instanceof Error ? err.stack : undefined,
+    });
   }
 
   try {
     await redis.quit();
     await bullmqRedis.quit();
-    console.log("Redis connections closed");
+    logger.info("Redis connections closed");
   } catch (err) {
-    console.error("Error closing Redis:", err);
+    logger.error("Error closing Redis", {
+      errorName: err instanceof Error ? err.name : "Unknown",
+      stack: err instanceof Error ? err.stack : undefined,
+    });
+  }
+
+  // Flush logs before exiting
+  try {
+    await logger.flush();
+    await logger.shutdown();
+  } catch (err) {
+    console.error("Error flushing logs:", err);
   }
 
   server.stop();
-  console.log("Server stopped");
+  logger.info("Server stopped");
   process.exit(0);
 }
 

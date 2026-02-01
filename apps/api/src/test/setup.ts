@@ -29,7 +29,8 @@ export async function cleanDatabase() {
       accounts,
       verifications,
       users,
-      organizations
+      organizations,
+      system_settings
     RESTART IDENTITY CASCADE
   `);
 }

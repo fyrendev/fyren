@@ -8,6 +8,7 @@ import {
   ExternalLink,
   Key,
   LayoutDashboard,
+  Server,
   Settings,
   UserCog,
   Users,
@@ -29,6 +30,7 @@ const navigation = [
   { name: "API Keys", href: "/admin/api-keys", icon: Key },
   { name: "Team", href: "/admin/team", icon: UserCog },
   { name: "Settings", href: "/admin/settings", icon: Settings },
+  { name: "System", href: "/admin/system", icon: Server },
 ];
 
 interface Props {
