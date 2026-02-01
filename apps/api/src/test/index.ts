@@ -12,6 +12,7 @@ export {
   createTestMembership,
   createTestComponent,
   createTestMonitor,
+  createTestMonitorResult,
   createTestIncident,
   createTestIncidentUpdate,
   createTestIncidentComponent,

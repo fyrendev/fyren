@@ -7,6 +7,8 @@ import {
   createTestIncidentUpdate,
   createTestMaintenance,
   createTestMaintenanceComponent,
+  createTestMonitor,
+  createTestMonitorResult,
   createTestOrganization,
   setupTestHooks,
 } from "../../test";
@@ -192,6 +194,146 @@ describe("Public Status API", () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.maintenance).toHaveLength(0);
+    });
+  });
+
+  describe("GET /api/v1/status/uptime", () => {
+    test("returns uptime percentages for components", async () => {
+      const org = await createTestOrganization({ slug: "test-org" });
+      await createTestComponent(org.id, { name: "API" });
+      await createTestComponent(org.id, { name: "Database" });
+
+      const res = await app.request("/api/v1/status/uptime");
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.components).toHaveLength(2);
+      expect(data.overall).toBeDefined();
+      expect(data.overall.day).toBeDefined();
+      expect(data.overall.week).toBeDefined();
+      expect(data.overall.month).toBeDefined();
+      expect(data.overall.quarter).toBeDefined();
+    });
+
+    test("returns 100% uptime when no monitor results exist", async () => {
+      const org = await createTestOrganization({ slug: "test-org" });
+      await createTestComponent(org.id, { name: "API" });
+
+      const res = await app.request("/api/v1/status/uptime");
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.components[0].uptime.day).toBe(100);
+      expect(data.components[0].uptime.week).toBe(100);
+    });
+  });
+
+  describe("GET /api/v1/status/uptime/:componentId/history", () => {
+    test("returns daily uptime history for component", async () => {
+      const org = await createTestOrganization({ slug: "test-org" });
+      const component = await createTestComponent(org.id, { name: "API" });
+      const monitor = await createTestMonitor(component.id);
+
+      // Create monitor results for today
+      const today = new Date();
+      today.setHours(12, 0, 0, 0);
+      await createTestMonitorResult(monitor.id, { status: "up", checkedAt: today });
+      await createTestMonitorResult(monitor.id, {
+        status: "up",
+        checkedAt: new Date(today.getTime() - 3600000),
+      });
+
+      const res = await app.request(`/api/v1/status/uptime/${component.id}/history?days=7`);
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.component.id).toBe(component.id);
+      expect(data.component.name).toBe("API");
+      expect(data.history).toHaveLength(7);
+      expect(data.history[0].date).toBeDefined();
+      expect(data.history[0].uptime).toBeDefined();
+      expect(data.history[0].status).toBeDefined();
+    });
+
+    test("calculates uptime correctly with mixed results", async () => {
+      const org = await createTestOrganization({ slug: "test-org" });
+      const component = await createTestComponent(org.id, { name: "API" });
+      const monitor = await createTestMonitor(component.id);
+
+      // Create 4 results: 3 up, 1 down = 75% uptime
+      const today = new Date();
+      today.setHours(12, 0, 0, 0);
+      await createTestMonitorResult(monitor.id, { status: "up", checkedAt: today });
+      await createTestMonitorResult(monitor.id, {
+        status: "up",
+        checkedAt: new Date(today.getTime() - 3600000),
+      });
+      await createTestMonitorResult(monitor.id, {
+        status: "up",
+        checkedAt: new Date(today.getTime() - 7200000),
+      });
+      await createTestMonitorResult(monitor.id, {
+        status: "down",
+        checkedAt: new Date(today.getTime() - 10800000),
+      });
+
+      const res = await app.request(`/api/v1/status/uptime/${component.id}/history?days=1`);
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.history[0].uptime).toBe(75);
+    });
+
+    test("returns 404 for non-existent component", async () => {
+      await createTestOrganization({ slug: "test-org" });
+
+      const res = await app.request(
+        "/api/v1/status/uptime/00000000-0000-0000-0000-000000000000/history"
+      );
+
+      expect(res.status).toBe(404);
+    });
+
+    test("respects days query parameter", async () => {
+      const org = await createTestOrganization({ slug: "test-org" });
+      const component = await createTestComponent(org.id, { name: "API" });
+
+      const res = await app.request(`/api/v1/status/uptime/${component.id}/history?days=30`);
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.history).toHaveLength(30);
+    });
+
+    test("caps days at 90", async () => {
+      const org = await createTestOrganization({ slug: "test-org" });
+      const component = await createTestComponent(org.id, { name: "API" });
+
+      const res = await app.request(`/api/v1/status/uptime/${component.id}/history?days=365`);
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.history).toHaveLength(90);
+    });
+
+    test("returns incident count for each day", async () => {
+      const org = await createTestOrganization({ slug: "test-org" });
+      const component = await createTestComponent(org.id, { name: "API" });
+
+      // Create an incident for today
+      const today = new Date();
+      today.setHours(12, 0, 0, 0);
+      const incident = await createTestIncident(org.id, {
+        title: "API Outage",
+        startedAt: today,
+      });
+      await createTestIncidentComponent(incident.id, component.id);
+
+      const res = await app.request(`/api/v1/status/uptime/${component.id}/history?days=1`);
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.history[0].incidents).toBe(1);
     });
   });
 });
