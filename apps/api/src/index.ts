@@ -28,10 +28,16 @@ const app = new Hono();
 app.use("*", loggingMiddleware());
 
 // CORS middleware for cross-origin requests
+// Always allow localhost:3000, plus any origins from APP_URL (comma-separated)
+const allowedOrigins = [
+  "http://localhost:3000",
+  ...env.APP_URL.split(",").map((origin) => origin.trim()),
+].filter((origin, index, arr) => arr.indexOf(origin) === index); // dedupe
+
 app.use(
   "*",
   cors({
-    origin: env.APP_URL || "http://localhost:3000",
+    origin: allowedOrigins,
     credentials: true,
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization", "X-Organization-Id"],

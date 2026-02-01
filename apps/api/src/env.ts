@@ -8,7 +8,7 @@ const envSchema = z.object({
   // Auth (BetterAuth)
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.string().url().default("http://localhost:3001"),
-  APP_URL: z.string().url().default("http://localhost:3000"),
+  APP_URL: z.string().default("http://localhost:3000"), // Can be comma-separated for multiple origins
   // Cookie domain for cross-subdomain auth (e.g., ".dotly.se")
   // Required when API and web are on different subdomains
   COOKIE_DOMAIN: z.string().optional(),
