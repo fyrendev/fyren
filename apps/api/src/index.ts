@@ -59,16 +59,8 @@ app.notFound((c) => {
 });
 
 // Global error handler
+// Note: errorResponse() handles logging for all error types
 app.onError((err, c) => {
-  const requestId = c.get("requestId");
-  logger.error("Unhandled error", {
-    requestId,
-    errorName: err.name,
-    errorCode: "code" in err ? (err as Error & { code?: string }).code : undefined,
-    stack: err.stack,
-    path: c.req.path,
-    method: c.req.method,
-  });
   return errorResponse(c, err);
 });
 

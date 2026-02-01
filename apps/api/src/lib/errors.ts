@@ -55,7 +55,20 @@ export class ConflictError extends AppError {
 }
 
 export function errorResponse(c: Context, error: unknown) {
+  const requestId = c.get("requestId");
+  const path = c.req.path;
+  const method = c.req.method;
+
   if (error instanceof AppError) {
+    // Log application errors (4xx) at warn level for visibility
+    logger.warn(`${error.name}: ${error.message}`, {
+      requestId,
+      path,
+      method,
+      statusCode: error.statusCode,
+      errorCode: error.code,
+      errorName: error.name,
+    });
     return c.json(
       {
         error: {
@@ -73,6 +86,15 @@ export function errorResponse(c: Context, error: unknown) {
 
     // Unique constraint violation
     if (pgError.code === "23505") {
+      logger.warn("Database conflict: unique constraint violation", {
+        requestId,
+        path,
+        method,
+        statusCode: 409,
+        errorCode: "CONFLICT",
+        pgCode: pgError.code,
+        detail: pgError.detail,
+      });
       return c.json(
         {
           error: {
@@ -86,6 +108,15 @@ export function errorResponse(c: Context, error: unknown) {
 
     // Foreign key violation
     if (pgError.code === "23503") {
+      logger.warn("Database error: foreign key violation", {
+        requestId,
+        path,
+        method,
+        statusCode: 400,
+        errorCode: "FOREIGN_KEY_VIOLATION",
+        pgCode: pgError.code,
+        detail: pgError.detail,
+      });
       return c.json(
         {
           error: {
@@ -102,6 +133,14 @@ export function errorResponse(c: Context, error: unknown) {
   if (error && typeof error === "object" && "issues" in error) {
     const zodError = error as { issues: Array<{ message: string; path: string[] }> };
     const message = zodError.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join(", ");
+    logger.warn(`Validation error: ${message}`, {
+      requestId,
+      path,
+      method,
+      statusCode: 400,
+      errorCode: "VALIDATION_ERROR",
+      validationErrors: zodError.issues,
+    });
     return c.json(
       {
         error: {
@@ -114,11 +153,11 @@ export function errorResponse(c: Context, error: unknown) {
   }
 
   logger.error("Unhandled error", {
-    requestId: c.get("requestId"),
+    requestId,
     errorName: error instanceof Error ? error.name : "Unknown",
     stack: error instanceof Error ? error.stack : undefined,
-    path: c.req.path,
-    method: c.req.method,
+    path,
+    method,
   });
   return c.json(
     {
