@@ -6,9 +6,11 @@ import {
   db,
   desc,
   eq,
+  gte,
   incidentComponents,
   incidents,
   incidentUpdates,
+  lt,
   maintenanceComponents,
   maintenances,
   monitorResults,
@@ -390,8 +392,8 @@ publicStatus.get("/uptime/:componentId/history", async (c) => {
           .where(
             and(
               eq(monitorResults.monitorId, monitor.id),
-              sql`${monitorResults.checkedAt} >= ${dayStart.toISOString()}::timestamp`,
-              sql`${monitorResults.checkedAt} < ${dayEnd.toISOString()}::timestamp`
+              gte(monitorResults.checkedAt, dayStart),
+              lt(monitorResults.checkedAt, dayEnd)
             )
           );
 
@@ -417,8 +419,8 @@ publicStatus.get("/uptime/:componentId/history", async (c) => {
         .where(
           and(
             eq(incidentComponents.componentId, componentId),
-            sql`${incidents.startedAt} >= ${dayStart.toISOString()}::timestamp`,
-            sql`${incidents.startedAt} < ${dayEnd.toISOString()}::timestamp`
+            gte(incidents.startedAt, dayStart),
+            lt(incidents.startedAt, dayEnd)
           )
         );
 
