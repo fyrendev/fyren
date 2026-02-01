@@ -1,6 +1,7 @@
 import { Queue } from "bullmq";
 import { bullmqRedis } from "./redis";
 import type { Monitor } from "@fyrendev/db";
+import { logger } from "./logging";
 
 export interface MonitorJobData {
   monitorId: string;
@@ -33,7 +34,10 @@ export async function scheduleMonitor(monitor: Monitor): Promise<void> {
     }
   );
 
-  console.log(`Scheduled monitor ${monitor.id} to run every ${monitor.intervalSeconds}s`);
+  logger.debug(`Scheduled monitor ${monitor.id} to run every ${monitor.intervalSeconds}s`, {
+    monitorId: monitor.id,
+    intervalSeconds: monitor.intervalSeconds,
+  });
 }
 
 // Remove a scheduled monitor
@@ -44,7 +48,7 @@ export async function unscheduleMonitor(monitorId: string): Promise<void> {
   for (const job of repeatableJobs) {
     if (job.id === monitorId || job.key.includes(monitorId)) {
       await monitorQueue.removeRepeatableByKey(job.key);
-      console.log(`Unscheduled monitor ${monitorId}`);
+      logger.debug(`Unscheduled monitor ${monitorId}`, { monitorId });
     }
   }
 }
@@ -72,13 +76,15 @@ export async function triggerImmediateCheck(monitorId: string): Promise<string> 
 
 // Initialize schedules for all active monitors
 export async function initializeMonitorSchedules(monitors: Monitor[]): Promise<void> {
-  console.log(`Initializing schedules for ${monitors.length} active monitors...`);
+  logger.info(`Initializing schedules for ${monitors.length} active monitors...`, {
+    monitorCount: monitors.length,
+  });
 
   for (const monitor of monitors) {
     await scheduleMonitor(monitor);
   }
 
-  console.log("Monitor schedules initialized");
+  logger.info("Monitor schedules initialized");
 }
 
 // Clean up all scheduled jobs (for shutdown or reset)
@@ -89,5 +95,5 @@ export async function cleanupAllSchedules(): Promise<void> {
     await monitorQueue.removeRepeatableByKey(job.key);
   }
 
-  console.log("All monitor schedules cleaned up");
+  logger.info("All monitor schedules cleaned up");
 }

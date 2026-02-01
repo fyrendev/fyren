@@ -6,6 +6,7 @@ import { requireOrgMembership, requireRole } from "../../middleware/session";
 import { errorResponse, NotFoundError, ForbiddenError, ConflictError } from "../../lib/errors";
 import type { AuthUser } from "../../lib/auth";
 import type { UserOrganization } from "@fyrendev/db";
+import { logger } from "../../lib/logging";
 
 type Variables = {
   user?: AuthUser;
@@ -156,7 +157,7 @@ adminInvites.post(
       }
 
       // TODO: Send invite email via notification service
-      console.log(`Invite created for ${data.email} with token: ${token}`);
+      logger.debug(`Invite created for ${data.email}`, { email: data.email, inviteId: invite.id });
 
       return c.json(
         {

@@ -9,6 +9,7 @@ import { db, systemSettings, type SystemSettings } from "@fyrendev/db";
 import { eq } from "@fyrendev/db";
 import { encryptJson, decryptJson, isEncryptionAvailable } from "../lib/encryption";
 import type { LoggerConfig, LogLevel, LogProvider } from "../lib/logging/types";
+import { logger } from "../lib/logging";
 
 export interface LokiConfigInput {
   username?: string;
@@ -172,7 +173,7 @@ export const SystemSettingsService = {
           config.lokiPassword = lokiSecrets.password;
           config.lokiTenantId = lokiSecrets.tenantId;
         } catch {
-          console.warn("[SystemSettings] Failed to decrypt Loki config");
+          logger.warn("Failed to decrypt Loki config from system settings");
         }
       }
     }
@@ -186,7 +187,7 @@ export const SystemSettingsService = {
           const otlpSecrets = decryptJson<OtlpConfigInput>(settings.otlpConfig);
           config.otlpHeaders = otlpSecrets.headers;
         } catch {
-          console.warn("[SystemSettings] Failed to decrypt OTLP config");
+          logger.warn("Failed to decrypt OTLP config from system settings");
         }
       }
     }

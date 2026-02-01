@@ -12,6 +12,7 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { z } from "zod";
 import { env } from "../env";
+import { logger } from "../lib/logging";
 
 const testRoutes = new Hono();
 
@@ -55,7 +56,10 @@ testRoutes.post("/reset", async (c) => {
 
     return c.json({ success: true });
   } catch (error) {
-    console.error("Test reset failed:", error);
+    logger.error("Test reset failed", {
+      errorName: error instanceof Error ? error.name : "Unknown",
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return c.json({ error: "Reset failed" }, 500);
   }
 });
@@ -216,7 +220,10 @@ testRoutes.post("/setup", zValidator("json", setupSchema), async (c) => {
       components: createdComponents,
     });
   } catch (error) {
-    console.error("Test setup failed:", error);
+    logger.error("Test setup failed", {
+      errorName: error instanceof Error ? error.name : "Unknown",
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return c.json({ error: "Setup failed", details: String(error) }, 500);
   }
 });
