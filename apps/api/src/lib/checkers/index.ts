@@ -2,6 +2,12 @@ import type { Monitor } from "@fyrendev/db";
 import { checkHttp, type CheckResult as HttpCheckResult } from "./http";
 import { checkTcp, parseHostPort, type CheckResult as TcpCheckResult } from "./tcp";
 import { checkSsl, parseHost, type SslCheckResult } from "./ssl";
+import {
+  checkNats,
+  parseNatsUrl,
+  parseNatsAuthConfig,
+  type CheckResult as NatsCheckResult,
+} from "./nats";
 
 export type CheckResult = {
   status: "up" | "down";
@@ -56,6 +62,23 @@ export async function executeCheck(monitor: Monitor): Promise<CheckResult> {
       });
     }
 
+    case "nats": {
+      const natsUrl = parseNatsUrl(monitor.url);
+      if (!natsUrl) {
+        return {
+          status: "down",
+          responseTimeMs: 0,
+          errorMessage: `Invalid NATS URL format: ${monitor.url}. Expected format: nats://host:port or host:port`,
+        };
+      }
+      const auth = parseNatsAuthConfig(monitor.headers as Record<string, string> | null);
+      return checkNats({
+        url: monitor.url,
+        timeoutMs: monitor.timeoutMs,
+        auth,
+      });
+    }
+
     default:
       return {
         status: "down",
@@ -65,5 +88,5 @@ export async function executeCheck(monitor: Monitor): Promise<CheckResult> {
   }
 }
 
-export { checkHttp, checkTcp, checkSsl };
-export type { HttpCheckResult, TcpCheckResult, SslCheckResult };
+export { checkHttp, checkTcp, checkSsl, checkNats };
+export type { HttpCheckResult, TcpCheckResult, SslCheckResult, NatsCheckResult };
