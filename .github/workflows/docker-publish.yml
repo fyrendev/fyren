@@ -2,7 +2,6 @@ name: Docker Publish
 
 on:
   push:
-    branches: [main]
     tags: ["v*"]
   workflow_dispatch:
     inputs:
@@ -65,8 +64,8 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/fyrendev/${{ matrix.image_name }}
           tags: |
-            # Set latest tag for default branch
-            type=raw,value=latest,enable={{is_default_branch}}
+            # Set latest tag for version tags
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             # Tag with version for version tags (v1.0.0 -> 1.0.0)
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
