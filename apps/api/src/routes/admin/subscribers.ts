@@ -108,6 +108,43 @@ adminSubscribers.get("/", async (c) => {
   }
 });
 
+// Export subscribers as CSV
+// NOTE: This route must be defined before /:id to avoid route conflicts
+adminSubscribers.get("/export", async (c) => {
+  try {
+    const orgId = c.get("organizationId");
+    if (!orgId) {
+      throw new ValidationError("Organization ID required");
+    }
+
+    const subs = await db.query.subscribers.findMany({
+      where: and(eq(subscribers.organizationId, orgId), eq(subscribers.verified, true)),
+      columns: {
+        email: true,
+        verifiedAt: true,
+        createdAt: true,
+      },
+      orderBy: [subscribers.email],
+    });
+
+    const csv = [
+      "email,verified_at,subscribed_at",
+      ...subs.map(
+        (s) => `${s.email},${s.verifiedAt?.toISOString() || ""},${s.createdAt.toISOString()}`
+      ),
+    ].join("\n");
+
+    return new Response(csv, {
+      headers: {
+        "Content-Type": "text/csv",
+        "Content-Disposition": 'attachment; filename="subscribers.csv"',
+      },
+    });
+  } catch (error) {
+    return errorResponse(c, error);
+  }
+});
+
 // Get single subscriber
 adminSubscribers.get("/:id", async (c) => {
   try {
@@ -295,42 +332,6 @@ adminSubscribers.delete("/:id", async (c) => {
     await db.delete(subscribers).where(eq(subscribers.id, subscriberId));
 
     return c.json({ success: true });
-  } catch (error) {
-    return errorResponse(c, error);
-  }
-});
-
-// Export subscribers as CSV
-adminSubscribers.get("/export", async (c) => {
-  try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
-    const subs = await db.query.subscribers.findMany({
-      where: and(eq(subscribers.organizationId, orgId), eq(subscribers.verified, true)),
-      columns: {
-        email: true,
-        verifiedAt: true,
-        createdAt: true,
-      },
-      orderBy: [subscribers.email],
-    });
-
-    const csv = [
-      "email,verified_at,subscribed_at",
-      ...subs.map(
-        (s) => `${s.email},${s.verifiedAt?.toISOString() || ""},${s.createdAt.toISOString()}`
-      ),
-    ].join("\n");
-
-    return new Response(csv, {
-      headers: {
-        "Content-Type": "text/csv",
-        "Content-Disposition": 'attachment; filename="subscribers.csv"',
-      },
-    });
   } catch (error) {
     return errorResponse(c, error);
   }
