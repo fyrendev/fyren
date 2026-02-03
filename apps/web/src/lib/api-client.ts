@@ -1,12 +1,10 @@
 import type { WebhookType } from "@fyrendev/shared";
 import { getCurrentOrgId } from "@/contexts/OrganizationContext";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-
 export async function apiClient<T>(path: string, options: RequestInit = {}): Promise<T> {
   const orgId = getCurrentOrgId();
 
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(`${path}`, {
     ...options,
     credentials: "include", // Send cookies for session auth
     headers: {

@@ -45,7 +45,7 @@ export default defineConfig({
       timeout: 120000,
     },
     {
-      command: "bun run dev",
+      command: "bun run --env-file .env.test dev",
       url: "http://localhost:3000",
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
