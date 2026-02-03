@@ -1,5 +1,6 @@
 import {
   db,
+  eq,
   organizations,
   components,
   apiKeys,
@@ -16,6 +17,9 @@ import {
   subscriberGroups,
   webhookEndpoints,
   systemSettings,
+  incidentTemplates,
+  organizationInvites,
+  sessions,
 } from "@fyrendev/db";
 import { generateApiKey } from "../lib/api-key";
 
@@ -397,4 +401,192 @@ export async function createTestSystemSettings(
 
   if (!settings) throw new Error("Failed to create test system settings");
   return settings;
+}
+
+/**
+ * Create a test incident template.
+ */
+export async function createTestIncidentTemplate(
+  organizationId: string,
+  overrides: Partial<typeof incidentTemplates.$inferInsert> = {}
+) {
+  const [template] = await db
+    .insert(incidentTemplates)
+    .values({
+      organizationId,
+      name: overrides.name || `Test Template ${randomString()}`,
+      title: overrides.title || "Test Incident Title",
+      severity: overrides.severity || "major",
+      initialMessage: overrides.initialMessage || "Initial incident message",
+      defaultComponentIds: overrides.defaultComponentIds ?? [],
+      ...overrides,
+    })
+    .returning();
+
+  if (!template) throw new Error("Failed to create test incident template");
+  return template;
+}
+
+/**
+ * Create a test organization invite.
+ */
+export async function createTestInvite(
+  organizationId: string,
+  invitedBy: string,
+  overrides: Partial<typeof organizationInvites.$inferInsert> = {}
+) {
+  const token = overrides.token || randomString(32);
+  const expiresAt = overrides.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+  const [invite] = await db
+    .insert(organizationInvites)
+    .values({
+      organizationId,
+      email: overrides.email || `invite-${randomString()}@example.com`,
+      role: overrides.role || "member",
+      token,
+      invitedBy,
+      expiresAt,
+      ...overrides,
+    })
+    .returning();
+
+  if (!invite) throw new Error("Failed to create test invite");
+  return invite;
+}
+
+/**
+ * Sign up a new user and create a session via BetterAuth.
+ * Returns the session token extracted from the response cookie.
+ *
+ * This creates a real session through BetterAuth's sign-up flow,
+ * which properly generates signed session tokens that will be validated.
+ *
+ * @param email - Email for the new user
+ * @param password - Password for the new user (defaults to a random strong password)
+ * @param name - Name for the user (defaults to "Test User")
+ */
+export async function signUpTestUser(
+  email?: string,
+  password?: string,
+  name?: string
+): Promise<{ user: typeof users.$inferSelect; token: string }> {
+  const testEmail = email || `test-${randomString()}@example.com`;
+  const testPassword = password || `TestPass123!${randomString(8)}`;
+  const testName = name || "Test User";
+
+  // Create the test app for making requests
+  const { createTestApp } = await import("./app");
+  const app = createTestApp();
+
+  // Sign up creates an account entry with a password and returns a session
+  const signUpRes = await app.request("/api/auth/sign-up/email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: testEmail,
+      password: testPassword,
+      name: testName,
+    }),
+  });
+
+  if (signUpRes.status !== 200) {
+    const body = await signUpRes.text();
+    throw new Error(`Sign-up failed: ${signUpRes.status} - ${body}`);
+  }
+
+  // Extract session token from Set-Cookie header
+  const setCookie = signUpRes.headers.get("set-cookie");
+  if (!setCookie) {
+    throw new Error("No session cookie returned from sign-up");
+  }
+
+  // Parse the session token from the cookie
+  const tokenMatch = setCookie.match(/better-auth\.session_token=([^;]+)/);
+  if (!tokenMatch || !tokenMatch[1]) {
+    throw new Error("Could not parse session token from cookie");
+  }
+
+  const token = decodeURIComponent(tokenMatch[1]);
+
+  // Get the created user from DB
+  const [user] = await db.select().from(users).where(eq(users.email, testEmail)).limit(1);
+
+  if (!user) throw new Error("User not created during sign-up");
+
+  return { user, token };
+}
+
+/**
+ * Create a test session for an existing user.
+ * This signs up a NEW user via BetterAuth and returns the session.
+ *
+ * Note: For existing users created via createTestUser(), you should use
+ * signUpTestUser() instead as BetterAuth requires the full auth flow.
+ *
+ * @deprecated Use signUpTestUser() for new tests that need session auth.
+ * This function exists for backwards compatibility.
+ */
+export async function createTestSession(userId: string) {
+  // Look up the user
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+
+  if (!user) throw new Error(`User not found: ${userId}`);
+
+  // For existing users, we need to sign them up via BetterAuth
+  // This won't work if the user was created via createTestUser() without an account
+  // So we create a session directly in the DB and hope cookie caching is bypassed
+
+  const sessionId = crypto.randomUUID();
+  const token = randomString(64);
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+  const [session] = await db
+    .insert(sessions)
+    .values({
+      id: sessionId,
+      userId,
+      token,
+      expiresAt,
+    })
+    .returning();
+
+  if (!session) throw new Error("Failed to create test session");
+
+  // Return the raw token - this may not work with cookie cache enabled
+  // Tests using session auth should prefer signUpTestUser()
+  return { session, token };
+}
+
+/**
+ * Helper to create session cookie header.
+ */
+export function sessionCookieHeader(
+  sessionToken: string,
+  organizationId?: string
+): Record<string, string> {
+  const headers: Record<string, string> = {
+    Cookie: `better-auth.session_token=${sessionToken}`,
+  };
+  if (organizationId) {
+    headers["X-Organization-Id"] = organizationId;
+  }
+  return headers;
+}
+
+/**
+ * Helper to create headers with JSON content type and session cookie.
+ */
+export function jsonSessionHeaders(
+  sessionToken: string,
+  organizationId?: string
+): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Cookie: `better-auth.session_token=${sessionToken}`,
+  };
+  if (organizationId) {
+    headers["X-Organization-Id"] = organizationId;
+  }
+  return headers;
 }

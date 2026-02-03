@@ -58,11 +58,11 @@ adminMonitorResults.get("/:id/results", async (c) => {
     const conditions = [eq(monitorResults.monitorId, monitorId)];
 
     if (validated.from) {
-      conditions.push(sql`${monitorResults.checkedAt} >= ${new Date(validated.from)}`);
+      conditions.push(sql`${monitorResults.checkedAt} >= ${validated.from}`);
     }
 
     if (validated.to) {
-      conditions.push(sql`${monitorResults.checkedAt} <= ${new Date(validated.to)}`);
+      conditions.push(sql`${monitorResults.checkedAt} <= ${validated.to}`);
     }
 
     // Get total count
