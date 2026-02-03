@@ -37,8 +37,7 @@ export default function SetupPage() {
   useEffect(() => {
     async function checkSetupStatus() {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-        const res = await fetch(`${apiUrl}/api/v1/setup/status`);
+        const res = await fetch(`/api/v1/setup/status`);
         const data: SetupStatus = await res.json();
 
         if (!data.needsSetup) {
@@ -120,8 +119,7 @@ export default function SetupPage() {
     setError("");
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-      const res = await fetch(`${apiUrl}/api/v1/admin/organizations`, {
+      const res = await fetch(`/api/v1/admin/organizations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

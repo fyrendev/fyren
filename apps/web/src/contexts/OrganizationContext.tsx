@@ -28,8 +28,7 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
 
   const fetchOrganizations = useCallback(async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-      const res = await fetch(`${apiUrl}/api/v1/admin/me`, {
+      const res = await fetch(`/api/v1/admin/me`, {
         credentials: "include",
       });
 

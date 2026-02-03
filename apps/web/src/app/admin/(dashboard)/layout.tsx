@@ -11,10 +11,8 @@ async function getSession() {
 
   if (!sessionCookie) return null;
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-
   try {
-    const res = await fetch(`${apiUrl}/api/auth/get-session`, {
+    const res = await fetch(`/api/auth/get-session`, {
       headers: {
         Cookie: `better-auth.session_token=${sessionCookie.value}`,
       },

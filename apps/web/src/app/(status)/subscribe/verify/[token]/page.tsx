@@ -15,10 +15,8 @@ export default function VerifySubscriptionPage() {
   useEffect(() => {
     async function verify() {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-
         // Get the default org slug
-        const orgRes = await fetch(`${apiUrl}/api/v1/org/default`);
+        const orgRes = await fetch(`/api/v1/org/default`);
         if (!orgRes.ok) {
           throw new Error("Organization not found");
         }
@@ -26,7 +24,7 @@ export default function VerifySubscriptionPage() {
         const slug = orgData.organization.slug;
 
         // Verify the subscription
-        const res = await fetch(`${apiUrl}/api/v1/status/${slug}/subscribe/verify/${token}`);
+        const res = await fetch(`/api/v1/status/${slug}/subscribe/verify/${token}`);
         const data = await res.json();
 
         if (!res.ok) {

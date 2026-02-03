@@ -29,8 +29,7 @@ export default function NewOrganizationPage() {
     setError(null);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-      const res = await fetch(`${apiUrl}/api/v1/admin/organizations`, {
+      const res = await fetch(`/api/v1/admin/organizations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

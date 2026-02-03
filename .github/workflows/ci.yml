@@ -164,7 +164,6 @@ jobs:
         run: bun run build
         env:
           NEXT_PUBLIC_INTERNAL_API_URL: http://localhost:3001
-          NEXT_PUBLIC_API_URL: http://localhost:3001
 
   # ===================================
   # E2E Tests (on PR only)

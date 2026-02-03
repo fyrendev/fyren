@@ -7,10 +7,8 @@ import type {
   MaintenanceResponse,
 } from "./types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-
 async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(`${path}`, {
     ...options,
     next: { revalidate: 60 }, // ISR: revalidate every 60 seconds
   });
