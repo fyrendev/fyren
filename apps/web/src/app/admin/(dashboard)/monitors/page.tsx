@@ -24,6 +24,7 @@ const typeOptions = [
   { value: "http", label: "HTTP/HTTPS" },
   { value: "tcp", label: "TCP Port" },
   { value: "ssl_expiry", label: "SSL Certificate" },
+  { value: "nats", label: "NATS Server" },
 ];
 
 const intervalOptions = [
@@ -32,6 +33,14 @@ const intervalOptions = [
   { value: "300", label: "5 minutes" },
   { value: "600", label: "10 minutes" },
   { value: "900", label: "15 minutes" },
+];
+
+const natsAuthOptions = [
+  { value: "none", label: "No Authentication" },
+  { value: "creds", label: "Credentials File (.creds)" },
+  { value: "token", label: "Token" },
+  { value: "userpass", label: "Username & Password" },
+  { value: "jwt", label: "JWT + NKey" },
 ];
 
 export default function MonitorsPage() {
@@ -48,8 +57,23 @@ export default function MonitorsPage() {
     timeoutMs: "5000",
     expectedStatusCode: "200",
     failureThreshold: "3",
+    testConnection: true,
+    // NATS auth fields
+    natsAuthType: "none",
+    natsToken: "",
+    natsUser: "",
+    natsPass: "",
+    natsJwt: "",
+    natsNkeySeed: "",
+    natsCreds: "",
   });
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{
+    success: boolean;
+    message: string;
+    responseTimeMs?: number;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -81,13 +105,27 @@ export default function MonitorsPage() {
       timeoutMs: "5000",
       expectedStatusCode: "200",
       failureThreshold: "3",
+      testConnection: true,
+      natsAuthType: "none",
+      natsToken: "",
+      natsUser: "",
+      natsPass: "",
+      natsJwt: "",
+      natsNkeySeed: "",
+      natsCreds: "",
     });
     setError(null);
+    setTestResult(null);
     setModalOpen(true);
   }
 
   function openEditModal(monitor: Monitor) {
     setEditingMonitor(monitor);
+
+    // Extract NATS auth config from headers if present
+    const headers = monitor.headers || {};
+    const natsAuthType = headers.auth_type || "none";
+
     setFormData({
       componentId: monitor.componentId,
       type: monitor.type,
@@ -96,8 +134,17 @@ export default function MonitorsPage() {
       timeoutMs: String(monitor.timeoutMs),
       expectedStatusCode: String(monitor.expectedStatusCode || 200),
       failureThreshold: String(monitor.failureThreshold),
+      testConnection: false,
+      natsAuthType,
+      natsToken: headers.token || "",
+      natsUser: headers.user || "",
+      natsPass: headers.pass || "",
+      natsJwt: headers.jwt || "",
+      natsNkeySeed: headers.nkey_seed || "",
+      natsCreds: headers.creds || "",
     });
     setError(null);
+    setTestResult(null);
     setModalOpen(true);
   }
 
@@ -107,19 +154,49 @@ export default function MonitorsPage() {
     setError(null);
 
     try {
-      const data = {
+      // Build NATS headers if applicable
+      let headers: Record<string, string> | undefined = undefined;
+      if (formData.type === "nats" && formData.natsAuthType !== "none") {
+        headers = { auth_type: formData.natsAuthType };
+        if (formData.natsAuthType === "token" && formData.natsToken) {
+          headers.token = formData.natsToken;
+        } else if (formData.natsAuthType === "userpass") {
+          if (formData.natsUser) headers.user = formData.natsUser;
+          if (formData.natsPass) headers.pass = formData.natsPass;
+        } else if (formData.natsAuthType === "jwt") {
+          if (formData.natsJwt) headers.jwt = formData.natsJwt;
+          if (formData.natsNkeySeed) headers.nkey_seed = formData.natsNkeySeed;
+        } else if (formData.natsAuthType === "creds" && formData.natsCreds) {
+          headers.creds = formData.natsCreds;
+        }
+      }
+
+      const data: Record<string, unknown> = {
         componentId: formData.componentId,
-        type: formData.type as "http" | "tcp" | "ssl_expiry",
+        type: formData.type as "http" | "tcp" | "ssl_expiry" | "nats",
         url: formData.url,
         intervalSeconds: parseInt(formData.intervalSeconds),
         timeoutMs: parseInt(formData.timeoutMs),
-        expectedStatusCode: formData.type === "http" ? parseInt(formData.expectedStatusCode) : null,
         failureThreshold: parseInt(formData.failureThreshold),
       };
+
+      // Only include expectedStatusCode for HTTP monitors
+      if (formData.type === "http") {
+        data.expectedStatusCode = parseInt(formData.expectedStatusCode);
+      }
+
+      // Only include headers if set
+      if (headers) {
+        data.headers = headers;
+      }
 
       if (editingMonitor) {
         await api.updateMonitor(editingMonitor.id, data);
       } else {
+        // Include testConnection only for new monitors
+        if (formData.testConnection) {
+          data.testConnection = true;
+        }
         await api.createMonitor(data);
       }
       setModalOpen(false);
@@ -129,6 +206,74 @@ export default function MonitorsPage() {
       setError(message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleTestConnection() {
+    setTesting(true);
+    setTestResult(null);
+    setError(null);
+
+    try {
+      // Build NATS headers if applicable
+      let headers: Record<string, string> | undefined = undefined;
+      if (formData.type === "nats" && formData.natsAuthType !== "none") {
+        headers = { auth_type: formData.natsAuthType };
+        if (formData.natsAuthType === "token" && formData.natsToken) {
+          headers.token = formData.natsToken;
+        } else if (formData.natsAuthType === "userpass") {
+          if (formData.natsUser) headers.user = formData.natsUser;
+          if (formData.natsPass) headers.pass = formData.natsPass;
+        } else if (formData.natsAuthType === "jwt") {
+          if (formData.natsJwt) headers.jwt = formData.natsJwt;
+          if (formData.natsNkeySeed) headers.nkey_seed = formData.natsNkeySeed;
+        } else if (formData.natsAuthType === "creds" && formData.natsCreds) {
+          headers.creds = formData.natsCreds;
+        }
+      }
+
+      const data: {
+        type: string;
+        url: string;
+        timeoutMs: number;
+        expectedStatusCode?: number;
+        headers?: Record<string, string>;
+      } = {
+        type: formData.type,
+        url: formData.url,
+        timeoutMs: parseInt(formData.timeoutMs),
+      };
+
+      if (formData.type === "http") {
+        data.expectedStatusCode = parseInt(formData.expectedStatusCode);
+      }
+
+      if (headers) {
+        data.headers = headers;
+      }
+
+      const response = await api.testMonitorConnection(data);
+
+      if (response.success) {
+        setTestResult({
+          success: true,
+          message: `Connection successful`,
+          responseTimeMs: response.result.responseTimeMs,
+        });
+      } else {
+        setTestResult({
+          success: false,
+          message: response.result.errorMessage || "Connection failed",
+        });
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to test connection";
+      setTestResult({
+        success: false,
+        message,
+      });
+    } finally {
+      setTesting(false);
     }
   }
 
@@ -292,7 +437,9 @@ export default function MonitorsPage() {
                 ? "https://api.example.com/health"
                 : formData.type === "tcp"
                   ? "tcp://db.example.com:5432"
-                  : "https://example.com"
+                  : formData.type === "nats"
+                    ? "nats://localhost:4222"
+                    : "https://example.com"
             }
             required
           />
@@ -322,6 +469,77 @@ export default function MonitorsPage() {
               max="599"
             />
           )}
+          {formData.type === "nats" && (
+            <div className="space-y-4 p-4 bg-navy-800/50 rounded-lg border border-navy-700">
+              <p className="text-sm font-medium text-navy-300">NATS Authentication</p>
+              <Select
+                label="Auth Type"
+                value={formData.natsAuthType}
+                onChange={(e) => setFormData({ ...formData, natsAuthType: e.target.value })}
+                options={natsAuthOptions}
+              />
+              {formData.natsAuthType === "creds" && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-navy-300">
+                    Credentials File Content
+                  </label>
+                  <textarea
+                    value={formData.natsCreds}
+                    onChange={(e) => setFormData({ ...formData, natsCreds: e.target.value })}
+                    placeholder="Paste the contents of your .creds file here..."
+                    rows={8}
+                    className="w-full px-3 py-2 bg-navy-800 border border-navy-600 rounded-lg text-white placeholder-navy-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent font-mono text-sm"
+                  />
+                  <p className="text-xs text-navy-500">
+                    Paste the entire contents of your .creds file from Synadia Cloud
+                  </p>
+                </div>
+              )}
+              {formData.natsAuthType === "token" && (
+                <Input
+                  label="Token"
+                  type="password"
+                  value={formData.natsToken}
+                  onChange={(e) => setFormData({ ...formData, natsToken: e.target.value })}
+                  placeholder="Enter NATS token"
+                />
+              )}
+              {formData.natsAuthType === "userpass" && (
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Username"
+                    value={formData.natsUser}
+                    onChange={(e) => setFormData({ ...formData, natsUser: e.target.value })}
+                    placeholder="Enter username"
+                  />
+                  <Input
+                    label="Password"
+                    type="password"
+                    value={formData.natsPass}
+                    onChange={(e) => setFormData({ ...formData, natsPass: e.target.value })}
+                    placeholder="Enter password"
+                  />
+                </div>
+              )}
+              {formData.natsAuthType === "jwt" && (
+                <div className="space-y-4">
+                  <Input
+                    label="JWT"
+                    value={formData.natsJwt}
+                    onChange={(e) => setFormData({ ...formData, natsJwt: e.target.value })}
+                    placeholder="Enter JWT token"
+                  />
+                  <Input
+                    label="NKey Seed"
+                    type="password"
+                    value={formData.natsNkeySeed}
+                    onChange={(e) => setFormData({ ...formData, natsNkeySeed: e.target.value })}
+                    placeholder="Enter NKey seed (SUAM...)"
+                  />
+                </div>
+              )}
+            </div>
+          )}
           <Input
             label="Failure Threshold"
             type="number"
@@ -333,6 +551,42 @@ export default function MonitorsPage() {
           <p className="text-xs text-navy-400">
             Number of consecutive failures before status changes
           </p>
+
+          {/* Test Connection Section */}
+          <div className="pt-2 space-y-3">
+            <div className="flex items-center gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleTestConnection}
+                loading={testing}
+                disabled={!formData.url}
+              >
+                Test Connection
+              </Button>
+              {testResult && (
+                <span
+                  className={`text-sm ${testResult.success ? "text-green-400" : "text-red-400"}`}
+                >
+                  {testResult.success ? "✓" : "✗"} {testResult.message}
+                  {testResult.responseTimeMs !== undefined && ` (${testResult.responseTimeMs}ms)`}
+                </span>
+              )}
+            </div>
+
+            {!editingMonitor && (
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.testConnection}
+                  onChange={(e) => setFormData({ ...formData, testConnection: e.target.checked })}
+                  className="w-4 h-4 rounded border-navy-600 bg-navy-800 text-amber-500 focus:ring-amber-500 focus:ring-offset-navy-900"
+                />
+                <span className="text-sm text-navy-300">Test connection before creating</span>
+              </label>
+            )}
+          </div>
+
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="ghost" onClick={() => setModalOpen(false)}>
               Cancel

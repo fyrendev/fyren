@@ -10,7 +10,7 @@ export const componentStatusEnum = pgEnum("component_status", [
 ]);
 
 // Monitor types
-export const monitorTypeEnum = pgEnum("monitor_type", ["http", "tcp", "ssl_expiry"]);
+export const monitorTypeEnum = pgEnum("monitor_type", ["http", "tcp", "ssl_expiry", "nats"]);
 
 // Monitor result status
 export const monitorResultStatusEnum = pgEnum("monitor_result_status", ["up", "down"]);

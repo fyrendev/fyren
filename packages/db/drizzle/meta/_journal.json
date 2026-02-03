@@ -22,6 +22,13 @@
       "when": 1769976101574,
       "tag": "0002_add-system-settings",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1770138600897,
+      "tag": "0003_outgoing_fat_cobra",
+      "breakpoints": true
     }
   ]
 }
