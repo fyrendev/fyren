@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/admin/Sidebar";
 import { AdminHeader } from "./AdminHeader";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import { DashboardContent } from "@/components/admin/DashboardContent";
+import { request } from "@/lib/request";
 
 async function getSession() {
   const cookieStore = await cookies();
@@ -12,7 +13,7 @@ async function getSession() {
   if (!sessionCookie) return null;
 
   try {
-    const res = await fetch(`/api/auth/get-session`, {
+    const res = await request("/api/auth/get-session", {
       headers: {
         Cookie: `better-auth.session_token=${sessionCookie.value}`,
       },

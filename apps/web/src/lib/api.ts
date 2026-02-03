@@ -6,9 +6,10 @@ import type {
   IncidentResponse,
   MaintenanceResponse,
 } from "./types";
+import { request } from "./request";
 
 async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${path}`, {
+  const res = await request(path, {
     ...options,
     next: { revalidate: 60 }, // ISR: revalidate every 60 seconds
   });
