@@ -137,6 +137,338 @@ describe("Admin Monitors API", () => {
 
       expect(res.status).toBe(404);
     });
+
+    test("creates a NATS monitor without auth", async () => {
+      const org = await createTestOrganization();
+      const { rawKey } = await createTestApiKey(org.id);
+      const component = await createTestComponent(org.id);
+
+      const res = await app.request("/api/v1/admin/monitors", {
+        method: "POST",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({
+          componentId: component.id,
+          type: "nats",
+          url: "nats://localhost:4222",
+          intervalSeconds: 60,
+          timeoutMs: 5000,
+        }),
+      });
+
+      expect(res.status).toBe(201);
+      const data = await res.json();
+      expect(data.monitor.type).toBe("nats");
+      expect(data.monitor.url).toBe("nats://localhost:4222");
+    });
+
+    test("creates a NATS monitor with token auth", async () => {
+      const org = await createTestOrganization();
+      const { rawKey } = await createTestApiKey(org.id);
+      const component = await createTestComponent(org.id);
+
+      const res = await app.request("/api/v1/admin/monitors", {
+        method: "POST",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({
+          componentId: component.id,
+          type: "nats",
+          url: "nats://localhost:4222",
+          intervalSeconds: 60,
+          timeoutMs: 5000,
+          headers: {
+            auth_type: "token",
+            token: "my-secret-token",
+          },
+        }),
+      });
+
+      expect(res.status).toBe(201);
+      const data = await res.json();
+      expect(data.monitor.type).toBe("nats");
+      expect(data.monitor.headers).toEqual({
+        auth_type: "token",
+        token: "my-secret-token",
+      });
+    });
+
+    test("creates a NATS monitor with userpass auth", async () => {
+      const org = await createTestOrganization();
+      const { rawKey } = await createTestApiKey(org.id);
+      const component = await createTestComponent(org.id);
+
+      const res = await app.request("/api/v1/admin/monitors", {
+        method: "POST",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({
+          componentId: component.id,
+          type: "nats",
+          url: "nats://localhost:4222",
+          intervalSeconds: 60,
+          headers: {
+            auth_type: "userpass",
+            user: "testuser",
+            pass: "testpass",
+          },
+        }),
+      });
+
+      expect(res.status).toBe(201);
+      const data = await res.json();
+      expect(data.monitor.headers).toEqual({
+        auth_type: "userpass",
+        user: "testuser",
+        pass: "testpass",
+      });
+    });
+
+    test("creates a NATS monitor with JWT auth", async () => {
+      const org = await createTestOrganization();
+      const { rawKey } = await createTestApiKey(org.id);
+      const component = await createTestComponent(org.id);
+
+      const res = await app.request("/api/v1/admin/monitors", {
+        method: "POST",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({
+          componentId: component.id,
+          type: "nats",
+          url: "nats://localhost:4222",
+          intervalSeconds: 60,
+          headers: {
+            auth_type: "jwt",
+            jwt: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            nkey_seed: "SUAM...",
+          },
+        }),
+      });
+
+      expect(res.status).toBe(201);
+      const data = await res.json();
+      expect(data.monitor.headers).toEqual({
+        auth_type: "jwt",
+        jwt: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        nkey_seed: "SUAM...",
+      });
+    });
+
+    test("creates a NATS monitor with credentials file auth", async () => {
+      const org = await createTestOrganization();
+      const { rawKey } = await createTestApiKey(org.id);
+      const component = await createTestComponent(org.id);
+
+      const credsContent = `-----BEGIN NATS USER JWT-----
+eyJhbGciOiJFRDI1NTE5In0.eyJqdGkiOiJBQkNERUYifQ.c2lnbmF0dXJl
+------END NATS USER JWT------
+
+-----BEGIN USER NKEY SEED-----
+SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
+------END USER NKEY SEED------`;
+
+      const res = await app.request("/api/v1/admin/monitors", {
+        method: "POST",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({
+          componentId: component.id,
+          type: "nats",
+          url: "nats://localhost:4222",
+          intervalSeconds: 60,
+          headers: {
+            auth_type: "creds",
+            creds: credsContent,
+          },
+        }),
+      });
+
+      expect(res.status).toBe(201);
+      const data = await res.json();
+      expect(data.monitor.headers.auth_type).toBe("creds");
+      expect(data.monitor.headers.creds).toContain("BEGIN NATS USER JWT");
+    });
+
+    test("returns 400 for invalid NATS URL format", async () => {
+      const org = await createTestOrganization();
+      const { rawKey } = await createTestApiKey(org.id);
+      const component = await createTestComponent(org.id);
+
+      const res = await app.request("/api/v1/admin/monitors", {
+        method: "POST",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({
+          componentId: component.id,
+          type: "nats",
+          url: "invalid:url:format:too:many:colons",
+          intervalSeconds: 60,
+        }),
+      });
+
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data.error.message).toContain("NATS");
+    });
+
+    test("accepts NATS URL without protocol prefix", async () => {
+      const org = await createTestOrganization();
+      const { rawKey } = await createTestApiKey(org.id);
+      const component = await createTestComponent(org.id);
+
+      const res = await app.request("/api/v1/admin/monitors", {
+        method: "POST",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({
+          componentId: component.id,
+          type: "nats",
+          url: "localhost:4222",
+          intervalSeconds: 60,
+        }),
+      });
+
+      expect(res.status).toBe(201);
+      const data = await res.json();
+      expect(data.monitor.url).toBe("localhost:4222");
+    });
+
+    test("creates monitor without testing connection when testConnection is false", async () => {
+      const org = await createTestOrganization();
+      const { rawKey } = await createTestApiKey(org.id);
+      const component = await createTestComponent(org.id);
+
+      // This URL won't be reachable, but should still create the monitor
+      const res = await app.request("/api/v1/admin/monitors", {
+        method: "POST",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({
+          componentId: component.id,
+          type: "nats",
+          url: "nats://unreachable-host:4222",
+          intervalSeconds: 60,
+          timeoutMs: 1000,
+          testConnection: false,
+        }),
+      });
+
+      expect(res.status).toBe(201);
+    });
+
+    test("returns 400 when testConnection fails for unreachable NATS host", async () => {
+      const org = await createTestOrganization();
+      const { rawKey } = await createTestApiKey(org.id);
+      const component = await createTestComponent(org.id);
+
+      const res = await app.request("/api/v1/admin/monitors", {
+        method: "POST",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({
+          componentId: component.id,
+          type: "nats",
+          url: "nats://unreachable-host:4222",
+          intervalSeconds: 60,
+          timeoutMs: 1000,
+          testConnection: true,
+        }),
+      });
+
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data.error.message).toContain("Connection test failed");
+    });
+
+    test("returns 400 when testConnection fails for unreachable TCP host", async () => {
+      const org = await createTestOrganization();
+      const { rawKey } = await createTestApiKey(org.id);
+      const component = await createTestComponent(org.id);
+
+      const res = await app.request("/api/v1/admin/monitors", {
+        method: "POST",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({
+          componentId: component.id,
+          type: "tcp",
+          url: "unreachable-host:12345",
+          intervalSeconds: 60,
+          timeoutMs: 1000,
+          testConnection: true,
+        }),
+      });
+
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data.error.message).toContain("Connection test failed");
+    });
+  });
+
+  describe("POST /api/v1/admin/monitors/test", () => {
+    test("returns failure for unreachable TCP host", async () => {
+      const org = await createTestOrganization();
+      const { rawKey } = await createTestApiKey(org.id);
+
+      // Test TCP against unreachable host - this will fail but verify endpoint works
+      const res = await app.request("/api/v1/admin/monitors/test", {
+        method: "POST",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({
+          type: "tcp",
+          url: "unreachable-host:12345",
+          timeoutMs: 1000,
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.success).toBe(false);
+      expect(data.result.status).toBe("down");
+    });
+
+    test("returns failure for unreachable NATS server", async () => {
+      const org = await createTestOrganization();
+      const { rawKey } = await createTestApiKey(org.id);
+
+      const res = await app.request("/api/v1/admin/monitors/test", {
+        method: "POST",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({
+          type: "nats",
+          url: "nats://unreachable-host:4222",
+          timeoutMs: 1000,
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.success).toBe(false);
+      expect(data.result.status).toBe("down");
+      expect(data.result.errorMessage).toBeDefined();
+    });
+
+    test("returns 400 for invalid NATS URL", async () => {
+      const org = await createTestOrganization();
+      const { rawKey } = await createTestApiKey(org.id);
+
+      const res = await app.request("/api/v1/admin/monitors/test", {
+        method: "POST",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({
+          type: "nats",
+          url: "invalid:url:format",
+          timeoutMs: 1000,
+        }),
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    test("returns 401 without authentication", async () => {
+      const res = await app.request("/api/v1/admin/monitors/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "http",
+          url: "https://example.com",
+          timeoutMs: 5000,
+        }),
+      });
+
+      expect(res.status).toBe(401);
+    });
   });
 
   describe("GET /api/v1/admin/monitors/:id", () => {
@@ -191,6 +523,35 @@ describe("Admin Monitors API", () => {
       const data = await res.json();
       expect(data.monitor.intervalSeconds).toBe(120);
       expect(data.monitor.timeoutMs).toBe(10000);
+    });
+
+    test("updates NATS monitor auth configuration", async () => {
+      const org = await createTestOrganization();
+      const { rawKey } = await createTestApiKey(org.id);
+      const component = await createTestComponent(org.id);
+      const monitor = await createTestMonitor(component.id, {
+        type: "nats",
+        url: "nats://localhost:4222",
+        expectedStatusCode: null,
+      });
+
+      const res = await app.request(`/api/v1/admin/monitors/${monitor.id}`, {
+        method: "PUT",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({
+          headers: {
+            auth_type: "token",
+            token: "new-token",
+          },
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.monitor.headers).toEqual({
+        auth_type: "token",
+        token: "new-token",
+      });
     });
 
     test("returns 404 for non-existent monitor", async () => {

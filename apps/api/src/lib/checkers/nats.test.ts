@@ -1,16 +1,20 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
-import { parseNatsUrl, parseNatsAuthConfig } from "./nats";
+import { parseNatsUrl, parseNatsAuthConfig, parseCredsFile } from "./nats";
 
-// Mock the nats.ws module
+// Mock the nats module
 const mockClose = mock(() => Promise.resolve());
 const mockConnect = mock(() =>
   Promise.resolve({
     close: mockClose,
   })
 );
+const mockCredsAuthenticator = mock(() => () => ({}));
+const mockJwtAuthenticator = mock(() => () => ({}));
 
-mock.module("nats.ws", () => ({
+mock.module("nats", () => ({
   connect: mockConnect,
+  credsAuthenticator: mockCredsAuthenticator,
+  jwtAuthenticator: mockJwtAuthenticator,
 }));
 
 // Import after mocking
@@ -106,6 +110,7 @@ describe("parseNatsAuthConfig", () => {
       pass: undefined,
       jwt: undefined,
       nkeySeed: undefined,
+      creds: undefined,
     });
   });
 
@@ -122,6 +127,30 @@ describe("parseNatsAuthConfig", () => {
       pass: "mypassword",
       jwt: undefined,
       nkeySeed: undefined,
+      creds: undefined,
+    });
+  });
+
+  it("should parse creds auth config", () => {
+    const credsContent = `-----BEGIN NATS USER JWT-----
+eyJhbGciOiJFRDI1NTE5IiwidHlwIjoiSldUIn0...
+------END NATS USER JWT------
+
+-----BEGIN USER NKEY SEED-----
+SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
+------END USER NKEY SEED------`;
+    const result = parseNatsAuthConfig({
+      auth_type: "creds",
+      creds: credsContent,
+    });
+    expect(result).toEqual({
+      authType: "creds",
+      token: undefined,
+      user: undefined,
+      pass: undefined,
+      jwt: undefined,
+      nkeySeed: undefined,
+      creds: credsContent,
     });
   });
 
@@ -138,7 +167,65 @@ describe("parseNatsAuthConfig", () => {
       pass: undefined,
       jwt: "eyJ...",
       nkeySeed: "SUAM...",
+      creds: undefined,
     });
+  });
+});
+
+describe("parseCredsFile", () => {
+  const validCredsFile = `-----BEGIN NATS USER JWT-----
+eyJhbGciOiJFRDI1NTE5IiwidHlwIjoiSldUIn0.eyJqdGkiOiJBQkNERUYiLCJpYXQiOjE2MDAwMDAwMDAsImlzcyI6IkFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBIiwibmFtZSI6InRlc3QiLCJzdWIiOiJVQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIsIm5hdHMiOnsicHViIjp7fSwic3ViIjp7fX19.c2lnbmF0dXJl
+------END NATS USER JWT------
+
+************************* IMPORTANT *************************
+NKEY Seed printed below can be used to sign and prove identity.
+NKEYs are sensitive and should be treated as secrets.
+
+-----BEGIN USER NKEY SEED-----
+SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
+------END USER NKEY SEED------
+
+*************************************************************`;
+
+  it("should parse valid credentials file", () => {
+    const result = parseCredsFile(validCredsFile);
+    expect(result).not.toBeNull();
+    expect(result?.jwt).toBe(
+      "eyJhbGciOiJFRDI1NTE5IiwidHlwIjoiSldUIn0.eyJqdGkiOiJBQkNERUYiLCJpYXQiOjE2MDAwMDAwMDAsImlzcyI6IkFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBIiwibmFtZSI6InRlc3QiLCJzdWIiOiJVQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIsIm5hdHMiOnsicHViIjp7fSwic3ViIjp7fX19.c2lnbmF0dXJl"
+    );
+    expect(result?.nkeySeed).toBe("SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ");
+  });
+
+  it("should return null for empty content", () => {
+    expect(parseCredsFile("")).toBeNull();
+  });
+
+  it("should return null for missing JWT section", () => {
+    const content = `-----BEGIN USER NKEY SEED-----
+SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
+------END USER NKEY SEED------`;
+    expect(parseCredsFile(content)).toBeNull();
+  });
+
+  it("should return null for missing NKey section", () => {
+    const content = `-----BEGIN NATS USER JWT-----
+eyJhbGciOiJFRDI1NTE5In0.eyJqdGkiOiJBQkNERUYifQ.c2lnbmF0dXJl
+------END NATS USER JWT------`;
+    expect(parseCredsFile(content)).toBeNull();
+  });
+
+  it("should handle minimal valid credentials file", () => {
+    const minimalCreds = `-----BEGIN NATS USER JWT-----
+eyJhbGciOiJFRDI1NTE5In0
+------END NATS USER JWT------
+
+-----BEGIN USER NKEY SEED-----
+SUAM123
+------END USER NKEY SEED------`;
+    const result = parseCredsFile(minimalCreds);
+    expect(result).not.toBeNull();
+    expect(result?.jwt).toBe("eyJhbGciOiJFRDI1NTE5In0");
+    expect(result?.nkeySeed).toBe("SUAM123");
   });
 });
 
@@ -146,6 +233,8 @@ describe("checkNats", () => {
   beforeEach(() => {
     mockConnect.mockClear();
     mockClose.mockClear();
+    mockCredsAuthenticator.mockClear();
+    mockJwtAuthenticator.mockClear();
     mockConnect.mockImplementation(() =>
       Promise.resolve({
         close: mockClose,
@@ -229,6 +318,33 @@ describe("checkNats", () => {
       },
     });
 
+    expect(mockJwtAuthenticator).toHaveBeenCalled();
+    expect(mockConnect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authenticator: expect.any(Function),
+      })
+    );
+  });
+
+  it("should pass creds auth configuration", async () => {
+    const credsContent = `-----BEGIN NATS USER JWT-----
+eyJhbGciOiJFRDI1NTE5In0
+------END NATS USER JWT------
+
+-----BEGIN USER NKEY SEED-----
+SUAM123
+------END USER NKEY SEED------`;
+
+    await checkNats({
+      url: "nats://localhost:4222",
+      timeoutMs: 5000,
+      auth: {
+        authType: "creds",
+        creds: credsContent,
+      },
+    });
+
+    expect(mockCredsAuthenticator).toHaveBeenCalled();
     expect(mockConnect).toHaveBeenCalledWith(
       expect.objectContaining({
         authenticator: expect.any(Function),

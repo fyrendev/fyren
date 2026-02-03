@@ -1,6 +1,12 @@
-import { connect, type ConnectionOptions, type NatsConnection } from "nats.ws";
+import {
+  connect,
+  credsAuthenticator,
+  jwtAuthenticator as natsJwtAuthenticator,
+  type ConnectionOptions,
+  type NatsConnection,
+} from "nats";
 
-export type NatsAuthType = "none" | "token" | "userpass" | "jwt";
+export type NatsAuthType = "none" | "token" | "userpass" | "jwt" | "creds";
 
 export interface NatsAuthConfig {
   authType?: NatsAuthType;
@@ -9,6 +15,7 @@ export interface NatsAuthConfig {
   pass?: string;
   jwt?: string;
   nkeySeed?: string;
+  creds?: string; // Full credentials file content
 }
 
 export interface NatsCheckOptions {
@@ -54,8 +61,15 @@ export async function checkNats(options: NatsCheckOptions): Promise<CheckResult>
           }
           break;
         case "jwt":
-          if (auth.jwt) {
-            connectionOptions.authenticator = jwtAuthenticator(auth.jwt, auth.nkeySeed);
+          if (auth.jwt && auth.nkeySeed) {
+            const seed = new TextEncoder().encode(auth.nkeySeed);
+            connectionOptions.authenticator = natsJwtAuthenticator(auth.jwt, seed);
+          }
+          break;
+        case "creds":
+          if (auth.creds) {
+            const credsBytes = new TextEncoder().encode(auth.creds);
+            connectionOptions.authenticator = credsAuthenticator(credsBytes);
           }
           break;
       }
@@ -124,15 +138,41 @@ export async function checkNats(options: NatsCheckOptions): Promise<CheckResult>
 }
 
 /**
- * Creates a JWT authenticator function for NATS
+ * Parse a NATS credentials file (.creds) content
+ * Extracts the JWT and NKey seed from the file format:
+ *
+ * -----BEGIN NATS USER JWT-----
+ * eyJ0eXAiOiJKV1QiLCJhbGci...
+ * ------END NATS USER JWT------
+ *
+ * -----BEGIN USER NKEY SEED-----
+ * SUAM...
+ * ------END USER NKEY SEED------
  */
-function jwtAuthenticator(jwt: string, nkeySeed?: string) {
-  return () => {
-    return {
-      jwt,
-      nkey: nkeySeed,
-    };
-  };
+export function parseCredsFile(content: string): { jwt: string; nkeySeed: string } | null {
+  if (!content) {
+    return null;
+  }
+
+  // Extract JWT
+  const jwtMatch = content.match(
+    /-----BEGIN NATS USER JWT-----\s*\n([^\n]+)\s*\n------END NATS USER JWT------/
+  );
+  if (!jwtMatch || !jwtMatch[1]) {
+    return null;
+  }
+  const jwt = jwtMatch[1].trim();
+
+  // Extract NKey seed
+  const nkeyMatch = content.match(
+    /-----BEGIN USER NKEY SEED-----\s*\n([^\n]+)\s*\n------END USER NKEY SEED------/
+  );
+  if (!nkeyMatch || !nkeyMatch[1]) {
+    return null;
+  }
+  const nkeySeed = nkeyMatch[1].trim();
+
+  return { jwt, nkeySeed };
 }
 
 /**
@@ -205,5 +245,6 @@ export function parseNatsAuthConfig(
     pass: headers.pass,
     jwt: headers.jwt,
     nkeySeed: headers.nkey_seed,
+    creds: headers.creds,
   };
 }

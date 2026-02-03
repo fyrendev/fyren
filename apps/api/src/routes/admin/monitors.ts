@@ -4,6 +4,7 @@ import { db, monitors, components, monitorResults, eq, and, desc } from "@fyrend
 import { NotFoundError, ValidationError, ForbiddenError, errorResponse } from "../../lib/errors";
 import { scheduleMonitor, unscheduleMonitor, rescheduleMonitor } from "../../lib/queue";
 import { executeCheck } from "../../lib/checkers";
+import { parseNatsUrl } from "../../lib/checkers/nats";
 import { storeCheckResult } from "../../services/monitor.service";
 
 export const adminMonitors = new Hono();
@@ -11,7 +12,7 @@ export const adminMonitors = new Hono();
 // Validation schemas
 const createMonitorSchema = z.object({
   componentId: z.string().uuid(),
-  type: z.enum(["http", "tcp", "ssl_expiry"]),
+  type: z.enum(["http", "tcp", "ssl_expiry", "nats"]),
   url: z.string().min(1).max(2000),
   intervalSeconds: z.number().int().min(30).max(3600).default(60),
   timeoutMs: z.number().int().min(1000).max(30000).default(10000),
@@ -22,10 +23,12 @@ const createMonitorSchema = z.object({
   // Auto-incident settings
   createIncidentOnFailure: z.boolean().default(false),
   autoResolveIncident: z.boolean().default(true),
+  // Test connection before creating
+  testConnection: z.boolean().default(false),
 });
 
 const updateMonitorSchema = z.object({
-  type: z.enum(["http", "tcp", "ssl_expiry"]).optional(),
+  type: z.enum(["http", "tcp", "ssl_expiry", "nats"]).optional(),
   url: z.string().min(1).max(2000).optional(),
   intervalSeconds: z.number().int().min(30).max(3600).optional(),
   timeoutMs: z.number().int().min(1000).max(30000).optional(),
@@ -43,7 +46,7 @@ adminMonitors.get("/", async (c) => {
   try {
     const orgId = c.get("organizationId")!;
     const componentId = c.req.query("componentId");
-    const type = c.req.query("type") as "http" | "tcp" | "ssl_expiry" | undefined;
+    const type = c.req.query("type") as "http" | "tcp" | "ssl_expiry" | "nats" | undefined;
     const isActive = c.req.query("isActive");
 
     // Get all components for this organization to filter monitors
@@ -148,6 +151,44 @@ adminMonitors.post("/", async (c) => {
       if (parts.length !== 2 || !port || isNaN(parseInt(port))) {
         throw new ValidationError("Invalid URL for TCP monitor. Expected format: host:port");
       }
+    } else if (validatedData.type === "nats") {
+      if (!parseNatsUrl(validatedData.url)) {
+        throw new ValidationError(
+          "Invalid URL for NATS monitor. Expected format: nats://host:port or host:port"
+        );
+      }
+    }
+
+    // Test connection before creating if requested
+    if (validatedData.testConnection) {
+      const testMonitor = {
+        id: "test",
+        componentId: validatedData.componentId,
+        type: validatedData.type,
+        url: validatedData.url,
+        timeoutMs: validatedData.timeoutMs,
+        intervalSeconds: validatedData.intervalSeconds,
+        expectedStatusCode:
+          validatedData.type === "http" ? (validatedData.expectedStatusCode ?? 200) : null,
+        headers:
+          validatedData.type === "http" || validatedData.type === "nats"
+            ? (validatedData.headers ?? null)
+            : null,
+        failureThreshold: validatedData.failureThreshold,
+        isActive: true,
+        lastCheckedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        createIncidentOnFailure: false,
+        autoResolveIncident: false,
+      };
+
+      const testResult = await executeCheck(testMonitor);
+      if (testResult.status === "down") {
+        throw new ValidationError(
+          `Connection test failed: ${testResult.errorMessage || "Unable to connect"}`
+        );
+      }
     }
 
     // Create the monitor
@@ -161,7 +202,10 @@ adminMonitors.post("/", async (c) => {
         timeoutMs: validatedData.timeoutMs,
         expectedStatusCode:
           validatedData.type === "http" ? (validatedData.expectedStatusCode ?? 200) : null,
-        headers: validatedData.type === "http" ? (validatedData.headers ?? null) : null,
+        headers:
+          validatedData.type === "http" || validatedData.type === "nats"
+            ? (validatedData.headers ?? null)
+            : null,
         failureThreshold: validatedData.failureThreshold,
         isActive: validatedData.isActive,
         createIncidentOnFailure: validatedData.createIncidentOnFailure,
@@ -179,6 +223,81 @@ adminMonitors.post("/", async (c) => {
     }
 
     return c.json({ monitor: newMonitor }, 201);
+  } catch (error) {
+    return errorResponse(c, error);
+  }
+});
+
+// Validation schema for test connection (same as create but without componentId requirement)
+const testConnectionSchema = z.object({
+  type: z.enum(["http", "tcp", "ssl_expiry", "nats"]),
+  url: z.string().min(1).max(2000),
+  timeoutMs: z.number().int().min(1000).max(30000).default(10000),
+  expectedStatusCode: z.number().int().min(100).max(599).optional(),
+  headers: z.record(z.string()).optional(),
+});
+
+// POST /api/v1/admin/monitors/test - Test connection without creating monitor
+adminMonitors.post("/test", async (c) => {
+  try {
+    const body = await c.req.json();
+    const validatedData = testConnectionSchema.parse(body);
+
+    // Type-specific validation
+    if (validatedData.type === "http") {
+      try {
+        new URL(validatedData.url);
+      } catch {
+        throw new ValidationError("Invalid URL for HTTP monitor");
+      }
+    } else if (validatedData.type === "tcp") {
+      const parts = validatedData.url.replace("tcp://", "").split(":");
+      const port = parts[1];
+      if (parts.length !== 2 || !port || isNaN(parseInt(port))) {
+        throw new ValidationError("Invalid URL for TCP monitor. Expected format: host:port");
+      }
+    } else if (validatedData.type === "nats") {
+      if (!parseNatsUrl(validatedData.url)) {
+        throw new ValidationError(
+          "Invalid URL for NATS monitor. Expected format: nats://host:port or host:port"
+        );
+      }
+    }
+
+    // Create a temporary monitor object for testing
+    const testMonitor = {
+      id: "test",
+      componentId: "test",
+      type: validatedData.type,
+      url: validatedData.url,
+      timeoutMs: validatedData.timeoutMs,
+      intervalSeconds: 60,
+      expectedStatusCode:
+        validatedData.type === "http" ? (validatedData.expectedStatusCode ?? 200) : null,
+      headers:
+        validatedData.type === "http" || validatedData.type === "nats"
+          ? (validatedData.headers ?? null)
+          : null,
+      failureThreshold: 1,
+      isActive: true,
+      lastCheckedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      createIncidentOnFailure: false,
+      autoResolveIncident: false,
+    };
+
+    // Execute the check
+    const result = await executeCheck(testMonitor);
+
+    return c.json({
+      success: result.status === "up",
+      result: {
+        status: result.status,
+        responseTimeMs: result.responseTimeMs,
+        errorMessage: result.errorMessage,
+      },
+    });
   } catch (error) {
     return errorResponse(c, error);
   }
@@ -274,6 +393,12 @@ adminMonitors.put("/:id", async (c) => {
       const port = parts[1];
       if (parts.length !== 2 || !port || isNaN(parseInt(port))) {
         throw new ValidationError("Invalid URL for TCP monitor. Expected format: host:port");
+      }
+    } else if (validatedData.type === "nats" && validatedData.url) {
+      if (!parseNatsUrl(validatedData.url)) {
+        throw new ValidationError(
+          "Invalid URL for NATS monitor. Expected format: nats://host:port or host:port"
+        );
       }
     }
 

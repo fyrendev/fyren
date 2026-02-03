@@ -38,11 +38,12 @@ export interface Monitor {
   id: string;
   componentId: string;
   component?: Component;
-  type: "http" | "tcp" | "ssl_expiry";
+  type: "http" | "tcp" | "ssl_expiry" | "nats";
   url: string;
   intervalSeconds: number;
   timeoutMs: number;
   expectedStatusCode: number | null;
+  headers: Record<string, string> | null;
   failureThreshold: number;
   isActive: boolean;
   lastCheckedAt: string | null;
@@ -270,6 +271,20 @@ export const api = {
   getMonitors: () => apiClient<{ monitors: Monitor[] }>("/api/v1/admin/monitors"),
   createMonitor: (data: Partial<Monitor>) =>
     apiClient<{ monitor: Monitor }>("/api/v1/admin/monitors", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  testMonitorConnection: (data: {
+    type: string;
+    url: string;
+    timeoutMs: number;
+    expectedStatusCode?: number;
+    headers?: Record<string, string>;
+  }) =>
+    apiClient<{
+      success: boolean;
+      result: { status: "up" | "down"; responseTimeMs: number; errorMessage?: string };
+    }>("/api/v1/admin/monitors/test", {
       method: "POST",
       body: JSON.stringify(data),
     }),
