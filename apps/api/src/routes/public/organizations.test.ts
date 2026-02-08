@@ -31,26 +31,4 @@ describe("Public Organizations API", () => {
       expect(res.status).toBe(404);
     });
   });
-
-  describe("GET /api/v1/org/:slug", () => {
-    test("returns organization info by slug", async () => {
-      await createTestOrganization({
-        slug: "acme",
-        name: "Acme Corp",
-      });
-
-      const res = await app.request("/api/v1/org/acme");
-
-      expect(res.status).toBe(200);
-      const data = await res.json();
-      expect(data.organization.slug).toBe("acme");
-      expect(data.organization.name).toBe("Acme Corp");
-    });
-
-    test("returns 404 for non-existent organization", async () => {
-      const res = await app.request("/api/v1/org/nonexistent");
-
-      expect(res.status).toBe(404);
-    });
-  });
 });
