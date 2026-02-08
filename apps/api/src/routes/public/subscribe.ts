@@ -173,7 +173,7 @@ subscribeRoutes.get("/subscribe/verify/:token", async (c) => {
       renderActionPage({
         title: "Subscription Confirmed",
         message: "You will now receive status updates via email.",
-        linkUrl: `${env.APP_URL}/${org.slug}`,
+        linkUrl: `${env.APP_URL}`,
         linkText: "View Status Page",
       })
     );
