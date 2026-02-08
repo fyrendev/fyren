@@ -51,7 +51,7 @@ export const auth = betterAuth({
     ...(env.COOKIE_DOMAIN && {
       crossSubDomainCookies: {
         enabled: true,
-        domain: env.COOKIE_DOMAIN, // e.g., ".dotly.se" to share cookies across subdomains
+        domain: env.COOKIE_DOMAIN, // e.g., ".example.com" to share cookies across subdomains
       },
       defaultCookieAttributes: {
         // sameSite "none" is required for cross-origin cookies

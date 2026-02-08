@@ -3,9 +3,9 @@ version: "3.8"
 # Fyren Production Docker Compose
 # Usage: docker compose -f docker-compose.prod.yml up -d
 #
-# NOTE: For Coolify deployments, you'll need to:
-# 1. Use Coolify's internal database URLs (UUIDs as hostnames)
-# 2. For Redis: use "default" username, not custom ACL users
+# NOTE: When using external databases, ensure:
+# 1. DATABASE_URL and REDIS_URL point to the correct hostnames
+# 2. For Redis: use "default" username if ACL is not configured
 # 3. Ensure MIGRATIONS_PATH=./drizzle is set on the API
 
 services:
