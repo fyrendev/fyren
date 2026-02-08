@@ -127,8 +127,9 @@ describe("Public Subscribe API", () => {
       const res = await app.request("/api/v1/status/subscribe/verify/valid-token-123");
 
       expect(res.status).toBe(200);
-      const data = await res.json();
-      expect(data.message).toBe("Subscription confirmed");
+      expect(res.headers.get("content-type")).toContain("text/html");
+      const html = await res.text();
+      expect(html).toContain("Subscription Confirmed");
     });
 
     test("returns already verified message for verified subscriber", async () => {
@@ -142,8 +143,9 @@ describe("Public Subscribe API", () => {
       const res = await app.request("/api/v1/status/subscribe/verify/already-verified-token");
 
       expect(res.status).toBe(200);
-      const data = await res.json();
-      expect(data.message).toBe("Already verified");
+      expect(res.headers.get("content-type")).toContain("text/html");
+      const html = await res.text();
+      expect(html).toContain("Already Verified");
     });
 
     test("returns 400 for invalid token", async () => {
@@ -152,8 +154,9 @@ describe("Public Subscribe API", () => {
       const res = await app.request("/api/v1/status/subscribe/verify/invalid-token");
 
       expect(res.status).toBe(400);
-      const data = await res.json();
-      expect(data.error.message).toContain("Invalid verification token");
+      expect(res.headers.get("content-type")).toContain("text/html");
+      const html = await res.text();
+      expect(html).toContain("Invalid Link");
     });
 
     test("returns 404 when no organization exists", async () => {
@@ -175,8 +178,9 @@ describe("Public Subscribe API", () => {
       const res = await app.request("/api/v1/status/unsubscribe/unsub-token-123");
 
       expect(res.status).toBe(200);
-      const data = await res.json();
-      expect(data.message).toBe("Successfully unsubscribed");
+      expect(res.headers.get("content-type")).toContain("text/html");
+      const html = await res.text();
+      expect(html).toContain("Unsubscribed");
     });
 
     test("returns 400 for invalid token", async () => {
@@ -185,8 +189,9 @@ describe("Public Subscribe API", () => {
       const res = await app.request("/api/v1/status/unsubscribe/invalid-token");
 
       expect(res.status).toBe(400);
-      const data = await res.json();
-      expect(data.error.message).toContain("Invalid unsubscribe token");
+      expect(res.headers.get("content-type")).toContain("text/html");
+      const html = await res.text();
+      expect(html).toContain("Invalid Link");
     });
 
     test("returns 404 when no organization exists", async () => {

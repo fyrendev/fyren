@@ -73,7 +73,7 @@ async function processEmailJob(job: Job<NotificationJobData>): Promise<void> {
   }
 
   const statusPageUrl = `${env.APP_URL}/${organizationSlug}`;
-  const unsubscribeUrl = `${env.APP_URL}/api/v1/status/${organizationSlug}/unsubscribe/${unsubscribeToken}`;
+  const unsubscribeUrl = `${env.APP_URL}/api/v1/status/unsubscribe/${unsubscribeToken}`;
   const incidentUrl = `${env.APP_URL}/${organizationSlug}/incidents/${entityId}`;
 
   let emailContent: { subject: string; html: string; text: string };

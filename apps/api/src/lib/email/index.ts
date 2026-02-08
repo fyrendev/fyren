@@ -33,7 +33,7 @@ export async function getEmailProviderForOrg(orgId: string): Promise<EmailProvid
   }
 
   const providerType = org.emailProvider as EmailProviderType;
-  const fromAddress = org.emailFromAddress || "noreply@fyren.dev";
+  const fromAddress = `${org.name} <${org.emailFromAddress || "noreply@fyren.dev"}>`;
 
   let provider: EmailProvider;
 

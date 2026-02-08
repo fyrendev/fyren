@@ -11,8 +11,8 @@
     "build": "bun build src/index.ts --outdir dist --target bun",
     "start": "bun run dist/index.js",
     "lint": "tsc --noEmit",
-    "test": "bun test --env-file .env.test",
-    "test:watch": "bun test --env-file .env.test --watch"
+    "test": "bun test",
+    "test:watch": "bun test --watch"
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.958.0",
