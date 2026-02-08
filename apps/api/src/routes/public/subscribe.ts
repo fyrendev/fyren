@@ -5,10 +5,49 @@ import { randomBytes } from "crypto";
 import { z } from "zod";
 import { getEmailProviderForOrg } from "../../lib/email";
 import { verificationTemplate } from "../../lib/email/templates/verification";
-import { errorResponse, ValidationError, NotFoundError } from "../../lib/errors";
+import { errorResponse, NotFoundError } from "../../lib/errors";
 import { env } from "../../env";
 
 export const subscribeRoutes = new Hono();
+
+function renderActionPage({
+  title,
+  message,
+  linkUrl,
+  linkText,
+}: {
+  title: string;
+  message: string;
+  linkUrl?: string;
+  linkText?: string;
+}) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title} — Fyren</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f8fafc;color:#1e293b}
+    .card{background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.1);padding:2.5rem;max-width:440px;width:100%;text-align:center}
+    h1{font-size:1.25rem;margin-bottom:.75rem}
+    p{color:#64748b;line-height:1.6;margin-bottom:1.25rem}
+    a.btn{display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:.6rem 1.5rem;border-radius:8px;font-size:.9rem;transition:background .15s}
+    a.btn:hover{background:#334155}
+    .brand{margin-top:1.5rem;font-size:.75rem;color:#94a3b8}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>${title}</h1>
+    <p>${message}</p>
+    ${linkUrl ? `<a class="btn" href="${linkUrl}">${linkText || "Continue"}</a>` : ""}
+    <div class="brand">Powered by Fyren</div>
+  </div>
+</body>
+</html>`;
+}
 
 // Helper to get the organization
 async function getOrganization() {
@@ -100,11 +139,24 @@ subscribeRoutes.get("/subscribe/verify/:token", async (c) => {
     });
 
     if (!subscriber) {
-      throw new ValidationError("Invalid verification token");
+      return c.html(
+        renderActionPage({
+          title: "Invalid Link",
+          message: "This verification link is invalid or has expired.",
+        }),
+        400
+      );
     }
 
     if (subscriber.verified) {
-      return c.json({ message: "Already verified" });
+      return c.html(
+        renderActionPage({
+          title: "Already Verified",
+          message: "Your subscription has already been verified.",
+          linkUrl: `${env.APP_URL}/${org.slug}`,
+          linkText: "View Status Page",
+        })
+      );
     }
 
     await db
@@ -117,7 +169,14 @@ subscribeRoutes.get("/subscribe/verify/:token", async (c) => {
       })
       .where(eq(subscribers.id, subscriber.id));
 
-    return c.json({ message: "Subscription confirmed" });
+    return c.html(
+      renderActionPage({
+        title: "Subscription Confirmed",
+        message: "You will now receive status updates via email.",
+        linkUrl: `${env.APP_URL}/${org.slug}`,
+        linkText: "View Status Page",
+      })
+    );
   } catch (error) {
     return errorResponse(c, error);
   }
@@ -135,12 +194,25 @@ subscribeRoutes.get("/unsubscribe/:token", async (c) => {
     });
 
     if (!subscriber) {
-      throw new ValidationError("Invalid unsubscribe token");
+      return c.html(
+        renderActionPage({
+          title: "Invalid Link",
+          message: "This unsubscribe link is invalid or has already been used.",
+        }),
+        400
+      );
     }
 
     await db.delete(subscribers).where(eq(subscribers.id, subscriber.id));
 
-    return c.json({ message: "Successfully unsubscribed" });
+    return c.html(
+      renderActionPage({
+        title: "Unsubscribed",
+        message: "You have been unsubscribed and will no longer receive status updates.",
+        linkUrl: `${env.APP_URL}/${org.slug}`,
+        linkText: "View Status Page",
+      })
+    );
   } catch (error) {
     return errorResponse(c, error);
   }
