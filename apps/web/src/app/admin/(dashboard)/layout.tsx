@@ -8,14 +8,17 @@ import { request } from "@/lib/request";
 
 async function getSession() {
   const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get("better-auth.session_token");
+  // BetterAuth prefixes cookies with __Secure- when secure: true (e.g. when COOKIE_DOMAIN is set)
+  const sessionCookie =
+    cookieStore.get("better-auth.session_token") ??
+    cookieStore.get("__Secure-better-auth.session_token");
 
   if (!sessionCookie) return null;
 
   try {
     const res = await request("/api/auth/get-session", {
       headers: {
-        Cookie: `better-auth.session_token=${sessionCookie.value}`,
+        Cookie: `${sessionCookie.name}=${sessionCookie.value}`,
       },
       cache: "no-store",
     });
