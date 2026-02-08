@@ -39,3 +39,4 @@ test-results/
 
 # Docker volumes (local)
 docker/data/
+.playwright-mcp/

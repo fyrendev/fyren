@@ -1,5 +1,6 @@
 import type { Organization } from "@/lib/types";
 import { Rss } from "lucide-react";
+import { EmbedButton } from "@/components/status/EmbedModal";
 
 interface Props {
   organization: Organization;
@@ -28,6 +29,7 @@ export function Footer({ organization, rssUrl }: Props) {
             <Rss className="w-4 h-4" />
             RSS
           </a>
+          <EmbedButton />
         </div>
         <a
           href="https://fyren.dev"
