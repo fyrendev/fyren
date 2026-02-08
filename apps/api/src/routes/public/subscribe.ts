@@ -153,7 +153,7 @@ subscribeRoutes.get("/subscribe/verify/:token", async (c) => {
         renderActionPage({
           title: "Already Verified",
           message: "Your subscription has already been verified.",
-          linkUrl: `${env.APP_URL}/${org.slug}`,
+          linkUrl: `${env.APP_URL}`,
           linkText: "View Status Page",
         })
       );
@@ -209,7 +209,7 @@ subscribeRoutes.get("/unsubscribe/:token", async (c) => {
       renderActionPage({
         title: "Unsubscribed",
         message: "You have been unsubscribed and will no longer receive status updates.",
-        linkUrl: `${env.APP_URL}/${org.slug}`,
+        linkUrl: `${env.APP_URL}`,
         linkText: "View Status Page",
       })
     );
