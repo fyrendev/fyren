@@ -17,6 +17,7 @@ import {
   UserCog,
   ExternalLink,
   Server,
+  Code2,
 } from "lucide-react";
 
 const navigation = [
@@ -29,6 +30,7 @@ const navigation = [
   { name: "Groups", href: "/admin/subscriber-groups", icon: UsersRound },
   { name: "Webhooks", href: "/admin/webhooks", icon: Webhook },
   { name: "API Keys", href: "/admin/api-keys", icon: Key },
+  { name: "Integrations", href: "/admin/integrations", icon: Code2 },
   { name: "Team", href: "/admin/team", icon: UserCog },
   { name: "Settings", href: "/admin/settings", icon: Settings },
   { name: "System", href: "/admin/system", icon: Server },

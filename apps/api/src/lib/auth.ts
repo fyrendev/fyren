@@ -38,7 +38,11 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
 
   // Trusted origins for CORS
-  trustedOrigins: [env.APP_URL],
+  // Support comma-separated APP_URL for multiple origins (e.g., production + localhost)
+  trustedOrigins: [
+    "http://localhost:3000",
+    ...env.APP_URL.split(",").map((origin) => origin.trim()),
+  ].filter((origin, index, arr) => arr.indexOf(origin) === index), // dedupe
 
   // Cross-subdomain cookie configuration
   // Required when API and web app are on different subdomains (e.g., api.example.com and app.example.com)
