@@ -206,21 +206,15 @@ adminOrganizations.post("/", async (c) => {
   }
 });
 
-// GET /organizations/:id - Get organization by ID (auth required)
-adminOrganizations.get("/:id", async (c) => {
+// GET /organizations - Get current organization (auth required)
+adminOrganizations.get("/", async (c) => {
   try {
     const orgId = c.get("organizationId");
     if (!orgId) {
       throw new ForbiddenError("Authentication required");
     }
-    const id = c.req.param("id");
 
-    // Verify the user has access to this organization
-    if (orgId !== id) {
-      throw new ForbiddenError("You don't have access to this organization");
-    }
-
-    const [org] = await db.select().from(organizations).where(eq(organizations.id, id)).limit(1);
+    const [org] = await db.select().from(organizations).where(eq(organizations.id, orgId)).limit(1);
 
     if (!org) {
       throw new NotFoundError("Organization not found");
@@ -234,18 +228,12 @@ adminOrganizations.get("/:id", async (c) => {
   }
 });
 
-// PUT /organizations/:id - Update organization (auth required)
-adminOrganizations.put("/:id", async (c) => {
+// PUT /organizations - Update current organization (auth required)
+adminOrganizations.put("/", async (c) => {
   try {
     const orgId = c.get("organizationId");
     if (!orgId) {
       throw new ForbiddenError("Authentication required");
-    }
-    const id = c.req.param("id");
-
-    // Verify the user has access to this organization
-    if (orgId !== id) {
-      throw new ForbiddenError("You don't have access to this organization");
     }
 
     const body = await c.req.json();
@@ -294,7 +282,7 @@ adminOrganizations.put("/:id", async (c) => {
         ...sanitizedData,
         updatedAt: new Date(),
       })
-      .where(eq(organizations.id, id))
+      .where(eq(organizations.id, orgId))
       .returning();
 
     if (!org) {
@@ -307,17 +295,17 @@ adminOrganizations.put("/:id", async (c) => {
       data.emailFromAddress !== undefined ||
       data.emailConfig !== undefined
     ) {
-      clearProviderCache(id);
+      clearProviderCache(orgId);
     }
 
     // Audit log
     const user = c.get("user") as AuthUser | undefined;
     const auditLogger = createAuditLogger({
       userId: user?.id,
-      organizationId: id,
+      organizationId: orgId,
       requestId: c.get("requestId"),
     });
-    auditLogger.orgUpdated(id, data);
+    auditLogger.orgUpdated(orgId, data);
 
     return c.json({
       organization: serializeOrganization(org),
@@ -327,18 +315,12 @@ adminOrganizations.put("/:id", async (c) => {
   }
 });
 
-// POST /organizations/:id/test-email - Send test email (auth required)
-adminOrganizations.post("/:id/test-email", async (c) => {
+// POST /organizations/test-email - Send test email (auth required)
+adminOrganizations.post("/test-email", async (c) => {
   try {
     const orgId = c.get("organizationId");
     if (!orgId) {
       throw new ForbiddenError("Authentication required");
-    }
-    const id = c.req.param("id");
-
-    // Verify the user has access to this organization
-    if (orgId !== id) {
-      throw new ForbiddenError("You don't have access to this organization");
     }
 
     // Get the current user's email
@@ -348,7 +330,7 @@ adminOrganizations.post("/:id/test-email", async (c) => {
     }
 
     // Get email provider for this organization
-    const provider = await getEmailProviderForOrg(id);
+    const provider = await getEmailProviderForOrg(orgId);
 
     // Send test email
     await provider.send({

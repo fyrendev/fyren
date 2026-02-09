@@ -117,8 +117,8 @@ describe("Admin Organizations API", () => {
     });
   });
 
-  describe("GET /api/v1/admin/organizations/:id", () => {
-    test("returns organization by ID", async () => {
+  describe("GET /api/v1/admin/organizations", () => {
+    test("returns current organization", async () => {
       const org = await createTestOrganization({
         name: "My Company",
         slug: "my-company",
@@ -126,7 +126,7 @@ describe("Admin Organizations API", () => {
       });
       const { rawKey } = await createTestApiKey(org.id);
 
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}`, {
+      const res = await app.request("/api/v1/admin/organizations", {
         headers: authHeader(rawKey),
       });
 
@@ -138,33 +138,19 @@ describe("Admin Organizations API", () => {
       expect(data.organization.brandColor).toBe("#FF5733");
     });
 
-    test("returns 403 when accessing different organization", async () => {
-      const org1 = await createTestOrganization({ slug: "org-1" });
-      const org2 = await createTestOrganization({ slug: "org-2" });
-      const { rawKey } = await createTestApiKey(org1.id);
-
-      const res = await app.request(`/api/v1/admin/organizations/${org2.id}`, {
-        headers: authHeader(rawKey),
-      });
-
-      expect(res.status).toBe(403);
-    });
-
     test("returns 403 without authentication", async () => {
-      const org = await createTestOrganization();
-
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}`);
+      const res = await app.request("/api/v1/admin/organizations");
 
       expect(res.status).toBe(403);
     });
   });
 
-  describe("PUT /api/v1/admin/organizations/:id", () => {
+  describe("PUT /api/v1/admin/organizations", () => {
     test("updates organization name", async () => {
       const org = await createTestOrganization({ name: "Original Name" });
       const { rawKey } = await createTestApiKey(org.id);
 
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}`, {
+      const res = await app.request("/api/v1/admin/organizations", {
         method: "PUT",
         headers: jsonAuthHeaders(rawKey),
         body: JSON.stringify({
@@ -181,7 +167,7 @@ describe("Admin Organizations API", () => {
       const org = await createTestOrganization();
       const { rawKey } = await createTestApiKey(org.id);
 
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}`, {
+      const res = await app.request("/api/v1/admin/organizations", {
         method: "PUT",
         headers: jsonAuthHeaders(rawKey),
         body: JSON.stringify({
@@ -202,7 +188,7 @@ describe("Admin Organizations API", () => {
       const org = await createTestOrganization();
       const { rawKey } = await createTestApiKey(org.id);
 
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}`, {
+      const res = await app.request("/api/v1/admin/organizations", {
         method: "PUT",
         headers: jsonAuthHeaders(rawKey),
         body: JSON.stringify({
@@ -221,7 +207,7 @@ describe("Admin Organizations API", () => {
       const org = await createTestOrganization();
       const { rawKey } = await createTestApiKey(org.id);
 
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}`, {
+      const res = await app.request("/api/v1/admin/organizations", {
         method: "PUT",
         headers: jsonAuthHeaders(rawKey),
         body: JSON.stringify({
@@ -239,7 +225,7 @@ describe("Admin Organizations API", () => {
       const org = await createTestOrganization();
       const { rawKey } = await createTestApiKey(org.id);
 
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}`, {
+      const res = await app.request("/api/v1/admin/organizations", {
         method: "PUT",
         headers: jsonAuthHeaders(rawKey),
         body: JSON.stringify({
@@ -261,7 +247,7 @@ describe("Admin Organizations API", () => {
       });
       const { rawKey } = await createTestApiKey(org.id);
 
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}`, {
+      const res = await app.request("/api/v1/admin/organizations", {
         method: "PUT",
         headers: jsonAuthHeaders(rawKey),
         body: JSON.stringify({
@@ -280,7 +266,7 @@ describe("Admin Organizations API", () => {
       const org = await createTestOrganization();
       const { rawKey } = await createTestApiKey(org.id);
 
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}`, {
+      const res = await app.request("/api/v1/admin/organizations", {
         method: "PUT",
         headers: jsonAuthHeaders(rawKey),
         body: JSON.stringify({
@@ -290,29 +276,15 @@ describe("Admin Organizations API", () => {
 
       expect(res.status).toBe(400);
     });
-
-    test("returns 403 when updating different organization", async () => {
-      const org1 = await createTestOrganization({ slug: "org-1" });
-      const org2 = await createTestOrganization({ slug: "org-2" });
-      const { rawKey } = await createTestApiKey(org1.id);
-
-      const res = await app.request(`/api/v1/admin/organizations/${org2.id}`, {
-        method: "PUT",
-        headers: jsonAuthHeaders(rawKey),
-        body: JSON.stringify({ name: "Hacked" }),
-      });
-
-      expect(res.status).toBe(403);
-    });
   });
 
-  describe("POST /api/v1/admin/organizations/:id/test-email", () => {
+  describe("POST /api/v1/admin/organizations/test-email", () => {
     test("sends test email to current user", async () => {
       const org = await createTestOrganization();
       const { user, token } = await signUpTestUser("test@example.com");
       await createTestMembership(user.id, org.id, "owner");
 
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}/test-email`, {
+      const res = await app.request("/api/v1/admin/organizations/test-email", {
         method: "POST",
         headers: sessionCookieHeader(token, org.id),
       });
@@ -330,7 +302,7 @@ describe("Admin Organizations API", () => {
       await createTestMembership(user.id, org1.id, "owner");
 
       // User is member of org1, but trying to access org2
-      const res = await app.request(`/api/v1/admin/organizations/${org2.id}/test-email`, {
+      const res = await app.request("/api/v1/admin/organizations/test-email", {
         method: "POST",
         headers: sessionCookieHeader(token, org2.id),
       });
@@ -339,9 +311,7 @@ describe("Admin Organizations API", () => {
     });
 
     test("returns 403 without authentication", async () => {
-      const org = await createTestOrganization();
-
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}/test-email`, {
+      const res = await app.request("/api/v1/admin/organizations/test-email", {
         method: "POST",
       });
 
