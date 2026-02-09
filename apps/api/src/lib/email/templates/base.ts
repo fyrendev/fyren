@@ -1,4 +1,8 @@
-export function baseTemplate(content: string, unsubscribeUrl?: string): string {
+export function baseTemplate(
+  content: string,
+  unsubscribeUrl?: string,
+  footerText?: string
+): string {
   return `
 <!DOCTYPE html>
 <html>
@@ -34,7 +38,7 @@ export function baseTemplate(content: string, unsubscribeUrl?: string): string {
       ${content}
     </div>
     <div class="footer">
-      <p>You're receiving this because you subscribed to status updates.</p>
+      <p>${footerText || "You're receiving this because you subscribed to status updates."}</p>
       ${unsubscribeUrl ? `<p><a href="${unsubscribeUrl}">Unsubscribe</a></p>` : ""}
       <p>Powered by <a href="https://fyren.dev">Fyren</a></p>
     </div>

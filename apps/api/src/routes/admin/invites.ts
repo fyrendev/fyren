@@ -1,12 +1,24 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { db, organizationInvites, userOrganizations, users, eq, and, isNull } from "@fyrendev/db";
+import {
+  db,
+  organizationInvites,
+  organizations,
+  userOrganizations,
+  users,
+  eq,
+  and,
+  isNull,
+} from "@fyrendev/db";
 import { authMiddleware } from "../../middleware/auth";
 import { requireOrgMembership, requireRole } from "../../middleware/session";
 import { errorResponse, NotFoundError, ForbiddenError, ConflictError } from "../../lib/errors";
 import type { AuthUser } from "../../lib/auth";
 import type { UserOrganization } from "@fyrendev/db";
 import { logger } from "../../lib/logging";
+import { getEmailProviderForOrg } from "../../lib/email";
+import { inviteTemplate } from "../../lib/email/templates/invite";
+import { env } from "../../env";
 
 type Variables = {
   user?: AuthUser;
@@ -156,8 +168,45 @@ adminInvites.post(
         throw new Error("Failed to create invite");
       }
 
-      // TODO: Send invite email via notification service
-      logger.debug(`Invite created for ${data.email}`, { email: data.email, inviteId: invite.id });
+      // Send invite email
+      const [org] = await db
+        .select()
+        .from(organizations)
+        .where(eq(organizations.id, orgId))
+        .limit(1);
+
+      if (org) {
+        try {
+          const inviteUrl = `${env.APP_URL}/invites/${token}`;
+          const emailContent = inviteTemplate({
+            organizationName: org.name,
+            inviterName: user.name || user.email,
+            role: data.role,
+            inviteUrl,
+            expiresAt,
+          });
+
+          const provider = await getEmailProviderForOrg(orgId);
+          await provider.send({
+            to: data.email,
+            subject: emailContent.subject,
+            html: emailContent.html,
+            text: emailContent.text,
+          });
+
+          logger.debug(`Invite email sent to ${data.email}`, {
+            email: data.email,
+            inviteId: invite.id,
+          });
+        } catch (emailError) {
+          // Log but don't fail the invite creation if email fails
+          logger.error(`Failed to send invite email to ${data.email}`, {
+            email: data.email,
+            inviteId: invite.id,
+            error: emailError,
+          });
+        }
+      }
 
       return c.json(
         {
