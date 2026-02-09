@@ -40,7 +40,7 @@ export function SubscribeForm() {
       {status === "success" ? (
         <p className="text-green-400">{message}</p>
       ) : (
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
           <input
             type="email"
             value={email}
@@ -53,7 +53,7 @@ export function SubscribeForm() {
             type="submit"
             disabled={status === "loading"}
             className="px-6 py-2 brand-button font-medium rounded-lg
-                       disabled:opacity-50 transition-colors"
+                       disabled:opacity-50 transition-colors whitespace-nowrap"
           >
             {status === "loading" ? "Subscribing..." : "Subscribe"}
           </button>
