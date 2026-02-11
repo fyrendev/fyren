@@ -153,9 +153,9 @@ describe("Admin Invites API", () => {
       await createTestMembership(owner.id, org.id, "owner");
       mockSend.mockClear();
 
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}/invites`, {
+      const res = await app.request("/api/v1/admin/organizations/invites", {
         method: "POST",
-        headers: jsonSessionHeaders(token),
+        headers: jsonSessionHeaders(token, org.id),
         body: JSON.stringify({
           email: "newuser@example.com",
           role: "member",
