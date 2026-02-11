@@ -1,4 +1,4 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect, mock } from "bun:test";
 import {
   createTestApp,
   setupTestHooks,
@@ -11,6 +11,15 @@ import {
   jsonSessionHeaders,
   sessionCookieHeader,
 } from "../../test";
+
+const mockSend = mock(() => Promise.resolve({ success: true }));
+
+// Mock the email provider to avoid sending real emails
+mock.module("../../lib/email", () => ({
+  getEmailProviderForOrg: () => ({
+    send: mockSend,
+  }),
+}));
 
 describe("Admin Invites API", () => {
   setupTestHooks();
@@ -136,6 +145,32 @@ describe("Admin Invites API", () => {
       expect(data.invite.role).toBe("member");
       expect(data.invite.id).toBeDefined();
       expect(data.invite.expiresAt).toBeDefined();
+    });
+
+    test("sends invite email on creation", async () => {
+      const org = await createTestOrganization({ name: "Acme Corp" });
+      const { user: owner, token } = await signUpTestUser("owner@example.com", undefined, "Alice");
+      await createTestMembership(owner.id, org.id, "owner");
+      mockSend.mockClear();
+
+      const res = await app.request(`/api/v1/admin/organizations/${org.id}/invites`, {
+        method: "POST",
+        headers: jsonSessionHeaders(token),
+        body: JSON.stringify({
+          email: "newuser@example.com",
+          role: "member",
+        }),
+      });
+
+      expect(res.status).toBe(201);
+      expect(mockSend).toHaveBeenCalledTimes(1);
+      const call = mockSend.mock.calls[0] as unknown[];
+      const emailArgs = call[0] as { to: string; subject: string; html: string; text: string };
+      expect(emailArgs.to).toBe("newuser@example.com");
+      expect(emailArgs.subject).toContain("Acme Corp");
+      expect(emailArgs.html).toContain("Alice");
+      expect(emailArgs.html).toContain("member");
+      expect(emailArgs.text).toContain("/invites/");
     });
 
     test("owner can create invite for admin role", async () => {
