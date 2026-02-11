@@ -53,12 +53,10 @@ export const requireOrgMembership = createMiddleware(async (c, next) => {
       throw new UnauthorizedError("Authentication required");
     }
 
-    const orgId = c.req.param("orgId") || c.req.header("X-Organization-Id");
+    const orgId = c.req.header("X-Organization-Id");
 
     if (!orgId) {
-      throw new BadRequestError(
-        "Organization ID required (use X-Organization-Id header or :orgId param)"
-      );
+      throw new BadRequestError("Organization ID required (use X-Organization-Id header)");
     }
 
     // Check user belongs to org

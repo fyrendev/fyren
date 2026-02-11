@@ -20,8 +20,8 @@ const updateMemberSchema = z.object({
   role: z.enum(["admin", "member"]), // Can't promote to owner via this endpoint
 });
 
-// GET /api/v1/admin/organizations/:orgId/members - List org members
-adminMembers.get("/:orgId/members", authMiddleware, requireOrgMembership, async (c) => {
+// GET /api/v1/admin/organizations/members - List org members
+adminMembers.get("/members", authMiddleware, requireOrgMembership, async (c) => {
   try {
     const orgId = c.get("organizationId")!;
 
@@ -52,9 +52,9 @@ adminMembers.get("/:orgId/members", authMiddleware, requireOrgMembership, async 
   }
 });
 
-// PUT /api/v1/admin/organizations/:orgId/members/:id - Update member role
+// PUT /api/v1/admin/organizations/members/:id - Update member role
 adminMembers.put(
-  "/:orgId/members/:id",
+  "/members/:id",
   authMiddleware,
   requireOrgMembership,
   requireRole("owner", "admin"),
@@ -126,9 +126,9 @@ adminMembers.put(
   }
 );
 
-// DELETE /api/v1/admin/organizations/:orgId/members/:id - Remove member
+// DELETE /api/v1/admin/organizations/members/:id - Remove member
 adminMembers.delete(
-  "/:orgId/members/:id",
+  "/members/:id",
   authMiddleware,
   requireOrgMembership,
   requireRole("owner", "admin"),
@@ -176,8 +176,8 @@ adminMembers.delete(
   }
 );
 
-// POST /api/v1/admin/organizations/:orgId/leave - Leave organization
-adminMembers.post("/:orgId/leave", authMiddleware, requireOrgMembership, async (c) => {
+// POST /api/v1/admin/organizations/leave - Leave organization
+adminMembers.post("/leave", authMiddleware, requireOrgMembership, async (c) => {
   try {
     const membership = c.get("membership");
     const user = c.get("user");

@@ -17,7 +17,7 @@ describe("Admin Members API", () => {
 
   const app = createTestApp();
 
-  describe("GET /api/v1/admin/organizations/:orgId/members", () => {
+  describe("GET /api/v1/admin/organizations/members", () => {
     test("lists all members for organization", async () => {
       const org = await createTestOrganization();
       const { user: owner, token } = await signUpTestUser("owner@example.com", undefined, "Owner");
@@ -25,8 +25,8 @@ describe("Admin Members API", () => {
       await createTestMembership(owner.id, org.id, "owner");
       await createTestMembership(member.id, org.id, "member");
 
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}/members`, {
-        headers: sessionCookieHeader(token),
+      const res = await app.request("/api/v1/admin/organizations/members", {
+        headers: sessionCookieHeader(token, org.id),
       });
 
       expect(res.status).toBe(200);
@@ -45,8 +45,8 @@ describe("Admin Members API", () => {
       const { user, token } = await signUpTestUser("test@example.com", undefined, "Test User");
       await createTestMembership(user.id, org.id, "admin");
 
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}/members`, {
-        headers: sessionCookieHeader(token),
+      const res = await app.request("/api/v1/admin/organizations/members", {
+        headers: sessionCookieHeader(token, org.id),
       });
 
       expect(res.status).toBe(200);
@@ -65,7 +65,7 @@ describe("Admin Members API", () => {
       await createTestMembership(user.id, org.id, "owner");
       const { rawKey } = await createTestApiKey(org.id);
 
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}/members`, {
+      const res = await app.request("/api/v1/admin/organizations/members", {
         headers: authHeader(rawKey),
       });
 
@@ -75,9 +75,7 @@ describe("Admin Members API", () => {
     });
 
     test("returns 401 without authentication", async () => {
-      const org = await createTestOrganization();
-
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}/members`);
+      const res = await app.request("/api/v1/admin/organizations/members");
 
       expect(res.status).toBe(401);
     });
@@ -86,15 +84,15 @@ describe("Admin Members API", () => {
       const org = await createTestOrganization();
       const { token } = await signUpTestUser(); // Not a member of org
 
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}/members`, {
-        headers: sessionCookieHeader(token),
+      const res = await app.request("/api/v1/admin/organizations/members", {
+        headers: sessionCookieHeader(token, org.id),
       });
 
       expect(res.status).toBe(403);
     });
   });
 
-  describe("PUT /api/v1/admin/organizations/:orgId/members/:id", () => {
+  describe("PUT /api/v1/admin/organizations/members/:id", () => {
     test("owner can update member role to admin", async () => {
       const org = await createTestOrganization();
       const { user: owner, token } = await signUpTestUser("owner@example.com");
@@ -102,14 +100,11 @@ describe("Admin Members API", () => {
       await createTestMembership(owner.id, org.id, "owner");
       const membership = await createTestMembership(member.id, org.id, "member");
 
-      const res = await app.request(
-        `/api/v1/admin/organizations/${org.id}/members/${membership.id}`,
-        {
-          method: "PUT",
-          headers: jsonSessionHeaders(token),
-          body: JSON.stringify({ role: "admin" }),
-        }
-      );
+      const res = await app.request(`/api/v1/admin/organizations/members/${membership.id}`, {
+        method: "PUT",
+        headers: jsonSessionHeaders(token, org.id),
+        body: JSON.stringify({ role: "admin" }),
+      });
 
       expect(res.status).toBe(200);
       const data = await res.json();
@@ -123,14 +118,11 @@ describe("Admin Members API", () => {
       await createTestMembership(owner.id, org.id, "owner");
       const membership = await createTestMembership(admin.id, org.id, "admin");
 
-      const res = await app.request(
-        `/api/v1/admin/organizations/${org.id}/members/${membership.id}`,
-        {
-          method: "PUT",
-          headers: jsonSessionHeaders(token),
-          body: JSON.stringify({ role: "member" }),
-        }
-      );
+      const res = await app.request(`/api/v1/admin/organizations/members/${membership.id}`, {
+        method: "PUT",
+        headers: jsonSessionHeaders(token, org.id),
+        body: JSON.stringify({ role: "member" }),
+      });
 
       expect(res.status).toBe(200);
       const data = await res.json();
@@ -144,14 +136,11 @@ describe("Admin Members API", () => {
       await createTestMembership(admin.id, org.id, "admin");
       const membership = await createTestMembership(member.id, org.id, "member");
 
-      const res = await app.request(
-        `/api/v1/admin/organizations/${org.id}/members/${membership.id}`,
-        {
-          method: "PUT",
-          headers: jsonSessionHeaders(token),
-          body: JSON.stringify({ role: "admin" }),
-        }
-      );
+      const res = await app.request(`/api/v1/admin/organizations/members/${membership.id}`, {
+        method: "PUT",
+        headers: jsonSessionHeaders(token, org.id),
+        body: JSON.stringify({ role: "admin" }),
+      });
 
       expect(res.status).toBe(200);
     });
@@ -163,14 +152,11 @@ describe("Admin Members API", () => {
       await createTestMembership(admin1.id, org.id, "admin");
       const membership = await createTestMembership(admin2.id, org.id, "admin");
 
-      const res = await app.request(
-        `/api/v1/admin/organizations/${org.id}/members/${membership.id}`,
-        {
-          method: "PUT",
-          headers: jsonSessionHeaders(token),
-          body: JSON.stringify({ role: "member" }),
-        }
-      );
+      const res = await app.request(`/api/v1/admin/organizations/members/${membership.id}`, {
+        method: "PUT",
+        headers: jsonSessionHeaders(token, org.id),
+        body: JSON.stringify({ role: "member" }),
+      });
 
       expect(res.status).toBe(403);
     });
@@ -182,14 +168,11 @@ describe("Admin Members API", () => {
       const ownerMembership = await createTestMembership(owner.id, org.id, "owner");
       await createTestMembership(admin.id, org.id, "admin");
 
-      const res = await app.request(
-        `/api/v1/admin/organizations/${org.id}/members/${ownerMembership.id}`,
-        {
-          method: "PUT",
-          headers: jsonSessionHeaders(token),
-          body: JSON.stringify({ role: "member" }),
-        }
-      );
+      const res = await app.request(`/api/v1/admin/organizations/members/${ownerMembership.id}`, {
+        method: "PUT",
+        headers: jsonSessionHeaders(token, org.id),
+        body: JSON.stringify({ role: "member" }),
+      });
 
       expect(res.status).toBe(403);
       const data = await res.json();
@@ -203,14 +186,11 @@ describe("Admin Members API", () => {
       await createTestMembership(member1.id, org.id, "member");
       const membership = await createTestMembership(member2.id, org.id, "member");
 
-      const res = await app.request(
-        `/api/v1/admin/organizations/${org.id}/members/${membership.id}`,
-        {
-          method: "PUT",
-          headers: jsonSessionHeaders(token),
-          body: JSON.stringify({ role: "admin" }),
-        }
-      );
+      const res = await app.request(`/api/v1/admin/organizations/members/${membership.id}`, {
+        method: "PUT",
+        headers: jsonSessionHeaders(token, org.id),
+        body: JSON.stringify({ role: "admin" }),
+      });
 
       expect(res.status).toBe(403);
     });
@@ -221,10 +201,10 @@ describe("Admin Members API", () => {
       await createTestMembership(owner.id, org.id, "owner");
 
       const res = await app.request(
-        `/api/v1/admin/organizations/${org.id}/members/00000000-0000-0000-0000-000000000000`,
+        "/api/v1/admin/organizations/members/00000000-0000-0000-0000-000000000000",
         {
           method: "PUT",
-          headers: jsonSessionHeaders(token),
+          headers: jsonSessionHeaders(token, org.id),
           body: JSON.stringify({ role: "admin" }),
         }
       );
@@ -233,7 +213,7 @@ describe("Admin Members API", () => {
     });
   });
 
-  describe("DELETE /api/v1/admin/organizations/:orgId/members/:id", () => {
+  describe("DELETE /api/v1/admin/organizations/members/:id", () => {
     test("owner can remove member", async () => {
       const org = await createTestOrganization();
       const { user: owner, token } = await signUpTestUser("owner@example.com");
@@ -241,13 +221,10 @@ describe("Admin Members API", () => {
       await createTestMembership(owner.id, org.id, "owner");
       const membership = await createTestMembership(member.id, org.id, "member");
 
-      const res = await app.request(
-        `/api/v1/admin/organizations/${org.id}/members/${membership.id}`,
-        {
-          method: "DELETE",
-          headers: sessionCookieHeader(token),
-        }
-      );
+      const res = await app.request(`/api/v1/admin/organizations/members/${membership.id}`, {
+        method: "DELETE",
+        headers: sessionCookieHeader(token, org.id),
+      });
 
       expect(res.status).toBe(200);
       const data = await res.json();
@@ -261,13 +238,10 @@ describe("Admin Members API", () => {
       await createTestMembership(owner.id, org.id, "owner");
       const membership = await createTestMembership(admin.id, org.id, "admin");
 
-      const res = await app.request(
-        `/api/v1/admin/organizations/${org.id}/members/${membership.id}`,
-        {
-          method: "DELETE",
-          headers: sessionCookieHeader(token),
-        }
-      );
+      const res = await app.request(`/api/v1/admin/organizations/members/${membership.id}`, {
+        method: "DELETE",
+        headers: sessionCookieHeader(token, org.id),
+      });
 
       expect(res.status).toBe(200);
     });
@@ -279,13 +253,10 @@ describe("Admin Members API", () => {
       await createTestMembership(admin.id, org.id, "admin");
       const membership = await createTestMembership(member.id, org.id, "member");
 
-      const res = await app.request(
-        `/api/v1/admin/organizations/${org.id}/members/${membership.id}`,
-        {
-          method: "DELETE",
-          headers: sessionCookieHeader(token),
-        }
-      );
+      const res = await app.request(`/api/v1/admin/organizations/members/${membership.id}`, {
+        method: "DELETE",
+        headers: sessionCookieHeader(token, org.id),
+      });
 
       expect(res.status).toBe(200);
     });
@@ -297,13 +268,10 @@ describe("Admin Members API", () => {
       await createTestMembership(admin1.id, org.id, "admin");
       const membership = await createTestMembership(admin2.id, org.id, "admin");
 
-      const res = await app.request(
-        `/api/v1/admin/organizations/${org.id}/members/${membership.id}`,
-        {
-          method: "DELETE",
-          headers: sessionCookieHeader(token),
-        }
-      );
+      const res = await app.request(`/api/v1/admin/organizations/members/${membership.id}`, {
+        method: "DELETE",
+        headers: sessionCookieHeader(token, org.id),
+      });
 
       expect(res.status).toBe(403);
     });
@@ -315,13 +283,10 @@ describe("Admin Members API", () => {
       const ownerMembership = await createTestMembership(owner.id, org.id, "owner");
       await createTestMembership(admin.id, org.id, "admin");
 
-      const res = await app.request(
-        `/api/v1/admin/organizations/${org.id}/members/${ownerMembership.id}`,
-        {
-          method: "DELETE",
-          headers: sessionCookieHeader(token),
-        }
-      );
+      const res = await app.request(`/api/v1/admin/organizations/members/${ownerMembership.id}`, {
+        method: "DELETE",
+        headers: sessionCookieHeader(token, org.id),
+      });
 
       expect(res.status).toBe(403);
       const data = await res.json();
@@ -333,13 +298,10 @@ describe("Admin Members API", () => {
       const { user: admin, token } = await signUpTestUser("admin@example.com");
       const membership = await createTestMembership(admin.id, org.id, "admin");
 
-      const res = await app.request(
-        `/api/v1/admin/organizations/${org.id}/members/${membership.id}`,
-        {
-          method: "DELETE",
-          headers: sessionCookieHeader(token),
-        }
-      );
+      const res = await app.request(`/api/v1/admin/organizations/members/${membership.id}`, {
+        method: "DELETE",
+        headers: sessionCookieHeader(token, org.id),
+      });
 
       expect(res.status).toBe(400);
       const data = await res.json();
@@ -352,10 +314,10 @@ describe("Admin Members API", () => {
       await createTestMembership(owner.id, org.id, "owner");
 
       const res = await app.request(
-        `/api/v1/admin/organizations/${org.id}/members/00000000-0000-0000-0000-000000000000`,
+        "/api/v1/admin/organizations/members/00000000-0000-0000-0000-000000000000",
         {
           method: "DELETE",
-          headers: sessionCookieHeader(token),
+          headers: sessionCookieHeader(token, org.id),
         }
       );
 
@@ -363,7 +325,7 @@ describe("Admin Members API", () => {
     });
   });
 
-  describe("POST /api/v1/admin/organizations/:orgId/leave", () => {
+  describe("POST /api/v1/admin/organizations/leave", () => {
     test("member can leave organization", async () => {
       const org = await createTestOrganization();
       const owner = await createTestUser();
@@ -371,9 +333,9 @@ describe("Admin Members API", () => {
       await createTestMembership(owner.id, org.id, "owner");
       await createTestMembership(member.id, org.id, "member");
 
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}/leave`, {
+      const res = await app.request("/api/v1/admin/organizations/leave", {
         method: "POST",
-        headers: sessionCookieHeader(token),
+        headers: sessionCookieHeader(token, org.id),
       });
 
       expect(res.status).toBe(200);
@@ -388,9 +350,9 @@ describe("Admin Members API", () => {
       await createTestMembership(owner.id, org.id, "owner");
       await createTestMembership(admin.id, org.id, "admin");
 
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}/leave`, {
+      const res = await app.request("/api/v1/admin/organizations/leave", {
         method: "POST",
-        headers: sessionCookieHeader(token),
+        headers: sessionCookieHeader(token, org.id),
       });
 
       expect(res.status).toBe(200);
@@ -401,9 +363,9 @@ describe("Admin Members API", () => {
       const { user: owner, token } = await signUpTestUser("owner@example.com");
       await createTestMembership(owner.id, org.id, "owner");
 
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}/leave`, {
+      const res = await app.request("/api/v1/admin/organizations/leave", {
         method: "POST",
-        headers: sessionCookieHeader(token),
+        headers: sessionCookieHeader(token, org.id),
       });
 
       expect(res.status).toBe(403);
@@ -415,7 +377,7 @@ describe("Admin Members API", () => {
       const org = await createTestOrganization();
       const { rawKey } = await createTestApiKey(org.id);
 
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}/leave`, {
+      const res = await app.request("/api/v1/admin/organizations/leave", {
         method: "POST",
         headers: authHeader(rawKey),
       });
@@ -427,9 +389,9 @@ describe("Admin Members API", () => {
       const org = await createTestOrganization();
       const { token } = await signUpTestUser(); // Not a member
 
-      const res = await app.request(`/api/v1/admin/organizations/${org.id}/leave`, {
+      const res = await app.request("/api/v1/admin/organizations/leave", {
         method: "POST",
-        headers: sessionCookieHeader(token),
+        headers: sessionCookieHeader(token, org.id),
       });
 
       expect(res.status).toBe(403);

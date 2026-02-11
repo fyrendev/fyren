@@ -43,9 +43,9 @@ const createInviteSchema = z.object({
   role: z.enum(["admin", "member"]).default("member"),
 });
 
-// GET /api/v1/admin/organizations/:orgId/invites - List pending invites
+// GET /api/v1/admin/organizations/invites - List pending invites
 adminInvites.get(
-  "/:orgId/invites",
+  "/invites",
   authMiddleware,
   requireOrgMembership,
   requireRole("owner", "admin"),
@@ -86,9 +86,9 @@ adminInvites.get(
   }
 );
 
-// POST /api/v1/admin/organizations/:orgId/invites - Create invite
+// POST /api/v1/admin/organizations/invites - Create invite
 adminInvites.post(
-  "/:orgId/invites",
+  "/invites",
   authMiddleware,
   requireOrgMembership,
   requireRole("owner", "admin"),
@@ -226,9 +226,9 @@ adminInvites.post(
   }
 );
 
-// DELETE /api/v1/admin/organizations/:orgId/invites/:id - Revoke invite
+// DELETE /api/v1/admin/organizations/invites/:id - Revoke invite
 adminInvites.delete(
-  "/:orgId/invites/:id",
+  "/invites/:id",
   authMiddleware,
   requireOrgMembership,
   requireRole("owner", "admin"),

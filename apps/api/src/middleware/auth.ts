@@ -81,8 +81,8 @@ export const authMiddleware = createMiddleware(async (c, next) => {
       c.set("user", session.user);
       c.set("authMethod", "session");
 
-      // For session auth, org ID can come from header or param
-      const orgId = c.req.param("orgId") || c.req.header("X-Organization-Id");
+      // For session auth, org ID comes from header
+      const orgId = c.req.header("X-Organization-Id");
 
       if (orgId) {
         // Verify membership
@@ -173,7 +173,7 @@ export const optionalAuthMiddleware = createMiddleware(async (c, next) => {
       c.set("user", session.user);
       c.set("authMethod", "session");
 
-      const orgId = c.req.param("orgId") || c.req.header("X-Organization-Id");
+      const orgId = c.req.header("X-Organization-Id");
 
       if (orgId) {
         const [membership] = await db

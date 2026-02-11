@@ -479,56 +479,47 @@ export const api = {
 
   // Team
   getMembers: () => {
-    const orgId = getCurrentOrgId();
-    return apiClient<{ members: Member[] }>(`/api/v1/admin/organizations/${orgId}/members`);
+    return apiClient<{ members: Member[] }>("/api/v1/admin/organizations/members");
   },
   updateMember: (id: string, data: { role: string }) => {
-    const orgId = getCurrentOrgId();
-    return apiClient<{ member: Member }>(`/api/v1/admin/organizations/${orgId}/members/${id}`, {
+    return apiClient<{ member: Member }>(`/api/v1/admin/organizations/members/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     });
   },
   removeMember: (id: string) => {
-    const orgId = getCurrentOrgId();
-    return apiClient<{ success: boolean }>(`/api/v1/admin/organizations/${orgId}/members/${id}`, {
+    return apiClient<{ success: boolean }>(`/api/v1/admin/organizations/members/${id}`, {
       method: "DELETE",
     });
   },
   getInvites: () => {
-    const orgId = getCurrentOrgId();
-    return apiClient<{ invites: Invite[] }>(`/api/v1/admin/organizations/${orgId}/invites`);
+    return apiClient<{ invites: Invite[] }>("/api/v1/admin/organizations/invites");
   },
   createInvite: (data: { email: string; role: string }) => {
-    const orgId = getCurrentOrgId();
-    return apiClient<{ invite: Invite }>(`/api/v1/admin/organizations/${orgId}/invites`, {
+    return apiClient<{ invite: Invite }>("/api/v1/admin/organizations/invites", {
       method: "POST",
       body: JSON.stringify(data),
     });
   },
   deleteInvite: (id: string) => {
-    const orgId = getCurrentOrgId();
-    return apiClient<{ success: boolean }>(`/api/v1/admin/organizations/${orgId}/invites/${id}`, {
+    return apiClient<{ success: boolean }>(`/api/v1/admin/organizations/invites/${id}`, {
       method: "DELETE",
     });
   },
 
   // Organization
   getOrganization: () => {
-    const orgId = getCurrentOrgId();
-    return apiClient<{ organization: Organization }>(`/api/v1/admin/organizations/${orgId}`);
+    return apiClient<{ organization: Organization }>("/api/v1/admin/organizations");
   },
   updateOrganization: (data: Partial<Organization> & { emailConfig?: EmailConfig | null }) => {
-    const orgId = getCurrentOrgId();
-    return apiClient<{ organization: Organization }>(`/api/v1/admin/organizations/${orgId}`, {
+    return apiClient<{ organization: Organization }>("/api/v1/admin/organizations", {
       method: "PUT",
       body: JSON.stringify(data),
     });
   },
   testEmail: () => {
-    const orgId = getCurrentOrgId();
     return apiClient<{ success: boolean; message: string }>(
-      `/api/v1/admin/organizations/${orgId}/test-email`,
+      "/api/v1/admin/organizations/test-email",
       {
         method: "POST",
       }
