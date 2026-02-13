@@ -1,9 +1,10 @@
-import { db, eq, organizations, userOrganizations, users } from "@fyrendev/db";
+import { db, eq, users } from "@fyrendev/db";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AuthUser } from "../../lib/auth";
 import { errorResponse, NotFoundError } from "../../lib/errors";
 import { requireSession } from "../../middleware/session";
+import { getOrganization } from "../../lib/organization";
 
 type Variables = {
   user: AuthUser;
@@ -15,20 +16,24 @@ const updateUserSchema = z.object({
   name: z.string().min(1).max(255).optional(),
 });
 
-// GET /api/v1/admin/me - Get current user info with organizations
+// GET /api/v1/admin/me - Get current user info with organization
 adminUsers.get("/me", requireSession, async (c) => {
   try {
     const user = c.get("user");
 
-    // Get user's organizations with roles
-    const memberships = await db
-      .select({
-        membership: userOrganizations,
-        organization: organizations,
-      })
-      .from(userOrganizations)
-      .innerJoin(organizations, eq(userOrganizations.organizationId, organizations.id))
-      .where(eq(userOrganizations.userId, user.id));
+    // Get the singleton organization
+    let organization = null;
+    try {
+      const org = await getOrganization();
+      organization = {
+        id: org.id,
+        name: org.name,
+        slug: org.slug,
+        role: user.role,
+      };
+    } catch {
+      // No organization configured yet
+    }
 
     return c.json({
       user: {
@@ -37,14 +42,10 @@ adminUsers.get("/me", requireSession, async (c) => {
         name: user.name,
         emailVerified: user.emailVerified,
         image: user.image,
+        role: user.role,
         createdAt: user.createdAt,
       },
-      organizations: memberships.map((m) => ({
-        id: m.organization.id,
-        name: m.organization.name,
-        slug: m.organization.slug,
-        role: m.membership.role,
-      })),
+      organization,
     });
   } catch (error) {
     return errorResponse(c, error);

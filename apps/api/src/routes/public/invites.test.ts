@@ -4,7 +4,6 @@ import {
   setupTestHooks,
   createTestOrganization,
   createTestUser,
-  createTestMembership,
   signUpTestUser,
   createTestInvite,
   sessionCookieHeader,
@@ -17,10 +16,9 @@ describe("Public Invites API", () => {
 
   describe("GET /api/v1/invites/:token", () => {
     test("returns invite details for valid token", async () => {
-      const org = await createTestOrganization({ name: "Acme Corp", slug: "acme-corp" });
-      const owner = await createTestUser();
-      await createTestMembership(owner.id, org.id, "owner");
-      await createTestInvite(org.id, owner.id, {
+      await createTestOrganization({ name: "Acme Corp", slug: "acme-corp" });
+      const owner = await createTestUser({}, "owner");
+      await createTestInvite(owner.id, {
         email: "invitee@example.com",
         role: "member",
         token: "valid-invite-token",
@@ -48,10 +46,9 @@ describe("Public Invites API", () => {
     });
 
     test("returns 404 for already accepted invite", async () => {
-      const org = await createTestOrganization();
-      const owner = await createTestUser();
-      await createTestMembership(owner.id, org.id, "owner");
-      await createTestInvite(org.id, owner.id, {
+      await createTestOrganization();
+      const owner = await createTestUser({}, "owner");
+      await createTestInvite(owner.id, {
         email: "accepted@example.com",
         token: "accepted-token",
         acceptedAt: new Date(), // Already accepted
@@ -65,10 +62,9 @@ describe("Public Invites API", () => {
     });
 
     test("returns 400 for expired invite", async () => {
-      const org = await createTestOrganization();
-      const owner = await createTestUser();
-      await createTestMembership(owner.id, org.id, "owner");
-      await createTestInvite(org.id, owner.id, {
+      await createTestOrganization();
+      const owner = await createTestUser({}, "owner");
+      await createTestInvite(owner.id, {
         email: "expired@example.com",
         token: "expired-token",
         expiresAt: new Date(Date.now() - 86400000), // Yesterday
@@ -83,16 +79,15 @@ describe("Public Invites API", () => {
   });
 
   describe("POST /api/v1/invites/:token/accept", () => {
-    test("accepts invite and creates membership", async () => {
-      const org = await createTestOrganization({ name: "Acme Corp", slug: "acme-corp" });
-      const owner = await createTestUser();
-      await createTestMembership(owner.id, org.id, "owner");
+    test("accepts invite and sets user role", async () => {
+      await createTestOrganization({ name: "Acme Corp", slug: "acme-corp" });
+      const owner = await createTestUser({}, "owner");
 
       // Sign up the invitee first
       const { token: sessionToken } = await signUpTestUser("invitee@example.com");
 
       // Create invite for that email
-      await createTestInvite(org.id, owner.id, {
+      await createTestInvite(owner.id, {
         email: "invitee@example.com",
         role: "member",
         token: "accept-token",
@@ -105,19 +100,17 @@ describe("Public Invites API", () => {
 
       expect(res.status).toBe(200);
       const data = await res.json();
-      expect(data.organization.id).toBe(org.id);
       expect(data.organization.name).toBe("Acme Corp");
       expect(data.organization.slug).toBe("acme-corp");
       expect(data.role).toBe("member");
     });
 
     test("accepts invite with admin role", async () => {
-      const org = await createTestOrganization();
-      const owner = await createTestUser();
-      await createTestMembership(owner.id, org.id, "owner");
+      await createTestOrganization();
+      const owner = await createTestUser({}, "owner");
 
       const { token: sessionToken } = await signUpTestUser("admin@example.com");
-      await createTestInvite(org.id, owner.id, {
+      await createTestInvite(owner.id, {
         email: "admin@example.com",
         role: "admin",
         token: "admin-token",
@@ -134,10 +127,9 @@ describe("Public Invites API", () => {
     });
 
     test("returns 401 without session", async () => {
-      const org = await createTestOrganization();
-      const owner = await createTestUser();
-      await createTestMembership(owner.id, org.id, "owner");
-      await createTestInvite(org.id, owner.id, {
+      await createTestOrganization();
+      const owner = await createTestUser({}, "owner");
+      await createTestInvite(owner.id, {
         email: "test@example.com",
         token: "no-session-token",
       });
@@ -161,12 +153,11 @@ describe("Public Invites API", () => {
     });
 
     test("returns 404 for already accepted invite", async () => {
-      const org = await createTestOrganization();
-      const owner = await createTestUser();
-      await createTestMembership(owner.id, org.id, "owner");
+      await createTestOrganization();
+      const owner = await createTestUser({}, "owner");
 
       const { token: sessionToken } = await signUpTestUser("already@example.com");
-      await createTestInvite(org.id, owner.id, {
+      await createTestInvite(owner.id, {
         email: "already@example.com",
         token: "already-accepted",
         acceptedAt: new Date(),
@@ -181,12 +172,11 @@ describe("Public Invites API", () => {
     });
 
     test("returns 400 for expired invite", async () => {
-      const org = await createTestOrganization();
-      const owner = await createTestUser();
-      await createTestMembership(owner.id, org.id, "owner");
+      await createTestOrganization();
+      const owner = await createTestUser({}, "owner");
 
       const { token: sessionToken } = await signUpTestUser("expired@example.com");
-      await createTestInvite(org.id, owner.id, {
+      await createTestInvite(owner.id, {
         email: "expired@example.com",
         token: "expired-accept-token",
         expiresAt: new Date(Date.now() - 86400000), // Yesterday
@@ -203,12 +193,11 @@ describe("Public Invites API", () => {
     });
 
     test("returns 403 when user email does not match invite", async () => {
-      const org = await createTestOrganization();
-      const owner = await createTestUser();
-      await createTestMembership(owner.id, org.id, "owner");
+      await createTestOrganization();
+      const owner = await createTestUser({}, "owner");
 
       const { token: sessionToken } = await signUpTestUser("wrong@example.com");
-      await createTestInvite(org.id, owner.id, {
+      await createTestInvite(owner.id, {
         email: "correct@example.com", // Different email
         token: "wrong-user-token",
       });
@@ -224,14 +213,16 @@ describe("Public Invites API", () => {
     });
 
     test("returns 409 when user is already a member", async () => {
-      const org = await createTestOrganization();
-      const owner = await createTestUser();
-      await createTestMembership(owner.id, org.id, "owner");
+      await createTestOrganization();
+      const owner = await createTestUser({}, "owner");
 
-      const { user: existingMember, token: sessionToken } =
-        await signUpTestUser("existing@example.com");
-      await createTestMembership(existingMember.id, org.id, "member"); // Already a member
-      await createTestInvite(org.id, owner.id, {
+      const { token: sessionToken } = await signUpTestUser(
+        "existing@example.com",
+        undefined,
+        undefined,
+        "member"
+      ); // Already has a role
+      await createTestInvite(owner.id, {
         email: "existing@example.com",
         token: "already-member-token",
       });
@@ -247,14 +238,13 @@ describe("Public Invites API", () => {
     });
 
     test("email matching is case-insensitive", async () => {
-      const org = await createTestOrganization();
-      const owner = await createTestUser();
-      await createTestMembership(owner.id, org.id, "owner");
+      await createTestOrganization();
+      const owner = await createTestUser({}, "owner");
 
       // BetterAuth normalizes emails to lowercase, so sign up with lowercase
       // but invite with mixed case to test the comparison
       const { token: sessionToken } = await signUpTestUser("casetest@example.com");
-      await createTestInvite(org.id, owner.id, {
+      await createTestInvite(owner.id, {
         email: "CASETEST@example.com", // Uppercase in invite
         token: "case-insensitive-token",
       });

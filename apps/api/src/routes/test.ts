@@ -1,12 +1,13 @@
 import {
   components,
   db,
+  eq,
   incidentComponents,
   incidents,
   incidentUpdates,
   organizations,
+  users,
   sql,
-  userOrganizations,
 } from "@fyrendev/db";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
@@ -45,7 +46,6 @@ testRoutes.post("/reset", async (c) => {
         components,
         api_keys,
         organization_invites,
-        user_organizations,
         sessions,
         accounts,
         verifications,
@@ -150,12 +150,8 @@ testRoutes.post("/setup", zValidator("json", setupSchema), async (c) => {
       throw new Error("Sign up did not return user ID");
     }
 
-    // Create user-organization membership
-    await db.insert(userOrganizations).values({
-      userId: user.id,
-      organizationId: org.id,
-      role: "owner",
-    });
+    // Set user role to owner
+    await db.update(users).set({ role: "owner" }).where(eq(users.id, user.id));
 
     // Create components
     const createdComponents: Array<{ id: string; name: string }> = [];
@@ -166,7 +162,6 @@ testRoutes.post("/setup", zValidator("json", setupSchema), async (c) => {
         const [created] = await db
           .insert(components)
           .values({
-            organizationId: org.id,
             name: comp.name,
             status: comp.status,
             displayOrder: i,
@@ -185,7 +180,6 @@ testRoutes.post("/setup", zValidator("json", setupSchema), async (c) => {
         const [incident] = await db
           .insert(incidents)
           .values({
-            organizationId: org.id,
             title: inc.title,
             status: inc.status,
             severity: inc.severity,

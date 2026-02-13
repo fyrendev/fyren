@@ -75,7 +75,6 @@ async function seed() {
     .insert(schema.components)
     .values(
       componentData.map((c) => ({
-        organizationId: org.id,
         name: c.name,
         status: c.status,
         displayOrder: c.displayOrder,
@@ -94,7 +93,6 @@ async function seed() {
   const [apiKey] = await db
     .insert(schema.apiKeys)
     .values({
-      organizationId: org.id,
       name: "Default API Key",
       keyHash: apiKeyData.keyHash,
       keyPrefix: apiKeyData.keyPrefix,

@@ -24,7 +24,6 @@ export async function cleanDatabase() {
       components,
       api_keys,
       organization_invites,
-      user_organizations,
       sessions,
       accounts,
       verifications,

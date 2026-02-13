@@ -1,18 +1,29 @@
-import type { UserOrganization } from "@fyrendev/db";
-import { and, apiKeys, db, eq, userOrganizations } from "@fyrendev/db";
+import { apiKeys, db, eq, users } from "@fyrendev/db";
 import { createMiddleware } from "hono/factory";
 import { extractKeyPrefix, isValidApiKeyFormat, verifyApiKey } from "../lib/api-key";
 import type { AuthUser, Session } from "../lib/auth";
-import { ForbiddenError, UnauthorizedError, errorResponse } from "../lib/errors";
+import { UnauthorizedError, errorResponse } from "../lib/errors";
 import { getSession } from "./session";
 import { logger } from "../lib/logging";
+
+/**
+ * Fetch the user's current role from the DB.
+ * BetterAuth's cookie cache may not include custom fields like `role`,
+ * so we always fetch it fresh to ensure it's up to date.
+ */
+async function enrichUserWithRole(user: AuthUser): Promise<AuthUser> {
+  const [dbUser] = await db
+    .select({ role: users.role })
+    .from(users)
+    .where(eq(users.id, user.id))
+    .limit(1);
+  return { ...user, role: dbUser?.role || null } as AuthUser;
+}
 
 declare module "hono" {
   interface ContextVariableMap {
     session?: Session | null;
     user?: AuthUser | null;
-    membership?: UserOrganization | null;
-    organizationId?: string | null;
     apiKeyId?: string | null;
     authMethod?: "session" | "api_key" | null;
     requestId?: string;
@@ -59,7 +70,6 @@ export const authMiddleware = createMiddleware(async (c, next) => {
                   })
                 );
 
-              c.set("organizationId", apiKeyRecord.organizationId);
               c.set("apiKeyId", apiKeyRecord.id);
               c.set("authMethod", "api_key");
 
@@ -78,32 +88,8 @@ export const authMiddleware = createMiddleware(async (c, next) => {
 
     if (session) {
       c.set("session", session);
-      c.set("user", session.user);
+      c.set("user", await enrichUserWithRole(session.user));
       c.set("authMethod", "session");
-
-      // For session auth, org ID comes from header
-      const orgId = c.req.header("X-Organization-Id");
-
-      if (orgId) {
-        // Verify membership
-        const [membership] = await db
-          .select()
-          .from(userOrganizations)
-          .where(
-            and(
-              eq(userOrganizations.userId, session.user.id),
-              eq(userOrganizations.organizationId, orgId)
-            )
-          )
-          .limit(1);
-
-        if (!membership) {
-          throw new ForbiddenError("Not a member of this organization");
-        }
-
-        c.set("membership", membership);
-        c.set("organizationId", orgId);
-      }
 
       await next();
       return;
@@ -153,7 +139,6 @@ export const optionalAuthMiddleware = createMiddleware(async (c, next) => {
                   })
                 );
 
-              c.set("organizationId", apiKeyRecord.organizationId);
               c.set("apiKeyId", apiKeyRecord.id);
               c.set("authMethod", "api_key");
 
@@ -170,28 +155,8 @@ export const optionalAuthMiddleware = createMiddleware(async (c, next) => {
 
     if (session) {
       c.set("session", session);
-      c.set("user", session.user);
+      c.set("user", await enrichUserWithRole(session.user));
       c.set("authMethod", "session");
-
-      const orgId = c.req.header("X-Organization-Id");
-
-      if (orgId) {
-        const [membership] = await db
-          .select()
-          .from(userOrganizations)
-          .where(
-            and(
-              eq(userOrganizations.userId, session.user.id),
-              eq(userOrganizations.organizationId, orgId)
-            )
-          )
-          .limit(1);
-
-        if (membership) {
-          c.set("membership", membership);
-          c.set("organizationId", orgId);
-        }
-      }
     }
 
     await next();

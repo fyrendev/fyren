@@ -1,20 +1,10 @@
 import { Hono } from "hono";
-import { db, eq, desc, asc } from "@fyrendev/db";
-import { organizations, incidents, incidentUpdates } from "@fyrendev/db";
+import { db, eq, desc } from "@fyrendev/db";
+import { incidents, incidentUpdates } from "@fyrendev/db";
+import { getOrganization } from "../../lib/organization";
 import { env } from "../../env";
 
 export const rssRoutes = new Hono();
-
-// Helper to get the organization
-async function getOrganization() {
-  const [org] = await db
-    .select()
-    .from(organizations)
-    .orderBy(asc(organizations.createdAt))
-    .limit(1);
-  if (!org) return null;
-  return org;
-}
 
 function escapeXml(str: string): string {
   return str
@@ -27,9 +17,10 @@ function escapeXml(str: string): string {
 
 // RSS feed for incidents
 rssRoutes.get("/rss", async (c) => {
-  const org = await getOrganization();
-
-  if (!org) {
+  let org;
+  try {
+    org = await getOrganization();
+  } catch {
     return c.json({ error: { message: "No organization configured" } }, 404);
   }
 
@@ -37,7 +28,6 @@ rssRoutes.get("/rss", async (c) => {
   const recentIncidents = await db
     .select()
     .from(incidents)
-    .where(eq(incidents.organizationId, org.id))
     .orderBy(desc(incidents.createdAt))
     .limit(20);
 

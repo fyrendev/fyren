@@ -14,8 +14,8 @@ describe("Public RSS API", () => {
 
   describe("GET /api/v1/status/rss", () => {
     test("returns valid RSS XML", async () => {
-      const org = await createTestOrganization({ name: "Test Company" });
-      await createTestIncident(org.id, { title: "Server Outage" });
+      await createTestOrganization({ name: "Test Company" });
+      await createTestIncident({ title: "Server Outage" });
 
       const res = await app.request("/api/v1/status/rss");
 
@@ -40,9 +40,9 @@ describe("Public RSS API", () => {
     });
 
     test("includes recent incidents as items", async () => {
-      const org = await createTestOrganization({ name: "Test Company" });
-      await createTestIncident(org.id, { title: "Database Issues" });
-      await createTestIncident(org.id, { title: "API Slowdown" });
+      await createTestOrganization({ name: "Test Company" });
+      await createTestIncident({ title: "Database Issues" });
+      await createTestIncident({ title: "API Slowdown" });
 
       const res = await app.request("/api/v1/status/rss");
 
@@ -54,8 +54,8 @@ describe("Public RSS API", () => {
     });
 
     test("includes incident status in item title", async () => {
-      const org = await createTestOrganization({ name: "Test Company" });
-      await createTestIncident(org.id, {
+      await createTestOrganization({ name: "Test Company" });
+      await createTestIncident({
         title: "Network Outage",
         status: "investigating",
       });
@@ -68,8 +68,8 @@ describe("Public RSS API", () => {
     });
 
     test("shows resolved status for resolved incidents", async () => {
-      const org = await createTestOrganization({ name: "Test Company" });
-      await createTestIncident(org.id, {
+      await createTestOrganization({ name: "Test Company" });
+      await createTestIncident({
         title: "Resolved Issue",
         status: "resolved",
         resolvedAt: new Date(),
@@ -83,8 +83,8 @@ describe("Public RSS API", () => {
     });
 
     test("includes latest update message in description", async () => {
-      const org = await createTestOrganization({ name: "Test Company" });
-      const incident = await createTestIncident(org.id, { title: "Server Down" });
+      await createTestOrganization({ name: "Test Company" });
+      const incident = await createTestIncident({ title: "Server Down" });
       await createTestIncidentUpdate(incident.id, { message: "We have identified the root cause" });
 
       const res = await app.request("/api/v1/status/rss");
@@ -96,8 +96,8 @@ describe("Public RSS API", () => {
     });
 
     test("includes incident links", async () => {
-      const org = await createTestOrganization({ name: "Test Company" });
-      const incident = await createTestIncident(org.id, { title: "Test Incident" });
+      await createTestOrganization({ name: "Test Company" });
+      const incident = await createTestIncident({ title: "Test Incident" });
 
       const res = await app.request("/api/v1/status/rss");
 
@@ -109,8 +109,8 @@ describe("Public RSS API", () => {
     });
 
     test("includes proper date formatting", async () => {
-      const org = await createTestOrganization({ name: "Test Company" });
-      await createTestIncident(org.id, { title: "Test Incident" });
+      await createTestOrganization({ name: "Test Company" });
+      await createTestIncident({ title: "Test Incident" });
 
       const res = await app.request("/api/v1/status/rss");
 
@@ -143,8 +143,8 @@ describe("Public RSS API", () => {
     });
 
     test("escapes XML special characters", async () => {
-      const org = await createTestOrganization({ name: "Test & Company <Inc>" });
-      await createTestIncident(org.id, { title: 'Issue with <script> & "quotes"' });
+      await createTestOrganization({ name: "Test & Company <Inc>" });
+      await createTestIncident({ title: 'Issue with <script> & "quotes"' });
 
       const res = await app.request("/api/v1/status/rss");
 

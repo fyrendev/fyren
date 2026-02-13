@@ -1,5 +1,6 @@
 import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { orgRoleEnum } from "./enums";
 
 // BetterAuth managed user table
 export const users = pgTable(
@@ -10,6 +11,7 @@ export const users = pgTable(
     emailVerified: boolean("email_verified").notNull().default(false),
     name: text("name"),
     image: text("image"),
+    role: orgRoleEnum("role"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },

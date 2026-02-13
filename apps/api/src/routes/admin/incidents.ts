@@ -8,7 +8,7 @@ import {
   listIncidentsSchema,
   updateAffectedComponentsSchema,
 } from "../../validators/incident";
-import { ValidationError, NotFoundError, errorResponse } from "../../lib/errors";
+import { NotFoundError, errorResponse } from "../../lib/errors";
 import { createAuditLogger } from "../../lib/logging/audit";
 
 export const adminIncidents = new Hono();
@@ -16,11 +16,6 @@ export const adminIncidents = new Hono();
 // GET /api/v1/admin/incidents - List incidents
 adminIncidents.get("/", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const query = listIncidentsSchema.parse({
       status: c.req.query("status"),
       severity: c.req.query("severity"),
@@ -28,7 +23,7 @@ adminIncidents.get("/", async (c) => {
       offset: c.req.query("offset"),
     });
 
-    const result = await IncidentService.list(orgId, query);
+    const result = await IncidentService.list(query);
 
     return c.json({
       incidents: result.incidents.map((incident) => ({
@@ -61,13 +56,8 @@ adminIncidents.get("/", async (c) => {
 // GET /api/v1/admin/incidents/:id - Get single incident
 adminIncidents.get("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const incidentId = c.req.param("id");
-    const incident = await IncidentService.getById(incidentId, orgId);
+    const incident = await IncidentService.getById(incidentId);
 
     if (!incident) {
       throw new NotFoundError("Incident not found");
@@ -102,17 +92,11 @@ adminIncidents.get("/:id", async (c) => {
 // POST /api/v1/admin/incidents - Create incident
 adminIncidents.post("/", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const user = c.get("user");
     const body = await c.req.json();
     const data = createIncidentSchema.parse(body);
 
     const incident = await IncidentService.create({
-      organizationId: orgId,
       title: data.title,
       severity: data.severity,
       status: data.status,
@@ -128,7 +112,6 @@ adminIncidents.post("/", async (c) => {
     // Audit log
     const auditLogger = createAuditLogger({
       userId: user?.id,
-      organizationId: orgId,
       requestId: c.get("requestId"),
     });
     auditLogger.incidentCreated(incident.id, {
@@ -160,16 +143,11 @@ adminIncidents.post("/", async (c) => {
 // PUT /api/v1/admin/incidents/:id - Update incident metadata (title, severity)
 adminIncidents.put("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const incidentId = c.req.param("id");
     const body = await c.req.json();
     const data = updateIncidentSchema.parse(body);
 
-    const incident = await IncidentService.update(incidentId, orgId, data);
+    const incident = await IncidentService.update(incidentId, data);
 
     if (!incident) {
       throw new NotFoundError("Incident not found");
@@ -179,7 +157,6 @@ adminIncidents.put("/:id", async (c) => {
     const user = c.get("user");
     const auditLogger = createAuditLogger({
       userId: user?.id,
-      organizationId: orgId,
       requestId: c.get("requestId"),
     });
     auditLogger.incidentUpdated(incidentId, data);
@@ -205,11 +182,6 @@ adminIncidents.put("/:id", async (c) => {
 // POST /api/v1/admin/incidents/:id/updates - Add update to incident
 adminIncidents.post("/:id/updates", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const incidentId = c.req.param("id");
     const user = c.get("user");
     const body = await c.req.json();
@@ -217,7 +189,6 @@ adminIncidents.post("/:id/updates", async (c) => {
 
     const update = await IncidentService.addUpdate({
       incidentId,
-      organizationId: orgId,
       status: data.status,
       message: data.message,
       createdBy: user?.id,
@@ -230,7 +201,6 @@ adminIncidents.post("/:id/updates", async (c) => {
     // Audit log
     const auditLogger = createAuditLogger({
       userId: user?.id,
-      organizationId: orgId,
       requestId: c.get("requestId"),
     });
     auditLogger.incidentUpdateAdded(update.id, incidentId, { status: update.status });
@@ -258,11 +228,6 @@ adminIncidents.post("/:id/updates", async (c) => {
 // PATCH /api/v1/admin/incidents/:id/resolve - Resolve incident (shortcut)
 adminIncidents.patch("/:id/resolve", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const incidentId = c.req.param("id");
     const user = c.get("user");
     const body = await c.req.json().catch(() => ({}));
@@ -270,7 +235,6 @@ adminIncidents.patch("/:id/resolve", async (c) => {
 
     const update = await IncidentService.resolve({
       incidentId,
-      organizationId: orgId,
       message: data.message,
       createdBy: user?.id,
     });
@@ -282,7 +246,6 @@ adminIncidents.patch("/:id/resolve", async (c) => {
     // Audit log
     const auditLogger = createAuditLogger({
       userId: user?.id,
-      organizationId: orgId,
       requestId: c.get("requestId"),
     });
     auditLogger.incidentResolved(incidentId);
@@ -307,16 +270,11 @@ adminIncidents.patch("/:id/resolve", async (c) => {
 // PUT /api/v1/admin/incidents/:id/components - Update affected components
 adminIncidents.put("/:id/components", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const incidentId = c.req.param("id");
     const body = await c.req.json();
     const { componentIds } = updateAffectedComponentsSchema.parse(body);
 
-    await IncidentService.updateAffectedComponents(incidentId, orgId, componentIds);
+    await IncidentService.updateAffectedComponents(incidentId, componentIds);
 
     return c.json({ success: true });
   } catch (error) {
@@ -330,13 +288,8 @@ adminIncidents.put("/:id/components", async (c) => {
 // DELETE /api/v1/admin/incidents/:id - Delete incident
 adminIncidents.delete("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const incidentId = c.req.param("id");
-    const result = await IncidentService.delete(incidentId, orgId);
+    const result = await IncidentService.delete(incidentId);
 
     if (!result) {
       throw new NotFoundError("Incident not found");
@@ -346,7 +299,6 @@ adminIncidents.delete("/:id", async (c) => {
     const user = c.get("user");
     const auditLogger = createAuditLogger({
       userId: user?.id,
-      organizationId: orgId,
       requestId: c.get("requestId"),
     });
     auditLogger.incidentDeleted(incidentId);

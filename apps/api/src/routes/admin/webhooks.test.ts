@@ -17,10 +17,9 @@ describe("Admin Webhooks API", () => {
 
   describe("GET /api/v1/admin/webhooks", () => {
     test("lists all webhooks for organization", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      await createTestWebhook(org.id, { name: "Slack Webhook", type: "slack" });
-      await createTestWebhook(org.id, { name: "Discord Webhook", type: "discord" });
+      const { rawKey } = await createTestApiKey();
+      await createTestWebhook({ name: "Slack Webhook", type: "slack" });
+      await createTestWebhook({ name: "Discord Webhook", type: "discord" });
 
       const res = await app.request("/api/v1/admin/webhooks", {
         headers: authHeader(rawKey),
@@ -39,8 +38,7 @@ describe("Admin Webhooks API", () => {
     });
 
     test("returns empty array when no webhooks exist", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/webhooks", {
         headers: authHeader(rawKey),
@@ -54,9 +52,8 @@ describe("Admin Webhooks API", () => {
 
   describe("GET /api/v1/admin/webhooks/:id", () => {
     test("returns webhook by ID", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const webhook = await createTestWebhook(org.id, {
+      const { rawKey } = await createTestApiKey();
+      const webhook = await createTestWebhook({
         name: "My Webhook",
         type: "slack",
         url: "https://hooks.slack.com/services/xxx",
@@ -74,23 +71,9 @@ describe("Admin Webhooks API", () => {
     });
 
     test("returns 404 for non-existent webhook", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/webhooks/00000000-0000-0000-0000-000000000000", {
-        headers: authHeader(rawKey),
-      });
-
-      expect(res.status).toBe(404);
-    });
-
-    test("returns 404 for webhook from different organization", async () => {
-      const org1 = await createTestOrganization({ slug: "org-1" });
-      const org2 = await createTestOrganization({ slug: "org-2" });
-      const { rawKey } = await createTestApiKey(org1.id);
-      const webhook = await createTestWebhook(org2.id, { name: "Other Org Webhook" });
-
-      const res = await app.request(`/api/v1/admin/webhooks/${webhook.id}`, {
         headers: authHeader(rawKey),
       });
 
@@ -100,8 +83,7 @@ describe("Admin Webhooks API", () => {
 
   describe("POST /api/v1/admin/webhooks", () => {
     test("creates a slack webhook", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/webhooks", {
         method: "POST",
@@ -121,8 +103,7 @@ describe("Admin Webhooks API", () => {
     });
 
     test("creates a discord webhook", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/webhooks", {
         method: "POST",
@@ -140,8 +121,7 @@ describe("Admin Webhooks API", () => {
     });
 
     test("creates a teams webhook", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/webhooks", {
         method: "POST",
@@ -159,8 +139,7 @@ describe("Admin Webhooks API", () => {
     });
 
     test("creates a generic webhook with secret", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/webhooks", {
         method: "POST",
@@ -179,8 +158,7 @@ describe("Admin Webhooks API", () => {
     });
 
     test("creates webhook with notification preferences", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/webhooks", {
         method: "POST",
@@ -203,9 +181,8 @@ describe("Admin Webhooks API", () => {
     });
 
     test("creates webhook with component filter", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id, { name: "API Server" });
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent({ name: "API Server" });
 
       const res = await app.request("/api/v1/admin/webhooks", {
         method: "POST",
@@ -224,8 +201,7 @@ describe("Admin Webhooks API", () => {
     });
 
     test("returns 400 for invalid URL", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/webhooks", {
         method: "POST",
@@ -241,8 +217,7 @@ describe("Admin Webhooks API", () => {
     });
 
     test("returns 400 for missing required fields", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/webhooks", {
         method: "POST",
@@ -259,9 +234,8 @@ describe("Admin Webhooks API", () => {
 
   describe("PUT /api/v1/admin/webhooks/:id", () => {
     test("updates webhook name and URL", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const webhook = await createTestWebhook(org.id, {
+      const { rawKey } = await createTestApiKey();
+      const webhook = await createTestWebhook({
         name: "Original Name",
         url: "https://old.example.com/webhook",
       });
@@ -282,9 +256,8 @@ describe("Admin Webhooks API", () => {
     });
 
     test("updates webhook notification preferences", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const webhook = await createTestWebhook(org.id, {
+      const { rawKey } = await createTestApiKey();
+      const webhook = await createTestWebhook({
         name: "Test Webhook",
         notifyOnIncident: true,
         notifyOnMaintenance: true,
@@ -306,8 +279,7 @@ describe("Admin Webhooks API", () => {
     });
 
     test("returns 404 for non-existent webhook", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/webhooks/00000000-0000-0000-0000-000000000000", {
         method: "PUT",
@@ -321,9 +293,8 @@ describe("Admin Webhooks API", () => {
 
   describe("DELETE /api/v1/admin/webhooks/:id", () => {
     test("deletes webhook", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const webhook = await createTestWebhook(org.id, { name: "Delete Me" });
+      const { rawKey } = await createTestApiKey();
+      const webhook = await createTestWebhook({ name: "Delete Me" });
 
       const res = await app.request(`/api/v1/admin/webhooks/${webhook.id}`, {
         method: "DELETE",
@@ -342,8 +313,7 @@ describe("Admin Webhooks API", () => {
     });
 
     test("returns 404 for non-existent webhook", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/webhooks/00000000-0000-0000-0000-000000000000", {
         method: "DELETE",
@@ -356,9 +326,8 @@ describe("Admin Webhooks API", () => {
 
   describe("PATCH /api/v1/admin/webhooks/:id/toggle", () => {
     test("toggles webhook from enabled to disabled", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const webhook = await createTestWebhook(org.id, { name: "Toggle Me", enabled: true });
+      const { rawKey } = await createTestApiKey();
+      const webhook = await createTestWebhook({ name: "Toggle Me", enabled: true });
 
       const res = await app.request(`/api/v1/admin/webhooks/${webhook.id}/toggle`, {
         method: "PATCH",
@@ -371,9 +340,8 @@ describe("Admin Webhooks API", () => {
     });
 
     test("toggles webhook from disabled to enabled", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const webhook = await createTestWebhook(org.id, { name: "Toggle Me", enabled: false });
+      const { rawKey } = await createTestApiKey();
+      const webhook = await createTestWebhook({ name: "Toggle Me", enabled: false });
 
       const res = await app.request(`/api/v1/admin/webhooks/${webhook.id}/toggle`, {
         method: "PATCH",
@@ -386,8 +354,7 @@ describe("Admin Webhooks API", () => {
     });
 
     test("returns 404 for non-existent webhook", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/webhooks/00000000-0000-0000-0000-000000000000/toggle",
@@ -403,12 +370,12 @@ describe("Admin Webhooks API", () => {
 
   describe("POST /api/v1/admin/webhooks/:id/test", () => {
     test("tests webhook and returns success on 2xx response", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      await createTestOrganization();
+      const { rawKey } = await createTestApiKey();
       // Use a webhook URL that will likely fail in test (no actual endpoint)
-      const webhook = await createTestWebhook(org.id, {
+      const webhook = await createTestWebhook({
         name: "Test Webhook",
-        url: "https://httpstat.us/200",
+        url: "https://tools-httpstatus.pickup-services.com/200",
         type: "generic",
       });
 
@@ -424,8 +391,7 @@ describe("Admin Webhooks API", () => {
     });
 
     test("returns 404 for non-existent webhook", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/webhooks/00000000-0000-0000-0000-000000000000/test",

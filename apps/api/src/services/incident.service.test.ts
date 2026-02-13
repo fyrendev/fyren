@@ -13,11 +13,10 @@ describe("IncidentService", () => {
 
   describe("create", () => {
     test("creates incident with initial update", async () => {
-      const org = await createTestOrganization();
-      const component = await createTestComponent(org.id);
+      await createTestOrganization();
+      const component = await createTestComponent();
 
       const incident = await IncidentService.create({
-        organizationId: org.id,
         title: "API Outage",
         severity: "major",
         status: "investigating",
@@ -28,7 +27,6 @@ describe("IncidentService", () => {
       expect(incident.title).toBe("API Outage");
       expect(incident.severity).toBe("major");
       expect(incident.status).toBe("investigating");
-      expect(incident.organizationId).toBe(org.id);
 
       // Verify initial update was created
       const updates = await db
@@ -41,12 +39,11 @@ describe("IncidentService", () => {
     });
 
     test("links incident to components", async () => {
-      const org = await createTestOrganization();
-      const comp1 = await createTestComponent(org.id, { name: "API" });
-      const comp2 = await createTestComponent(org.id, { name: "Database" });
+      await createTestOrganization();
+      const comp1 = await createTestComponent({ name: "API" });
+      const comp2 = await createTestComponent({ name: "Database" });
 
       const incident = await IncidentService.create({
-        organizationId: org.id,
         title: "Multiple Services Down",
         severity: "critical",
         status: "investigating",
@@ -63,13 +60,12 @@ describe("IncidentService", () => {
     });
 
     test("updates component status based on severity", async () => {
-      const org = await createTestOrganization();
-      const component = await createTestComponent(org.id, {
+      await createTestOrganization();
+      const component = await createTestComponent({
         status: "operational",
       });
 
       await IncidentService.create({
-        organizationId: org.id,
         title: "Major Incident",
         severity: "major",
         status: "investigating",
@@ -84,10 +80,9 @@ describe("IncidentService", () => {
     });
 
     test("creates incident without components", async () => {
-      const org = await createTestOrganization();
+      await createTestOrganization();
 
       const incident = await IncidentService.create({
-        organizationId: org.id,
         title: "General Issue",
         severity: "minor",
         status: "investigating",
@@ -108,9 +103,8 @@ describe("IncidentService", () => {
 
   describe("addUpdate", () => {
     test("adds update to existing incident", async () => {
-      const org = await createTestOrganization();
+      await createTestOrganization();
       const incident = await IncidentService.create({
-        organizationId: org.id,
         title: "Test Incident",
         severity: "minor",
         status: "investigating",
@@ -120,7 +114,6 @@ describe("IncidentService", () => {
 
       const update = await IncidentService.addUpdate({
         incidentId: incident.id,
-        organizationId: org.id,
         status: "identified",
         message: "We found the root cause",
       });
@@ -135,12 +128,11 @@ describe("IncidentService", () => {
     });
 
     test("throws error for non-existent incident", async () => {
-      const org = await createTestOrganization();
+      await createTestOrganization();
 
       await expect(
         IncidentService.addUpdate({
           incidentId: "00000000-0000-0000-0000-000000000000",
-          organizationId: org.id,
           status: "monitoring",
           message: "Should fail",
         })
@@ -150,13 +142,12 @@ describe("IncidentService", () => {
 
   describe("resolve", () => {
     test("resolves incident and restores component status", async () => {
-      const org = await createTestOrganization();
-      const component = await createTestComponent(org.id, {
+      await createTestOrganization();
+      const component = await createTestComponent({
         status: "operational",
       });
 
       const incident = await IncidentService.create({
-        organizationId: org.id,
         title: "Test Incident",
         severity: "major",
         status: "investigating",
@@ -171,7 +162,6 @@ describe("IncidentService", () => {
       // Resolve incident
       await IncidentService.resolve({
         incidentId: incident.id,
-        organizationId: org.id,
         message: "Issue resolved",
       });
 
@@ -189,11 +179,10 @@ describe("IncidentService", () => {
 
   describe("getById", () => {
     test("returns incident with updates and components", async () => {
-      const org = await createTestOrganization();
-      const component = await createTestComponent(org.id, { name: "API" });
+      await createTestOrganization();
+      const component = await createTestComponent({ name: "API" });
 
       const incident = await IncidentService.create({
-        organizationId: org.id,
         title: "Test Incident",
         severity: "minor",
         status: "investigating",
@@ -203,12 +192,11 @@ describe("IncidentService", () => {
 
       await IncidentService.addUpdate({
         incidentId: incident.id,
-        organizationId: org.id,
         status: "monitoring",
         message: "Second update",
       });
 
-      const result = await IncidentService.getById(incident.id, org.id);
+      const result = await IncidentService.getById(incident.id);
 
       expect(result).not.toBeNull();
       expect(result?.title).toBe("Test Incident");
@@ -218,27 +206,9 @@ describe("IncidentService", () => {
     });
 
     test("returns null for non-existent incident", async () => {
-      const org = await createTestOrganization();
+      await createTestOrganization();
 
-      const result = await IncidentService.getById("00000000-0000-0000-0000-000000000000", org.id);
-
-      expect(result).toBeNull();
-    });
-
-    test("returns null for incident from different organization", async () => {
-      const org1 = await createTestOrganization({ slug: "org-1" });
-      const org2 = await createTestOrganization({ slug: "org-2" });
-
-      const incident = await IncidentService.create({
-        organizationId: org1.id,
-        title: "Org1 Incident",
-        severity: "minor",
-        status: "investigating",
-        message: "Test",
-        componentIds: [],
-      });
-
-      const result = await IncidentService.getById(incident.id, org2.id);
+      const result = await IncidentService.getById("00000000-0000-0000-0000-000000000000");
 
       expect(result).toBeNull();
     });
@@ -246,12 +216,11 @@ describe("IncidentService", () => {
 
   describe("list", () => {
     test("lists incidents with pagination", async () => {
-      const org = await createTestOrganization();
+      await createTestOrganization();
 
       // Create multiple incidents
       for (let i = 0; i < 5; i++) {
         await IncidentService.create({
-          organizationId: org.id,
           title: `Incident ${i + 1}`,
           severity: "minor",
           status: "investigating",
@@ -260,7 +229,7 @@ describe("IncidentService", () => {
         });
       }
 
-      const result = await IncidentService.list(org.id, {
+      const result = await IncidentService.list({
         limit: 3,
         offset: 0,
       });
@@ -272,10 +241,9 @@ describe("IncidentService", () => {
     });
 
     test("filters by active status", async () => {
-      const org = await createTestOrganization();
+      await createTestOrganization();
 
       await IncidentService.create({
-        organizationId: org.id,
         title: "Active Incident",
         severity: "minor",
         status: "investigating",
@@ -284,7 +252,6 @@ describe("IncidentService", () => {
       });
 
       const resolved = await IncidentService.create({
-        organizationId: org.id,
         title: "Resolved Incident",
         severity: "minor",
         status: "investigating",
@@ -294,10 +261,9 @@ describe("IncidentService", () => {
 
       await IncidentService.resolve({
         incidentId: resolved.id,
-        organizationId: org.id,
       });
 
-      const result = await IncidentService.list(org.id, {
+      const result = await IncidentService.list({
         status: "active",
         limit: 10,
         offset: 0,
@@ -308,10 +274,9 @@ describe("IncidentService", () => {
     });
 
     test("filters by severity", async () => {
-      const org = await createTestOrganization();
+      await createTestOrganization();
 
       await IncidentService.create({
-        organizationId: org.id,
         title: "Minor Issue",
         severity: "minor",
         status: "investigating",
@@ -320,7 +285,6 @@ describe("IncidentService", () => {
       });
 
       await IncidentService.create({
-        organizationId: org.id,
         title: "Critical Issue",
         severity: "critical",
         status: "investigating",
@@ -328,7 +292,7 @@ describe("IncidentService", () => {
         componentIds: [],
       });
 
-      const result = await IncidentService.list(org.id, {
+      const result = await IncidentService.list({
         severity: "critical",
         limit: 10,
         offset: 0,
@@ -341,13 +305,12 @@ describe("IncidentService", () => {
 
   describe("delete", () => {
     test("deletes incident and restores component status", async () => {
-      const org = await createTestOrganization();
-      const component = await createTestComponent(org.id, {
+      await createTestOrganization();
+      const component = await createTestComponent({
         status: "operational",
       });
 
       const incident = await IncidentService.create({
-        organizationId: org.id,
         title: "Test Incident",
         severity: "major",
         status: "investigating",
@@ -360,7 +323,7 @@ describe("IncidentService", () => {
       expect(degraded!.status).toBe("partial_outage");
 
       // Delete incident
-      const result = await IncidentService.delete(incident.id, org.id);
+      const result = await IncidentService.delete(incident.id);
       expect(result?.success).toBe(true);
 
       // Component should be restored
@@ -373,9 +336,9 @@ describe("IncidentService", () => {
     });
 
     test("returns null for non-existent incident", async () => {
-      const org = await createTestOrganization();
+      await createTestOrganization();
 
-      const result = await IncidentService.delete("00000000-0000-0000-0000-000000000000", org.id);
+      const result = await IncidentService.delete("00000000-0000-0000-0000-000000000000");
 
       expect(result).toBeNull();
     });
@@ -383,14 +346,13 @@ describe("IncidentService", () => {
 
   describe("createFromMonitorFailure", () => {
     test("creates new incident for monitor failure", async () => {
-      const org = await createTestOrganization();
-      const component = await createTestComponent(org.id, {
+      await createTestOrganization();
+      const component = await createTestComponent({
         name: "API Server",
       });
       const monitor = await createTestMonitor(component.id);
 
       const incident = await IncidentService.createFromMonitorFailure({
-        organizationId: org.id,
         monitorId: monitor.id,
         componentId: component.id,
         componentName: component.name,
@@ -403,15 +365,14 @@ describe("IncidentService", () => {
     });
 
     test("adds update to existing incident for same monitor", async () => {
-      const org = await createTestOrganization();
-      const component = await createTestComponent(org.id, {
+      await createTestOrganization();
+      const component = await createTestComponent({
         name: "API Server",
       });
       const monitor = await createTestMonitor(component.id);
 
       // First failure creates incident
       const incident1 = await IncidentService.createFromMonitorFailure({
-        organizationId: org.id,
         monitorId: monitor.id,
         componentId: component.id,
         componentName: component.name,
@@ -420,7 +381,6 @@ describe("IncidentService", () => {
 
       // Second failure adds update to existing incident
       const incident2 = await IncidentService.createFromMonitorFailure({
-        organizationId: org.id,
         monitorId: monitor.id,
         componentId: component.id,
         componentName: component.name,
@@ -441,13 +401,12 @@ describe("IncidentService", () => {
 
   describe("resolveFromMonitorRecovery", () => {
     test("resolves incident when monitor recovers", async () => {
-      const org = await createTestOrganization();
-      const component = await createTestComponent(org.id);
+      await createTestOrganization();
+      const component = await createTestComponent();
       const monitor = await createTestMonitor(component.id);
 
       // Create incident from monitor failure
       const incident = await IncidentService.createFromMonitorFailure({
-        organizationId: org.id,
         monitorId: monitor.id,
         componentId: component.id,
         componentName: component.name,
@@ -456,7 +415,6 @@ describe("IncidentService", () => {
 
       // Resolve from recovery
       const resolved = await IncidentService.resolveFromMonitorRecovery({
-        organizationId: org.id,
         monitorId: monitor.id,
       });
 
@@ -469,12 +427,11 @@ describe("IncidentService", () => {
     });
 
     test("returns null when no active incident exists", async () => {
-      const org = await createTestOrganization();
-      const component = await createTestComponent(org.id);
+      await createTestOrganization();
+      const component = await createTestComponent();
       const monitor = await createTestMonitor(component.id);
 
       const result = await IncidentService.resolveFromMonitorRecovery({
-        organizationId: org.id,
         monitorId: monitor.id,
       });
 

@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { db, eq, subscriberGroups, subscribers } from "@fyrendev/db";
-import { errorResponse, NotFoundError, ForbiddenError, ValidationError } from "../../lib/errors";
+import { errorResponse, NotFoundError, ValidationError } from "../../lib/errors";
 
 export const subscriberGroupsRouter = new Hono();
 
@@ -32,13 +32,7 @@ function serializeGroup(group: typeof subscriberGroups.$inferSelect, memberCount
 // GET /subscriber-groups - List all subscriber groups
 subscriberGroupsRouter.get("/", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ForbiddenError("Authentication required");
-    }
-
     const groups = await db.query.subscriberGroups.findMany({
-      where: eq(subscriberGroups.organizationId, orgId),
       orderBy: (subscriberGroups, { asc }) => [asc(subscriberGroups.name)],
     });
 
@@ -62,11 +56,6 @@ subscriberGroupsRouter.get("/", async (c) => {
 // GET /subscriber-groups/:id - Get a single subscriber group
 subscriberGroupsRouter.get("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ForbiddenError("Authentication required");
-    }
-
     const id = c.req.param("id");
 
     const group = await db.query.subscriberGroups.findFirst({
@@ -75,10 +64,6 @@ subscriberGroupsRouter.get("/:id", async (c) => {
 
     if (!group) {
       throw new NotFoundError("Subscriber group not found");
-    }
-
-    if (group.organizationId !== orgId) {
-      throw new ForbiddenError("You don't have access to this subscriber group");
     }
 
     // Get member count
@@ -96,18 +81,12 @@ subscriberGroupsRouter.get("/:id", async (c) => {
 // POST /subscriber-groups - Create a new subscriber group
 subscriberGroupsRouter.post("/", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ForbiddenError("Authentication required");
-    }
-
     const body = await c.req.json();
     const data = createGroupSchema.parse(body);
 
     const [group] = await db
       .insert(subscriberGroups)
       .values({
-        organizationId: orgId,
         name: data.name,
         description: data.description ?? null,
         componentIds: data.componentIds ?? null,
@@ -127,26 +106,17 @@ subscriberGroupsRouter.post("/", async (c) => {
 // PUT /subscriber-groups/:id - Update a subscriber group
 subscriberGroupsRouter.put("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ForbiddenError("Authentication required");
-    }
-
     const id = c.req.param("id");
     const body = await c.req.json();
     const data = updateGroupSchema.parse(body);
 
-    // Verify ownership
+    // Verify existence
     const existing = await db.query.subscriberGroups.findFirst({
       where: eq(subscriberGroups.id, id),
     });
 
     if (!existing) {
       throw new NotFoundError("Subscriber group not found");
-    }
-
-    if (existing.organizationId !== orgId) {
-      throw new ForbiddenError("You don't have access to this subscriber group");
     }
 
     const updateData: Record<string, unknown> = {
@@ -188,24 +158,15 @@ subscriberGroupsRouter.put("/:id", async (c) => {
 // DELETE /subscriber-groups/:id - Delete a subscriber group
 subscriberGroupsRouter.delete("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ForbiddenError("Authentication required");
-    }
-
     const id = c.req.param("id");
 
-    // Verify ownership
+    // Verify existence
     const existing = await db.query.subscriberGroups.findFirst({
       where: eq(subscriberGroups.id, id),
     });
 
     if (!existing) {
       throw new NotFoundError("Subscriber group not found");
-    }
-
-    if (existing.organizationId !== orgId) {
-      throw new ForbiddenError("You don't have access to this subscriber group");
     }
 
     // Check if there are subscribers in this group
@@ -231,24 +192,15 @@ subscriberGroupsRouter.delete("/:id", async (c) => {
 // GET /subscriber-groups/:id/members - Get members of a subscriber group
 subscriberGroupsRouter.get("/:id/members", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ForbiddenError("Authentication required");
-    }
-
     const id = c.req.param("id");
 
-    // Verify ownership
+    // Verify existence
     const group = await db.query.subscriberGroups.findFirst({
       where: eq(subscriberGroups.id, id),
     });
 
     if (!group) {
       throw new NotFoundError("Subscriber group not found");
-    }
-
-    if (group.organizationId !== orgId) {
-      throw new ForbiddenError("You don't have access to this subscriber group");
     }
 
     const members = await db.query.subscribers.findMany({

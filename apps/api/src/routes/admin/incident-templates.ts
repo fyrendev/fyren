@@ -1,29 +1,20 @@
 import { Hono } from "hono";
 import { db } from "../../lib/db";
-import { incidentTemplates, eq, and } from "@fyrendev/db";
+import { incidentTemplates, eq } from "@fyrendev/db";
 import { IncidentService } from "../../services/incident.service";
 import {
   createTemplateSchema,
   updateTemplateSchema,
   createFromTemplateSchema,
 } from "../../validators/incident";
-import { ValidationError, NotFoundError, errorResponse } from "../../lib/errors";
+import { NotFoundError, errorResponse } from "../../lib/errors";
 
 export const adminIncidentTemplates = new Hono();
 
 // GET /api/v1/admin/incident-templates - List templates
 adminIncidentTemplates.get("/", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
-    const templates = await db
-      .select()
-      .from(incidentTemplates)
-      .where(eq(incidentTemplates.organizationId, orgId))
-      .orderBy(incidentTemplates.name);
+    const templates = await db.select().from(incidentTemplates).orderBy(incidentTemplates.name);
 
     return c.json({
       templates: templates.map((t) => ({
@@ -45,17 +36,12 @@ adminIncidentTemplates.get("/", async (c) => {
 // GET /api/v1/admin/incident-templates/:id - Get single template
 adminIncidentTemplates.get("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const templateId = c.req.param("id");
 
     const [template] = await db
       .select()
       .from(incidentTemplates)
-      .where(and(eq(incidentTemplates.id, templateId), eq(incidentTemplates.organizationId, orgId)))
+      .where(eq(incidentTemplates.id, templateId))
       .limit(1);
 
     if (!template) {
@@ -82,18 +68,12 @@ adminIncidentTemplates.get("/:id", async (c) => {
 // POST /api/v1/admin/incident-templates - Create template
 adminIncidentTemplates.post("/", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const body = await c.req.json();
     const data = createTemplateSchema.parse(body);
 
     const [template] = await db
       .insert(incidentTemplates)
       .values({
-        organizationId: orgId,
         name: data.name,
         title: data.title,
         severity: data.severity,
@@ -129,11 +109,6 @@ adminIncidentTemplates.post("/", async (c) => {
 // PUT /api/v1/admin/incident-templates/:id - Update template
 adminIncidentTemplates.put("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const templateId = c.req.param("id");
     const body = await c.req.json();
     const data = updateTemplateSchema.parse(body);
@@ -144,7 +119,7 @@ adminIncidentTemplates.put("/:id", async (c) => {
         ...data,
         updatedAt: new Date(),
       })
-      .where(and(eq(incidentTemplates.id, templateId), eq(incidentTemplates.organizationId, orgId)))
+      .where(eq(incidentTemplates.id, templateId))
       .returning();
 
     if (!template) {
@@ -171,16 +146,11 @@ adminIncidentTemplates.put("/:id", async (c) => {
 // DELETE /api/v1/admin/incident-templates/:id - Delete template
 adminIncidentTemplates.delete("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const templateId = c.req.param("id");
 
     const [deleted] = await db
       .delete(incidentTemplates)
-      .where(and(eq(incidentTemplates.id, templateId), eq(incidentTemplates.organizationId, orgId)))
+      .where(eq(incidentTemplates.id, templateId))
       .returning();
 
     if (!deleted) {
@@ -196,11 +166,6 @@ adminIncidentTemplates.delete("/:id", async (c) => {
 // POST /api/v1/admin/incident-templates/:id/create-incident - Create incident from template
 adminIncidentTemplates.post("/:id/create-incident", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const templateId = c.req.param("id");
     const user = c.get("user");
     const body = await c.req.json().catch(() => ({}));
@@ -209,7 +174,7 @@ adminIncidentTemplates.post("/:id/create-incident", async (c) => {
     const [template] = await db
       .select()
       .from(incidentTemplates)
-      .where(and(eq(incidentTemplates.id, templateId), eq(incidentTemplates.organizationId, orgId)))
+      .where(eq(incidentTemplates.id, templateId))
       .limit(1);
 
     if (!template) {
@@ -217,7 +182,6 @@ adminIncidentTemplates.post("/:id/create-incident", async (c) => {
     }
 
     const incident = await IncidentService.create({
-      organizationId: orgId,
       title: overrides.title || template.title,
       severity: template.severity,
       status: "investigating",

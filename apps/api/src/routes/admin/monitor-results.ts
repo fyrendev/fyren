@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { db, monitors, components, monitorResults, eq, and, desc, sql } from "@fyrendev/db";
-import { NotFoundError, ForbiddenError, errorResponse } from "../../lib/errors";
+import { db, monitors, monitorResults, eq, and, desc, sql } from "@fyrendev/db";
+import { NotFoundError, errorResponse } from "../../lib/errors";
 
 export const adminMonitorResults = new Hono();
 
@@ -16,7 +16,6 @@ const querySchema = z.object({
 // GET /api/v1/admin/monitors/:id/results - Get monitor results with pagination
 adminMonitorResults.get("/:id/results", async (c) => {
   try {
-    const orgId = c.get("organizationId")!;
     const monitorId = c.req.param("id");
 
     // Parse query params
@@ -34,24 +33,11 @@ adminMonitorResults.get("/:id/results", async (c) => {
       to: queryParams.to || undefined,
     });
 
-    // Verify monitor exists and belongs to org
-    const existingResult = await db
-      .select({
-        monitor: monitors,
-        organizationId: components.organizationId,
-      })
-      .from(monitors)
-      .innerJoin(components, eq(monitors.componentId, components.id))
-      .where(eq(monitors.id, monitorId))
-      .limit(1);
+    // Verify monitor exists
+    const [existing] = await db.select().from(monitors).where(eq(monitors.id, monitorId)).limit(1);
 
-    const existing = existingResult[0];
     if (!existing) {
       throw new NotFoundError("Monitor not found");
-    }
-
-    if (existing.organizationId !== orgId) {
-      throw new ForbiddenError("Monitor does not belong to your organization");
     }
 
     // Build conditions

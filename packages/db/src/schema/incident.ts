@@ -1,6 +1,5 @@
 import { pgTable, uuid, varchar, timestamp, index } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { organizations } from "./organization";
 import { monitors } from "./monitor";
 import { incidentStatusEnum, incidentSeverityEnum } from "./enums";
 
@@ -8,9 +7,6 @@ export const incidents = pgTable(
   "incidents",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    organizationId: uuid("organization_id")
-      .notNull()
-      .references(() => organizations.id, { onDelete: "cascade" }),
     title: varchar("title", { length: 255 }).notNull(),
     status: incidentStatusEnum("status").notNull().default("investigating"),
     severity: incidentSeverityEnum("severity").notNull().default("minor"),
@@ -24,7 +20,6 @@ export const incidents = pgTable(
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
   (table) => [
-    index("incidents_organization_id_idx").on(table.organizationId),
     index("incidents_status_idx").on(table.status),
     index("incidents_started_at_idx").on(table.startedAt),
     index("incidents_triggered_by_monitor_id_idx").on(table.triggeredByMonitorId),

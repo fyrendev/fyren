@@ -1,5 +1,5 @@
 import type { Subscriber, SubscriberGroup } from "@fyrendev/db";
-import { and, db, eq, subscribers } from "@fyrendev/db";
+import { db, eq, subscribers } from "@fyrendev/db";
 import { randomBytes } from "crypto";
 
 export interface SubscriberWithGroup extends Subscriber {
@@ -7,7 +7,6 @@ export interface SubscriberWithGroup extends Subscriber {
 }
 
 export interface CreateManualSubscriberData {
-  organizationId: string;
   email: string;
   groupId?: string | null;
   componentIds?: string[] | null;
@@ -24,7 +23,6 @@ export interface UpdateSubscriberData {
 }
 
 export interface EligibleSubscriberFilter {
-  organizationId: string;
   eventType: "incident" | "maintenance" | "component";
   componentIds?: string[];
   isGlobalEvent?: boolean; // Global events (like global incidents) always notify group members
@@ -76,11 +74,11 @@ export const SubscriberService = {
    * Get all eligible subscribers for a notification.
    */
   async getEligibleSubscribers(filter: EligibleSubscriberFilter): Promise<SubscriberWithGroup[]> {
-    const { organizationId, eventType, componentIds, isGlobalEvent = false } = filter;
+    const { eventType, componentIds, isGlobalEvent = false } = filter;
 
     // Get all verified subscribers with their groups
     const allSubs = await db.query.subscribers.findMany({
-      where: and(eq(subscribers.organizationId, organizationId), eq(subscribers.verified, true)),
+      where: eq(subscribers.verified, true),
       with: {
         group: true,
       },
@@ -110,7 +108,6 @@ export const SubscriberService = {
     const [subscriber] = await db
       .insert(subscribers)
       .values({
-        organizationId: data.organizationId,
         email: data.email,
         groupId: data.groupId || null,
         componentIds: data.componentIds || null,
@@ -181,11 +178,10 @@ export const SubscriberService = {
   },
 
   /**
-   * Get all subscribers for an organization with their groups.
+   * Get all subscribers with their groups.
    */
-  async getSubscribersWithGroups(organizationId: string): Promise<SubscriberWithGroup[]> {
+  async getSubscribersWithGroups(): Promise<SubscriberWithGroup[]> {
     const subs = await db.query.subscribers.findMany({
-      where: eq(subscribers.organizationId, organizationId),
       with: {
         group: true,
       },

@@ -77,20 +77,20 @@ export default function TeamPage() {
     }
   }
 
-  async function handleRoleChange(memberId: string, role: string) {
+  async function handleRoleChange(userId: string, role: string) {
     try {
-      await api.updateMember(memberId, { role });
+      await api.updateMember(userId, { role });
       loadData();
     } catch (err) {
       console.error("Failed to update member role:", err);
     }
   }
 
-  async function handleRemoveMember(id: string) {
+  async function handleRemoveMember(userId: string) {
     if (!confirm("Are you sure you want to remove this team member?")) return;
 
     try {
-      await api.removeMember(id);
+      await api.removeMember(userId);
       loadData();
     } catch (err) {
       console.error("Failed to remove member:", err);
@@ -151,17 +151,17 @@ export default function TeamPage() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-navy-700 rounded-full flex items-center justify-center">
-                        {member.user.image ? (
-                          <img src={member.user.image} alt="" className="w-8 h-8 rounded-full" />
+                        {member.image ? (
+                          <img src={member.image} alt="" className="w-8 h-8 rounded-full" />
                         ) : (
                           <span className="text-sm text-navy-300">
-                            {member.user.name?.[0]?.toUpperCase() || "?"}
+                            {member.name?.[0]?.toUpperCase() || "?"}
                           </span>
                         )}
                       </div>
                       <div>
-                        <p className="font-medium text-white">{member.user.name}</p>
-                        <p className="text-xs text-navy-400">{member.user.email}</p>
+                        <p className="font-medium text-white">{member.name}</p>
+                        <p className="text-xs text-navy-400">{member.email}</p>
                       </div>
                     </div>
                   </TableCell>

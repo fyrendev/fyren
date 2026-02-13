@@ -1,15 +1,11 @@
 import type { WebhookType } from "@fyrendev/shared";
-import { getCurrentOrgId } from "@/contexts/OrganizationContext";
 
 export async function apiClient<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const orgId = getCurrentOrgId();
-
   const res = await fetch(`${path}`, {
     ...options,
     credentials: "include", // Send cookies for session auth
     headers: {
       "Content-Type": "application/json",
-      ...(orgId ? { "X-Organization-Id": orgId } : {}),
       ...options.headers,
     },
   });
@@ -138,13 +134,9 @@ export interface ApiKey {
 
 export interface Member {
   id: string;
-  userId: string;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    image: string | null;
-  };
+  email: string;
+  name: string;
+  image: string | null;
   role: "owner" | "admin" | "member";
   createdAt: string;
 }
@@ -479,30 +471,30 @@ export const api = {
 
   // Team
   getMembers: () => {
-    return apiClient<{ members: Member[] }>("/api/v1/admin/organizations/members");
+    return apiClient<{ members: Member[] }>("/api/v1/admin/members");
   },
-  updateMember: (id: string, data: { role: string }) => {
-    return apiClient<{ member: Member }>(`/api/v1/admin/organizations/members/${id}`, {
+  updateMember: (userId: string, data: { role: string }) => {
+    return apiClient<{ member: Member }>(`/api/v1/admin/members/${userId}`, {
       method: "PUT",
       body: JSON.stringify(data),
     });
   },
-  removeMember: (id: string) => {
-    return apiClient<{ success: boolean }>(`/api/v1/admin/organizations/members/${id}`, {
+  removeMember: (userId: string) => {
+    return apiClient<{ success: boolean }>(`/api/v1/admin/members/${userId}`, {
       method: "DELETE",
     });
   },
   getInvites: () => {
-    return apiClient<{ invites: Invite[] }>("/api/v1/admin/organizations/invites");
+    return apiClient<{ invites: Invite[] }>("/api/v1/admin/invites");
   },
   createInvite: (data: { email: string; role: string }) => {
-    return apiClient<{ invite: Invite }>("/api/v1/admin/organizations/invites", {
+    return apiClient<{ invite: Invite }>("/api/v1/admin/invites", {
       method: "POST",
       body: JSON.stringify(data),
     });
   },
   deleteInvite: (id: string) => {
-    return apiClient<{ success: boolean }>(`/api/v1/admin/organizations/invites/${id}`, {
+    return apiClient<{ success: boolean }>(`/api/v1/admin/invites/${id}`, {
       method: "DELETE",
     });
   },

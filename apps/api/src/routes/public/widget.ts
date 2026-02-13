@@ -1,20 +1,10 @@
 import { Hono } from "hono";
-import { db, asc, organizations } from "@fyrendev/db";
+import { getOrganization } from "../../lib/organization";
 import { env } from "../../env";
 import { widgetCorsHeaders, cacheHeaders } from "../../middleware/security";
 import { badgeRateLimit } from "../../middleware/rateLimit";
 
 export const widgetRoutes = new Hono();
-
-// Helper to get the organization
-async function getOrganization() {
-  const [org] = await db
-    .select()
-    .from(organizations)
-    .orderBy(asc(organizations.createdAt))
-    .limit(1);
-  return org;
-}
 
 // Apply rate limiting, CORS, and caching
 widgetRoutes.use("*", badgeRateLimit);
@@ -26,9 +16,10 @@ widgetRoutes.get("/widget.js", async (_c) => {
   const appUrl = env.APP_URL || "http://localhost:3000";
 
   // Verify org exists
-  const org = await getOrganization();
-
-  if (!org) {
+  let org;
+  try {
+    org = await getOrganization();
+  } catch {
     return new Response("// Organization not found", {
       status: 404,
       headers: { "Content-Type": "application/javascript" },
@@ -174,9 +165,10 @@ widgetRoutes.get("/embed.html", async (c) => {
   const appUrl = env.APP_URL || "http://localhost:3000";
 
   // Verify org exists
-  const org = await getOrganization();
-
-  if (!org) {
+  let org;
+  try {
+    org = await getOrganization();
+  } catch {
     return c.text("Organization not found", 404);
   }
 

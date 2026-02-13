@@ -16,8 +16,8 @@ describe("Admin System API", () => {
 
   describe("GET /api/v1/admin/system/logging", () => {
     test("returns default logging config when no settings exist", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      await createTestOrganization();
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/system/logging", {
         headers: authHeader(rawKey),
@@ -36,8 +36,8 @@ describe("Admin System API", () => {
     });
 
     test("returns configured logging settings", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      await createTestOrganization();
+      const { rawKey } = await createTestApiKey();
       await createTestSystemSettings({
         logProvider: "loki",
         logLevel: "debug",
@@ -65,8 +65,8 @@ describe("Admin System API", () => {
 
   describe("PUT /api/v1/admin/system/logging", () => {
     test("updates logging configuration", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      await createTestOrganization();
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/system/logging", {
         method: "PUT",
@@ -87,8 +87,8 @@ describe("Admin System API", () => {
     });
 
     test("updates to loki provider with URL", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      await createTestOrganization();
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/system/logging", {
         method: "PUT",
@@ -107,8 +107,8 @@ describe("Admin System API", () => {
     });
 
     test("returns 400 when loki provider missing URL", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      await createTestOrganization();
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/system/logging", {
         method: "PUT",
@@ -126,8 +126,8 @@ describe("Admin System API", () => {
     });
 
     test("returns 400 when otlp provider missing endpoint", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      await createTestOrganization();
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/system/logging", {
         method: "PUT",
@@ -145,8 +145,8 @@ describe("Admin System API", () => {
     });
 
     test("returns 400 for invalid log level", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      await createTestOrganization();
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/system/logging", {
         method: "PUT",
@@ -176,8 +176,8 @@ describe("Admin System API", () => {
 
   describe("POST /api/v1/admin/system/logging/test", () => {
     test("validates console provider configuration", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      await createTestOrganization();
+      const { rawKey } = await createTestApiKey();
       await createTestSystemSettings({
         logProvider: "console",
         logLevel: "info",
@@ -195,8 +195,8 @@ describe("Admin System API", () => {
     });
 
     test("validates loki provider configuration", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      await createTestOrganization();
+      const { rawKey } = await createTestApiKey();
       await createTestSystemSettings({
         logProvider: "loki",
         logLevel: "info",
@@ -215,8 +215,8 @@ describe("Admin System API", () => {
     });
 
     test("returns 400 when no configuration saved in DB", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      await createTestOrganization();
+      const { rawKey } = await createTestApiKey();
       // Don't create any system settings - buildLoggerConfig returns null
 
       const res = await app.request("/api/v1/admin/system/logging/test", {
@@ -241,8 +241,8 @@ describe("Admin System API", () => {
 
   describe("POST /api/v1/admin/system/logging/reload", () => {
     test("reloads logger from database configuration", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      await createTestOrganization();
+      const { rawKey } = await createTestApiKey();
       await createTestSystemSettings({
         logProvider: "console",
         logLevel: "debug",
@@ -261,8 +261,8 @@ describe("Admin System API", () => {
     });
 
     test("falls back to env config when no db config", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      await createTestOrganization();
+      const { rawKey } = await createTestApiKey();
       // Don't create system settings
 
       const res = await app.request("/api/v1/admin/system/logging/reload", {
@@ -288,8 +288,8 @@ describe("Admin System API", () => {
 
   describe("POST /api/v1/admin/system/logging/reset", () => {
     test("resets logger to environment configuration", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      await createTestOrganization();
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/system/logging/reset", {
         method: "POST",

@@ -1,12 +1,4 @@
-import {
-  and,
-  db,
-  eq,
-  isNull,
-  organizationInvites,
-  organizations,
-  userOrganizations,
-} from "@fyrendev/db";
+import { and, db, eq, isNull, organizationInvites, users } from "@fyrendev/db";
 import { Hono } from "hono";
 import type { AuthUser } from "../../lib/auth";
 import {
@@ -16,6 +8,7 @@ import {
   ForbiddenError,
   NotFoundError,
 } from "../../lib/errors";
+import { getOrganization } from "../../lib/organization";
 import { requireSession } from "../../middleware/session";
 
 type Variables = {
@@ -29,33 +22,29 @@ publicInvites.get("/:token", async (c) => {
   try {
     const token = c.req.param("token");
 
-    const [result] = await db
-      .select({
-        invite: organizationInvites,
-        organization: organizations,
-      })
-      .from(organizationInvites)
-      .innerJoin(organizations, eq(organizationInvites.organizationId, organizations.id))
-      .where(and(eq(organizationInvites.token, token), isNull(organizationInvites.acceptedAt)))
-      .limit(1);
+    const invite = await db.query.organizationInvites.findFirst({
+      where: and(eq(organizationInvites.token, token), isNull(organizationInvites.acceptedAt)),
+    });
 
-    if (!result) {
+    if (!invite) {
       throw new NotFoundError("Invite not found or already used");
     }
 
-    if (result.invite.expiresAt < new Date()) {
+    if (invite.expiresAt < new Date()) {
       throw new BadRequestError("Invite has expired");
     }
+
+    const org = await getOrganization();
 
     return c.json({
       invite: {
         organization: {
-          name: result.organization.name,
-          slug: result.organization.slug,
+          name: org.name,
+          slug: org.slug,
         },
-        email: result.invite.email,
-        role: result.invite.role,
-        expiresAt: result.invite.expiresAt.toISOString(),
+        email: invite.email,
+        role: invite.role,
+        expiresAt: invite.expiresAt.toISOString(),
       },
     });
   } catch (error) {
@@ -70,65 +59,52 @@ publicInvites.post("/:token/accept", requireSession, async (c) => {
     const user = c.get("user")!;
 
     // Get the invite
-    const [result] = await db
-      .select({
-        invite: organizationInvites,
-        organization: organizations,
-      })
-      .from(organizationInvites)
-      .innerJoin(organizations, eq(organizationInvites.organizationId, organizations.id))
-      .where(and(eq(organizationInvites.token, token), isNull(organizationInvites.acceptedAt)))
-      .limit(1);
+    const invite = await db.query.organizationInvites.findFirst({
+      where: and(eq(organizationInvites.token, token), isNull(organizationInvites.acceptedAt)),
+    });
 
-    if (!result) {
+    if (!invite) {
       throw new NotFoundError("Invite not found or already used");
     }
 
-    if (result.invite.expiresAt < new Date()) {
+    if (invite.expiresAt < new Date()) {
       throw new BadRequestError("Invite has expired");
     }
 
     // Verify user email matches invite email
-    if (user.email.toLowerCase() !== result.invite.email.toLowerCase()) {
+    if (user.email.toLowerCase() !== invite.email.toLowerCase()) {
       throw new ForbiddenError("This invite was sent to a different email address");
     }
 
-    // Check if user is already a member
-    const [existingMembership] = await db
-      .select()
-      .from(userOrganizations)
-      .where(
-        and(
-          eq(userOrganizations.userId, user.id),
-          eq(userOrganizations.organizationId, result.invite.organizationId)
-        )
-      )
+    // Check if user already has a role (is already a member)
+    const [existingUser] = await db
+      .select({ role: users.role })
+      .from(users)
+      .where(eq(users.id, user.id))
       .limit(1);
 
-    if (existingMembership) {
+    if (existingUser?.role) {
       throw new ConflictError("You are already a member of this organization");
     }
 
-    // Create membership
-    await db.insert(userOrganizations).values({
-      userId: user.id,
-      organizationId: result.invite.organizationId,
-      role: result.invite.role,
-    });
+    // Set user role
+    await db.update(users).set({ role: invite.role }).where(eq(users.id, user.id));
 
     // Mark invite as accepted
     await db
       .update(organizationInvites)
       .set({ acceptedAt: new Date() })
-      .where(eq(organizationInvites.id, result.invite.id));
+      .where(eq(organizationInvites.id, invite.id));
+
+    const org = await getOrganization();
 
     return c.json({
       organization: {
-        id: result.organization.id,
-        name: result.organization.name,
-        slug: result.organization.slug,
+        id: org.id,
+        name: org.name,
+        slug: org.slug,
       },
-      role: result.invite.role,
+      role: invite.role,
     });
   } catch (error) {
     return errorResponse(c, error);

@@ -131,9 +131,6 @@ export default function SetupPage() {
         throw new Error(data.error?.message || "Failed to create organization");
       }
 
-      // Clear localStorage org ID so it picks up the new one
-      localStorage.removeItem("fyren_current_org_id");
-
       // Redirect to admin dashboard
       window.location.href = "/admin";
     } catch (err) {

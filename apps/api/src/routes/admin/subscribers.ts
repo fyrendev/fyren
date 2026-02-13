@@ -33,11 +33,6 @@ const updateSubscriberSchema = z.object({
 // List subscribers
 adminSubscribers.get("/", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const query = listSchema.parse({
       limit: c.req.query("limit"),
       offset: c.req.query("offset"),
@@ -45,7 +40,7 @@ adminSubscribers.get("/", async (c) => {
       groupId: c.req.query("groupId"),
     });
 
-    const conditions = [eq(subscribers.organizationId, orgId)];
+    const conditions = [];
 
     if (query.verified === "true") {
       conditions.push(eq(subscribers.verified, true));
@@ -57,9 +52,11 @@ adminSubscribers.get("/", async (c) => {
       conditions.push(eq(subscribers.groupId, query.groupId));
     }
 
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
     const [items, countResult] = await Promise.all([
       db.query.subscribers.findMany({
-        where: and(...conditions),
+        where: whereClause,
         with: {
           group: {
             columns: {
@@ -75,7 +72,7 @@ adminSubscribers.get("/", async (c) => {
       db
         .select({ count: sql<number>`count(*)::int` })
         .from(subscribers)
-        .where(and(...conditions)),
+        .where(whereClause),
     ]);
 
     return c.json({
@@ -112,13 +109,8 @@ adminSubscribers.get("/", async (c) => {
 // NOTE: This route must be defined before /:id to avoid route conflicts
 adminSubscribers.get("/export", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const subs = await db.query.subscribers.findMany({
-      where: and(eq(subscribers.organizationId, orgId), eq(subscribers.verified, true)),
+      where: eq(subscribers.verified, true),
       columns: {
         email: true,
         verifiedAt: true,
@@ -148,20 +140,11 @@ adminSubscribers.get("/export", async (c) => {
 // Get single subscriber
 adminSubscribers.get("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const subscriberId = c.req.param("id");
 
     const subscriber = await SubscriberService.getSubscriberWithGroup(subscriberId);
 
     if (!subscriber) {
-      throw new NotFoundError("Subscriber not found");
-    }
-
-    if (subscriber.organizationId !== orgId) {
       throw new NotFoundError("Subscriber not found");
     }
 
@@ -193,17 +176,12 @@ adminSubscribers.get("/:id", async (c) => {
 // Create subscriber (admin-added, auto-verified)
 adminSubscribers.post("/", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const body = await c.req.json();
     const data = createSubscriberSchema.parse(body);
 
     // Check if subscriber already exists
     const existing = await db.query.subscribers.findFirst({
-      where: and(eq(subscribers.organizationId, orgId), eq(subscribers.email, data.email)),
+      where: eq(subscribers.email, data.email),
     });
 
     if (existing) {
@@ -211,7 +189,6 @@ adminSubscribers.post("/", async (c) => {
     }
 
     const subscriber = await SubscriberService.createManualSubscriber({
-      organizationId: orgId,
       email: data.email,
       groupId: data.groupId,
       componentIds: data.componentIds,
@@ -253,18 +230,13 @@ adminSubscribers.post("/", async (c) => {
 // Update subscriber
 adminSubscribers.put("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const subscriberId = c.req.param("id");
     const body = await c.req.json();
     const data = updateSubscriberSchema.parse(body);
 
-    // Verify subscriber exists and belongs to org
+    // Verify subscriber exists
     const existing = await db.query.subscribers.findFirst({
-      where: and(eq(subscribers.id, subscriberId), eq(subscribers.organizationId, orgId)),
+      where: eq(subscribers.id, subscriberId),
     });
 
     if (!existing) {
@@ -274,7 +246,7 @@ adminSubscribers.put("/:id", async (c) => {
     // If changing email, check for duplicates
     if (data.email && data.email !== existing.email) {
       const duplicate = await db.query.subscribers.findFirst({
-        where: and(eq(subscribers.organizationId, orgId), eq(subscribers.email, data.email)),
+        where: eq(subscribers.email, data.email),
       });
       if (duplicate) {
         throw new ValidationError("A subscriber with this email already exists");
@@ -314,15 +286,10 @@ adminSubscribers.put("/:id", async (c) => {
 // Delete subscriber
 adminSubscribers.delete("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const subscriberId = c.req.param("id");
 
     const subscriber = await db.query.subscribers.findFirst({
-      where: and(eq(subscribers.id, subscriberId), eq(subscribers.organizationId, orgId)),
+      where: eq(subscribers.id, subscriberId),
     });
 
     if (!subscriber) {

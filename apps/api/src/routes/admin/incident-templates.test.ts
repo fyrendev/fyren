@@ -2,7 +2,6 @@ import { describe, test, expect } from "bun:test";
 import {
   createTestApp,
   setupTestHooks,
-  createTestOrganization,
   createTestApiKey,
   createTestComponent,
   createTestIncidentTemplate,
@@ -17,10 +16,9 @@ describe("Admin Incident Templates API", () => {
 
   describe("GET /api/v1/admin/incident-templates", () => {
     test("lists all templates for organization", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      await createTestIncidentTemplate(org.id, { name: "Database Outage" });
-      await createTestIncidentTemplate(org.id, { name: "API Failure" });
+      const { rawKey } = await createTestApiKey();
+      await createTestIncidentTemplate({ name: "Database Outage" });
+      await createTestIncidentTemplate({ name: "API Failure" });
 
       const res = await app.request("/api/v1/admin/incident-templates", {
         headers: authHeader(rawKey),
@@ -39,8 +37,7 @@ describe("Admin Incident Templates API", () => {
     });
 
     test("returns empty array when no templates exist", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/incident-templates", {
         headers: authHeader(rawKey),
@@ -54,9 +51,8 @@ describe("Admin Incident Templates API", () => {
 
   describe("GET /api/v1/admin/incident-templates/:id", () => {
     test("returns template by ID", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const template = await createTestIncidentTemplate(org.id, {
+      const { rawKey } = await createTestApiKey();
+      const template = await createTestIncidentTemplate({
         name: "Server Outage",
         title: "Server connectivity issues",
         severity: "critical",
@@ -77,8 +73,7 @@ describe("Admin Incident Templates API", () => {
     });
 
     test("returns 404 for non-existent template", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/incident-templates/00000000-0000-0000-0000-000000000000",
@@ -89,25 +84,11 @@ describe("Admin Incident Templates API", () => {
 
       expect(res.status).toBe(404);
     });
-
-    test("returns 404 for template from different organization", async () => {
-      const org1 = await createTestOrganization({ slug: "org-1" });
-      const org2 = await createTestOrganization({ slug: "org-2" });
-      const { rawKey } = await createTestApiKey(org1.id);
-      const template = await createTestIncidentTemplate(org2.id, { name: "Other Org Template" });
-
-      const res = await app.request(`/api/v1/admin/incident-templates/${template.id}`, {
-        headers: authHeader(rawKey),
-      });
-
-      expect(res.status).toBe(404);
-    });
   });
 
   describe("POST /api/v1/admin/incident-templates", () => {
     test("creates a new template", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/incident-templates", {
         method: "POST",
@@ -130,9 +111,8 @@ describe("Admin Incident Templates API", () => {
     });
 
     test("creates template with default component IDs", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id, { name: "API Server" });
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent({ name: "API Server" });
 
       const res = await app.request("/api/v1/admin/incident-templates", {
         method: "POST",
@@ -151,8 +131,7 @@ describe("Admin Incident Templates API", () => {
     });
 
     test("returns 400 for missing required fields", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/incident-templates", {
         method: "POST",
@@ -169,9 +148,8 @@ describe("Admin Incident Templates API", () => {
 
   describe("PUT /api/v1/admin/incident-templates/:id", () => {
     test("updates template fields", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const template = await createTestIncidentTemplate(org.id, {
+      const { rawKey } = await createTestApiKey();
+      const template = await createTestIncidentTemplate({
         name: "Original Name",
         title: "Original Title",
         severity: "minor",
@@ -195,8 +173,7 @@ describe("Admin Incident Templates API", () => {
     });
 
     test("returns 404 for non-existent template", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/incident-templates/00000000-0000-0000-0000-000000000000",
@@ -213,9 +190,8 @@ describe("Admin Incident Templates API", () => {
 
   describe("DELETE /api/v1/admin/incident-templates/:id", () => {
     test("deletes template", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const template = await createTestIncidentTemplate(org.id);
+      const { rawKey } = await createTestApiKey();
+      const template = await createTestIncidentTemplate();
 
       const res = await app.request(`/api/v1/admin/incident-templates/${template.id}`, {
         method: "DELETE",
@@ -234,8 +210,7 @@ describe("Admin Incident Templates API", () => {
     });
 
     test("returns 404 for non-existent template", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/incident-templates/00000000-0000-0000-0000-000000000000",
@@ -251,9 +226,8 @@ describe("Admin Incident Templates API", () => {
 
   describe("POST /api/v1/admin/incident-templates/:id/create-incident", () => {
     test("creates incident from template", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const template = await createTestIncidentTemplate(org.id, {
+      const { rawKey } = await createTestApiKey();
+      const template = await createTestIncidentTemplate({
         name: "DB Template",
         title: "Database Issues",
         severity: "major",
@@ -277,10 +251,9 @@ describe("Admin Incident Templates API", () => {
     });
 
     test("creates incident from template with overrides", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id, { name: "API Server" });
-      const template = await createTestIncidentTemplate(org.id, {
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent({ name: "API Server" });
+      const template = await createTestIncidentTemplate({
         name: "API Template",
         title: "API Issues",
         severity: "minor",
@@ -305,8 +278,7 @@ describe("Admin Incident Templates API", () => {
     });
 
     test("returns 404 for non-existent template", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/incident-templates/00000000-0000-0000-0000-000000000000/create-incident",

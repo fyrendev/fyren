@@ -3,7 +3,6 @@ import {
   monitors,
   monitorResults,
   components,
-  organizations,
   eq,
   desc,
   and,
@@ -18,6 +17,7 @@ import {
   getCachedUptime,
   type UptimeCache,
 } from "./cache.service";
+import { getOrganization } from "../lib/organization";
 
 export interface StatusEvaluation {
   shouldUpdateComponent: boolean;
@@ -151,23 +151,12 @@ export async function updateComponentStatus(
     .set({ status, updatedAt: new Date() })
     .where(eq(components.id, componentId));
 
-  // Invalidate cache for the organization
-  const [component] = await db
-    .select({ organizationId: components.organizationId })
-    .from(components)
-    .where(eq(components.id, componentId))
-    .limit(1);
-
-  if (component) {
-    const [org] = await db
-      .select({ slug: organizations.slug })
-      .from(organizations)
-      .where(eq(organizations.id, component.organizationId))
-      .limit(1);
-
-    if (org) {
-      await invalidateStatusCache(org.slug);
-    }
+  // Invalidate cache
+  try {
+    const org = await getOrganization();
+    await invalidateStatusCache(org.slug);
+  } catch {
+    // No org configured yet
   }
 }
 

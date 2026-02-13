@@ -41,10 +41,7 @@ export default function NewOrganizationPage() {
         throw new Error(data.error?.message || "Failed to create organization");
       }
 
-      // Clear localStorage org ID so it picks up the new one
-      localStorage.removeItem("fyren_current_org_id");
-
-      // Redirect to dashboard and force a refresh
+      // Redirect to dashboard
       window.location.href = "/admin";
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");

@@ -13,8 +13,8 @@ describe("Badge API", () => {
 
   describe("GET /api/v1/status/badge.svg", () => {
     test("returns SVG badge for operational status", async () => {
-      const org = await createTestOrganization({ slug: "test-org" });
-      await createTestComponent(org.id, { status: "operational", isPublic: true });
+      await createTestOrganization({ slug: "test-org" });
+      await createTestComponent({ status: "operational", isPublic: true });
 
       const res = await app.request("/api/v1/status/badge.svg");
 
@@ -26,8 +26,8 @@ describe("Badge API", () => {
     });
 
     test("returns SVG badge showing degraded status", async () => {
-      const org = await createTestOrganization({ slug: "test-org" });
-      await createTestComponent(org.id, { status: "degraded", isPublic: true });
+      await createTestOrganization({ slug: "test-org" });
+      await createTestComponent({ status: "degraded", isPublic: true });
 
       const res = await app.request("/api/v1/status/badge.svg");
 
@@ -37,9 +37,9 @@ describe("Badge API", () => {
     });
 
     test("returns SVG badge showing major outage status", async () => {
-      const org = await createTestOrganization({ slug: "test-org" });
-      await createTestComponent(org.id, { status: "operational", isPublic: true });
-      await createTestComponent(org.id, { status: "major_outage", isPublic: true });
+      await createTestOrganization({ slug: "test-org" });
+      await createTestComponent({ status: "operational", isPublic: true });
+      await createTestComponent({ status: "major_outage", isPublic: true });
 
       const res = await app.request("/api/v1/status/badge.svg");
 
@@ -58,17 +58,17 @@ describe("Badge API", () => {
       expect(svg).toContain("Operational");
     });
 
-    test("returns error badge when no organization configured", async () => {
+    test("returns operational badge when no components exist", async () => {
       const res = await app.request("/api/v1/status/badge.svg");
 
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(200);
       const svg = await res.text();
-      expect(svg).toContain("unknown");
+      expect(svg).toContain("Operational");
     });
 
     test("supports custom label via query param", async () => {
-      const org = await createTestOrganization({ slug: "test-org" });
-      await createTestComponent(org.id, { status: "operational", isPublic: true });
+      await createTestOrganization({ slug: "test-org" });
+      await createTestComponent({ status: "operational", isPublic: true });
 
       const res = await app.request("/api/v1/status/badge.svg?label=uptime");
 
@@ -78,8 +78,8 @@ describe("Badge API", () => {
     });
 
     test("supports flat-square style", async () => {
-      const org = await createTestOrganization({ slug: "test-org" });
-      await createTestComponent(org.id, { status: "operational", isPublic: true });
+      await createTestOrganization({ slug: "test-org" });
+      await createTestComponent({ status: "operational", isPublic: true });
 
       const res = await app.request("/api/v1/status/badge.svg?style=flat-square");
 
@@ -90,8 +90,8 @@ describe("Badge API", () => {
     });
 
     test("sets cache headers", async () => {
-      const org = await createTestOrganization({ slug: "test-org" });
-      await createTestComponent(org.id, { status: "operational", isPublic: true });
+      await createTestOrganization({ slug: "test-org" });
+      await createTestComponent({ status: "operational", isPublic: true });
 
       const res = await app.request("/api/v1/status/badge.svg");
 
@@ -100,9 +100,9 @@ describe("Badge API", () => {
     });
 
     test("only considers public components", async () => {
-      const org = await createTestOrganization({ slug: "test-org" });
-      await createTestComponent(org.id, { status: "operational", isPublic: true });
-      await createTestComponent(org.id, { status: "major_outage", isPublic: false });
+      await createTestOrganization({ slug: "test-org" });
+      await createTestComponent({ status: "operational", isPublic: true });
+      await createTestComponent({ status: "major_outage", isPublic: false });
 
       const res = await app.request("/api/v1/status/badge.svg");
 
@@ -115,11 +115,11 @@ describe("Badge API", () => {
 
   describe("GET /api/v1/status/badge.json", () => {
     test("returns JSON badge data", async () => {
-      const org = await createTestOrganization({
+      await createTestOrganization({
         slug: "test-org",
         name: "Test Organization",
       });
-      await createTestComponent(org.id, { status: "operational", isPublic: true });
+      await createTestComponent({ status: "operational", isPublic: true });
 
       const res = await app.request("/api/v1/status/badge.json");
 
@@ -134,8 +134,8 @@ describe("Badge API", () => {
     });
 
     test("returns degraded indicator for degraded status", async () => {
-      const org = await createTestOrganization({ slug: "test-org" });
-      await createTestComponent(org.id, { status: "degraded", isPublic: true });
+      await createTestOrganization({ slug: "test-org" });
+      await createTestComponent({ status: "degraded", isPublic: true });
 
       const res = await app.request("/api/v1/status/badge.json");
 
@@ -153,8 +153,8 @@ describe("Badge API", () => {
 
   describe("GET /api/v1/status/badge", () => {
     test("redirects to SVG endpoint", async () => {
-      const org = await createTestOrganization({ slug: "test-org" });
-      await createTestComponent(org.id, { status: "operational", isPublic: true });
+      await createTestOrganization({ slug: "test-org" });
+      await createTestComponent({ status: "operational", isPublic: true });
 
       const res = await app.request("/api/v1/status/badge", {
         redirect: "manual",
@@ -165,8 +165,8 @@ describe("Badge API", () => {
     });
 
     test("preserves query params in redirect", async () => {
-      const org = await createTestOrganization({ slug: "test-org" });
-      await createTestComponent(org.id, { status: "operational", isPublic: true });
+      await createTestOrganization({ slug: "test-org" });
+      await createTestComponent({ status: "operational", isPublic: true });
 
       const res = await app.request("/api/v1/status/badge?style=flat-square&label=uptime", {
         redirect: "manual",

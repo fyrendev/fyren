@@ -4,7 +4,6 @@ import {
   setupTestHooks,
   createTestOrganization,
   createTestApiKey,
-  createTestMembership,
   signUpTestUser,
   jsonAuthHeaders,
   authHeader,
@@ -14,7 +13,7 @@ import {
 
 // Mock the email provider to avoid sending real emails
 mock.module("../../lib/email", () => ({
-  getEmailProviderForOrg: () => ({
+  getEmailProvider: () => ({
     send: async () => ({ success: true }),
   }),
   clearProviderCache: () => {},
@@ -124,7 +123,7 @@ describe("Admin Organizations API", () => {
         slug: "my-company",
         brandColor: "#FF5733",
       });
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/organizations", {
         headers: authHeader(rawKey),
@@ -147,8 +146,8 @@ describe("Admin Organizations API", () => {
 
   describe("PUT /api/v1/admin/organizations", () => {
     test("updates organization name", async () => {
-      const org = await createTestOrganization({ name: "Original Name" });
-      const { rawKey } = await createTestApiKey(org.id);
+      await createTestOrganization({ name: "Original Name" });
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/organizations", {
         method: "PUT",
@@ -164,8 +163,8 @@ describe("Admin Organizations API", () => {
     });
 
     test("updates branding settings", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      await createTestOrganization();
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/organizations", {
         method: "PUT",
@@ -185,8 +184,8 @@ describe("Admin Organizations API", () => {
     });
 
     test("updates SEO metadata", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      await createTestOrganization();
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/organizations", {
         method: "PUT",
@@ -204,8 +203,8 @@ describe("Admin Organizations API", () => {
     });
 
     test("updates social and support settings", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      await createTestOrganization();
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/organizations", {
         method: "PUT",
@@ -222,8 +221,8 @@ describe("Admin Organizations API", () => {
     });
 
     test("updates email provider settings", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      await createTestOrganization();
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/organizations", {
         method: "PUT",
@@ -241,11 +240,11 @@ describe("Admin Organizations API", () => {
     });
 
     test("clears nullable fields with null", async () => {
-      const org = await createTestOrganization({
+      await createTestOrganization({
         brandColor: "#FF5733",
         logoUrl: "https://example.com/logo.png",
       });
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/organizations", {
         method: "PUT",
@@ -263,8 +262,8 @@ describe("Admin Organizations API", () => {
     });
 
     test("returns 400 for invalid hex color", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      await createTestOrganization();
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/organizations", {
         method: "PUT",
@@ -280,34 +279,18 @@ describe("Admin Organizations API", () => {
 
   describe("POST /api/v1/admin/organizations/test-email", () => {
     test("sends test email to current user", async () => {
-      const org = await createTestOrganization();
-      const { user, token } = await signUpTestUser("test@example.com");
-      await createTestMembership(user.id, org.id, "owner");
+      await createTestOrganization();
+      const { token } = await signUpTestUser("test@example.com", undefined, undefined, "owner");
 
       const res = await app.request("/api/v1/admin/organizations/test-email", {
         method: "POST",
-        headers: sessionCookieHeader(token, org.id),
+        headers: sessionCookieHeader(token),
       });
 
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.success).toBe(true);
       expect(data.message).toContain("test@example.com");
-    });
-
-    test("returns 403 when testing email for different organization", async () => {
-      const org1 = await createTestOrganization({ slug: "org-1" });
-      const org2 = await createTestOrganization({ slug: "org-2" });
-      const { user, token } = await signUpTestUser("test@example.com");
-      await createTestMembership(user.id, org1.id, "owner");
-
-      // User is member of org1, but trying to access org2
-      const res = await app.request("/api/v1/admin/organizations/test-email", {
-        method: "POST",
-        headers: sessionCookieHeader(token, org2.id),
-      });
-
-      expect(res.status).toBe(403);
     });
 
     test("returns 403 without authentication", async () => {

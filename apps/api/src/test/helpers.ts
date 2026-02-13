@@ -5,7 +5,6 @@ import {
   components,
   apiKeys,
   users,
-  userOrganizations,
   monitors,
   monitorResults,
   incidents,
@@ -21,6 +20,7 @@ import {
   organizationInvites,
   sessions,
 } from "@fyrendev/db";
+import type { OrgRole } from "@fyrendev/db";
 import { generateApiKey } from "../lib/api-key";
 
 /**
@@ -58,16 +58,12 @@ export async function createTestOrganization(
 /**
  * Create a test API key and return both the key record and the raw key.
  */
-export async function createTestApiKey(
-  organizationId: string,
-  overrides: Partial<typeof apiKeys.$inferInsert> = {}
-) {
+export async function createTestApiKey(overrides: Partial<typeof apiKeys.$inferInsert> = {}) {
   const keyData = await generateApiKey();
 
   const [apiKey] = await db
     .insert(apiKeys)
     .values({
-      organizationId,
       name: overrides.name || "Test API Key",
       keyHash: keyData.keyHash,
       keyPrefix: keyData.keyPrefix,
@@ -82,7 +78,10 @@ export async function createTestApiKey(
 /**
  * Create a test user.
  */
-export async function createTestUser(overrides: Partial<typeof users.$inferInsert> = {}) {
+export async function createTestUser(
+  overrides: Partial<typeof users.$inferInsert> = {},
+  role?: OrgRole
+) {
   const [user] = await db
     .insert(users)
     .values({
@@ -90,6 +89,7 @@ export async function createTestUser(overrides: Partial<typeof users.$inferInser
       email: overrides.email || `test-${randomString()}@example.com`,
       name: overrides.name || "Test User",
       emailVerified: overrides.emailVerified ?? true,
+      role: role || overrides.role || null,
       ...overrides,
     })
     .returning();
@@ -99,37 +99,12 @@ export async function createTestUser(overrides: Partial<typeof users.$inferInser
 }
 
 /**
- * Create a user-organization membership.
- */
-export async function createTestMembership(
-  userId: string,
-  organizationId: string,
-  role: "owner" | "admin" | "member" = "owner"
-) {
-  const [membership] = await db
-    .insert(userOrganizations)
-    .values({
-      userId,
-      organizationId,
-      role,
-    })
-    .returning();
-
-  if (!membership) throw new Error("Failed to create test membership");
-  return membership;
-}
-
-/**
  * Create a test component.
  */
-export async function createTestComponent(
-  organizationId: string,
-  overrides: Partial<typeof components.$inferInsert> = {}
-) {
+export async function createTestComponent(overrides: Partial<typeof components.$inferInsert> = {}) {
   const [component] = await db
     .insert(components)
     .values({
-      organizationId,
       name: overrides.name || "Test Component",
       description: overrides.description || "A test component",
       status: overrides.status || "operational",
@@ -195,14 +170,10 @@ export async function createTestMonitorResult(
 /**
  * Create a test incident.
  */
-export async function createTestIncident(
-  organizationId: string,
-  overrides: Partial<typeof incidents.$inferInsert> = {}
-) {
+export async function createTestIncident(overrides: Partial<typeof incidents.$inferInsert> = {}) {
   const [incident] = await db
     .insert(incidents)
     .values({
-      organizationId,
       title: overrides.title || "Test Incident",
       status: overrides.status || "investigating",
       severity: overrides.severity || "minor",
@@ -256,7 +227,6 @@ export async function createTestIncidentComponent(incidentId: string, componentI
  * Create a test maintenance window.
  */
 export async function createTestMaintenance(
-  organizationId: string,
   overrides: Partial<typeof maintenances.$inferInsert> = {}
 ) {
   const now = new Date();
@@ -266,7 +236,6 @@ export async function createTestMaintenance(
   const [maint] = await db
     .insert(maintenances)
     .values({
-      organizationId,
       title: overrides.title || "Test Maintenance",
       description: overrides.description || "Test maintenance description",
       status: overrides.status || "scheduled",
@@ -300,13 +269,11 @@ export async function createTestMaintenanceComponent(maintenanceId: string, comp
  * Create a test subscriber group.
  */
 export async function createTestSubscriberGroup(
-  organizationId: string,
   overrides: Partial<typeof subscriberGroups.$inferInsert> = {}
 ) {
   const [group] = await db
     .insert(subscriberGroups)
     .values({
-      organizationId,
       name: overrides.name || `Test Group ${randomString()}`,
       description: overrides.description || "A test subscriber group",
       componentIds: overrides.componentIds ?? null,
@@ -322,13 +289,11 @@ export async function createTestSubscriberGroup(
  * Create a test subscriber.
  */
 export async function createTestSubscriber(
-  organizationId: string,
   overrides: Partial<typeof subscribers.$inferInsert> = {}
 ) {
   const [subscriber] = await db
     .insert(subscribers)
     .values({
-      organizationId,
       email: overrides.email || `subscriber-${randomString()}@example.com`,
       verified: overrides.verified ?? true,
       verificationToken: overrides.verificationToken || randomString(32),
@@ -345,13 +310,11 @@ export async function createTestSubscriber(
  * Create a test webhook endpoint.
  */
 export async function createTestWebhook(
-  organizationId: string,
   overrides: Partial<typeof webhookEndpoints.$inferInsert> = {}
 ) {
   const [webhook] = await db
     .insert(webhookEndpoints)
     .values({
-      organizationId,
       name: overrides.name || "Test Webhook",
       url: overrides.url || "https://example.com/webhook",
       type: overrides.type || "generic",
@@ -407,13 +370,11 @@ export async function createTestSystemSettings(
  * Create a test incident template.
  */
 export async function createTestIncidentTemplate(
-  organizationId: string,
   overrides: Partial<typeof incidentTemplates.$inferInsert> = {}
 ) {
   const [template] = await db
     .insert(incidentTemplates)
     .values({
-      organizationId,
       name: overrides.name || `Test Template ${randomString()}`,
       title: overrides.title || "Test Incident Title",
       severity: overrides.severity || "major",
@@ -431,7 +392,6 @@ export async function createTestIncidentTemplate(
  * Create a test organization invite.
  */
 export async function createTestInvite(
-  organizationId: string,
   invitedBy: string,
   overrides: Partial<typeof organizationInvites.$inferInsert> = {}
 ) {
@@ -441,7 +401,6 @@ export async function createTestInvite(
   const [invite] = await db
     .insert(organizationInvites)
     .values({
-      organizationId,
       email: overrides.email || `invite-${randomString()}@example.com`,
       role: overrides.role || "member",
       token,
@@ -459,17 +418,16 @@ export async function createTestInvite(
  * Sign up a new user and create a session via BetterAuth.
  * Returns the session token extracted from the response cookie.
  *
- * This creates a real session through BetterAuth's sign-up flow,
- * which properly generates signed session tokens that will be validated.
- *
  * @param email - Email for the new user
  * @param password - Password for the new user (defaults to a random strong password)
  * @param name - Name for the user (defaults to "Test User")
+ * @param role - Role to assign to the user after sign-up
  */
 export async function signUpTestUser(
   email?: string,
   password?: string,
-  name?: string
+  name?: string,
+  role?: OrgRole
 ): Promise<{ user: typeof users.$inferSelect; token: string }> {
   const testEmail = email || `test-${randomString()}@example.com`;
   const testPassword = password || `TestPass123!${randomString(8)}`;
@@ -514,6 +472,12 @@ export async function signUpTestUser(
 
   if (!user) throw new Error("User not created during sign-up");
 
+  // Set role if provided
+  if (role) {
+    await db.update(users).set({ role }).where(eq(users.id, user.id));
+    user.role = role;
+  }
+
   return { user, token };
 }
 
@@ -533,10 +497,6 @@ export async function createTestSession(userId: string) {
 
   if (!user) throw new Error(`User not found: ${userId}`);
 
-  // For existing users, we need to sign them up via BetterAuth
-  // This won't work if the user was created via createTestUser() without an account
-  // So we create a session directly in the DB and hope cookie caching is bypassed
-
   const sessionId = crypto.randomUUID();
   const token = randomString(64);
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
@@ -553,40 +513,24 @@ export async function createTestSession(userId: string) {
 
   if (!session) throw new Error("Failed to create test session");
 
-  // Return the raw token - this may not work with cookie cache enabled
-  // Tests using session auth should prefer signUpTestUser()
   return { session, token };
 }
 
 /**
  * Helper to create session cookie header.
  */
-export function sessionCookieHeader(
-  sessionToken: string,
-  organizationId?: string
-): Record<string, string> {
-  const headers: Record<string, string> = {
+export function sessionCookieHeader(sessionToken: string): Record<string, string> {
+  return {
     Cookie: `better-auth.session_token=${sessionToken}`,
   };
-  if (organizationId) {
-    headers["X-Organization-Id"] = organizationId;
-  }
-  return headers;
 }
 
 /**
  * Helper to create headers with JSON content type and session cookie.
  */
-export function jsonSessionHeaders(
-  sessionToken: string,
-  organizationId?: string
-): Record<string, string> {
-  const headers: Record<string, string> = {
+export function jsonSessionHeaders(sessionToken: string): Record<string, string> {
+  return {
     "Content-Type": "application/json",
     Cookie: `better-auth.session_token=${sessionToken}`,
   };
-  if (organizationId) {
-    headers["X-Organization-Id"] = organizationId;
-  }
-  return headers;
 }

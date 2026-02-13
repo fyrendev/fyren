@@ -9,7 +9,6 @@ export {
   createTestOrganization,
   createTestApiKey,
   createTestUser,
-  createTestMembership,
   createTestComponent,
   createTestMonitor,
   createTestMonitorResult,

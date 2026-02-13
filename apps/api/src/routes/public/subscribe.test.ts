@@ -8,7 +8,7 @@ import {
 
 // Mock the email provider to avoid sending real emails
 mock.module("../../lib/email", () => ({
-  getEmailProviderForOrg: () => ({
+  getEmailProvider: () => ({
     send: async () => ({ success: true }),
   }),
 }));
@@ -53,8 +53,8 @@ describe("Public Subscribe API", () => {
     });
 
     test("returns message when already subscribed and verified", async () => {
-      const org = await createTestOrganization();
-      await createTestSubscriber(org.id, { email: "existing@example.com", verified: true });
+      await createTestOrganization();
+      await createTestSubscriber({ email: "existing@example.com", verified: true });
 
       const res = await app.request("/api/v1/status/subscribe", {
         method: "POST",
@@ -70,8 +70,8 @@ describe("Public Subscribe API", () => {
     });
 
     test("resends verification for unverified subscriber", async () => {
-      const org = await createTestOrganization();
-      await createTestSubscriber(org.id, { email: "unverified@example.com", verified: false });
+      await createTestOrganization();
+      await createTestSubscriber({ email: "unverified@example.com", verified: false });
 
       const res = await app.request("/api/v1/status/subscribe", {
         method: "POST",
@@ -117,8 +117,8 @@ describe("Public Subscribe API", () => {
 
   describe("GET /api/v1/status/subscribe/verify/:token", () => {
     test("verifies subscription with valid token", async () => {
-      const org = await createTestOrganization();
-      await createTestSubscriber(org.id, {
+      await createTestOrganization();
+      await createTestSubscriber({
         email: "verify@example.com",
         verified: false,
         verificationToken: "valid-token-123",
@@ -133,8 +133,8 @@ describe("Public Subscribe API", () => {
     });
 
     test("returns already verified message for verified subscriber", async () => {
-      const org = await createTestOrganization();
-      await createTestSubscriber(org.id, {
+      await createTestOrganization();
+      await createTestSubscriber({
         email: "verified@example.com",
         verified: true,
         verificationToken: "already-verified-token",
@@ -159,17 +159,17 @@ describe("Public Subscribe API", () => {
       expect(html).toContain("Invalid Link");
     });
 
-    test("returns 404 when no organization exists", async () => {
+    test("returns 400 for unknown token when no organization exists", async () => {
       const res = await app.request("/api/v1/status/subscribe/verify/some-token");
 
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(400);
     });
   });
 
   describe("GET /api/v1/status/unsubscribe/:token", () => {
     test("unsubscribes with valid token", async () => {
-      const org = await createTestOrganization();
-      await createTestSubscriber(org.id, {
+      await createTestOrganization();
+      await createTestSubscriber({
         email: "unsubscribe@example.com",
         verified: true,
         unsubscribeToken: "unsub-token-123",
@@ -194,10 +194,10 @@ describe("Public Subscribe API", () => {
       expect(html).toContain("Invalid Link");
     });
 
-    test("returns 404 when no organization exists", async () => {
+    test("returns 400 for unknown token when no organization exists", async () => {
       const res = await app.request("/api/v1/status/unsubscribe/some-token");
 
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(400);
     });
   });
 });

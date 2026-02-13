@@ -4,7 +4,6 @@ import {
   incidentUpdates,
   incidentComponents,
   components,
-  organizations,
   eq,
   and,
   desc,
@@ -15,6 +14,7 @@ import {
 } from "@fyrendev/db";
 import { invalidateStatusCache } from "./cache.service";
 import { NotificationService } from "./notification.service";
+import { getOrganization } from "../lib/organization";
 import type { IncidentStatus, IncidentSeverity, ComponentStatus } from "@fyrendev/db";
 
 // Helper: map severity to component status
@@ -29,22 +29,18 @@ function severityToComponentStatus(severity: IncidentSeverity): ComponentStatus 
   }
 }
 
-// Helper to invalidate cache for an organization
-async function invalidateOrgCache(organizationId: string): Promise<void> {
-  const [org] = await db
-    .select({ slug: organizations.slug })
-    .from(organizations)
-    .where(eq(organizations.id, organizationId))
-    .limit(1);
-
-  if (org) {
+// Helper to invalidate cache
+async function invalidateCache(): Promise<void> {
+  try {
+    const org = await getOrganization();
     await invalidateStatusCache(org.slug);
+  } catch {
+    // No org configured yet, nothing to invalidate
   }
 }
 
 export const IncidentService = {
   async create(data: {
-    organizationId: string;
     title: string;
     severity: IncidentSeverity;
     status: IncidentStatus;
@@ -58,7 +54,6 @@ export const IncidentService = {
       const [incident] = await tx
         .insert(incidents)
         .values({
-          organizationId: data.organizationId,
           title: data.title,
           severity: data.severity,
           status: data.status,
@@ -96,10 +91,9 @@ export const IncidentService = {
       }
 
       // 5. Invalidate cache
-      await invalidateOrgCache(data.organizationId);
+      await invalidateCache();
 
       // 6. Trigger notifications
-      // Get component names for notification
       let affectedComponentNames: string[] = [];
       if (data.componentIds.length > 0) {
         const comps = await db
@@ -110,7 +104,6 @@ export const IncidentService = {
       }
 
       await NotificationService.trigger({
-        organizationId: data.organizationId,
         event: "incident.created",
         entityType: "incident",
         entityId: incident.id,
@@ -130,22 +123,19 @@ export const IncidentService = {
 
   async addUpdate(data: {
     incidentId: string;
-    organizationId: string;
     status: IncidentStatus;
     message: string;
     createdBy?: string;
   }) {
     return await db.transaction(async (tx) => {
-      // 1. Verify incident belongs to org
+      // 1. Verify incident exists
       const [incident] = await tx
         .select({
           id: incidents.id,
           severity: incidents.severity,
         })
         .from(incidents)
-        .where(
-          and(eq(incidents.id, data.incidentId), eq(incidents.organizationId, data.organizationId))
-        )
+        .where(eq(incidents.id, data.incidentId))
         .limit(1);
 
       if (!incident) {
@@ -195,10 +185,9 @@ export const IncidentService = {
       await tx.update(incidents).set(updateData).where(eq(incidents.id, data.incidentId));
 
       // 4. Invalidate cache
-      await invalidateOrgCache(data.organizationId);
+      await invalidateCache();
 
       // 5. Trigger notifications
-      // Get full incident details and component names
       const [fullIncident] = await db
         .select({
           title: incidents.title,
@@ -221,7 +210,6 @@ export const IncidentService = {
       const eventType = data.status === "resolved" ? "incident.resolved" : "incident.updated";
 
       await NotificationService.trigger({
-        organizationId: data.organizationId,
         event: eventType,
         entityType: "incident",
         entityId: data.incidentId,
@@ -239,28 +227,22 @@ export const IncidentService = {
     });
   },
 
-  async resolve(data: {
-    incidentId: string;
-    organizationId: string;
-    message?: string;
-    createdBy?: string;
-  }) {
+  async resolve(data: { incidentId: string; message?: string; createdBy?: string }) {
     const defaultMessage = "This incident has been resolved.";
 
     return this.addUpdate({
       incidentId: data.incidentId,
-      organizationId: data.organizationId,
       status: "resolved",
       message: data.message || defaultMessage,
       createdBy: data.createdBy,
     });
   },
 
-  async getById(incidentId: string, organizationId: string) {
+  async getById(incidentId: string) {
     const [incident] = await db
       .select()
       .from(incidents)
-      .where(and(eq(incidents.id, incidentId), eq(incidents.organizationId, organizationId)))
+      .where(eq(incidents.id, incidentId))
       .limit(1);
 
     if (!incident) {
@@ -292,16 +274,13 @@ export const IncidentService = {
     };
   },
 
-  async list(
-    organizationId: string,
-    options: {
-      status?: "active" | "resolved" | "all";
-      severity?: IncidentSeverity;
-      limit: number;
-      offset: number;
-    }
-  ) {
-    const conditions = [eq(incidents.organizationId, organizationId)];
+  async list(options: {
+    status?: "active" | "resolved" | "all";
+    severity?: IncidentSeverity;
+    limit: number;
+    offset: number;
+  }) {
+    const conditions = [];
 
     if (options.status === "active") {
       conditions.push(isNull(incidents.resolvedAt));
@@ -313,18 +292,20 @@ export const IncidentService = {
       conditions.push(eq(incidents.severity, options.severity));
     }
 
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
     const [items, countResult] = await Promise.all([
       db
         .select()
         .from(incidents)
-        .where(and(...conditions))
+        .where(whereClause)
         .orderBy(desc(incidents.createdAt))
         .limit(options.limit)
         .offset(options.offset),
       db
         .select({ count: sql<number>`count(*)::int` })
         .from(incidents)
-        .where(and(...conditions)),
+        .where(whereClause),
     ]);
 
     // Get latest update and affected components for each incident
@@ -364,38 +345,30 @@ export const IncidentService = {
     };
   },
 
-  async update(
-    incidentId: string,
-    organizationId: string,
-    data: { title?: string; severity?: IncidentSeverity }
-  ) {
+  async update(incidentId: string, data: { title?: string; severity?: IncidentSeverity }) {
     const [updated] = await db
       .update(incidents)
       .set({
         ...data,
         updatedAt: new Date(),
       })
-      .where(and(eq(incidents.id, incidentId), eq(incidents.organizationId, organizationId)))
+      .where(eq(incidents.id, incidentId))
       .returning();
 
     if (updated) {
-      await invalidateOrgCache(organizationId);
+      await invalidateCache();
     }
 
     return updated;
   },
 
-  async updateAffectedComponents(
-    incidentId: string,
-    organizationId: string,
-    componentIds: string[]
-  ) {
+  async updateAffectedComponents(incidentId: string, componentIds: string[]) {
     return await db.transaction(async (tx) => {
       // Verify incident
       const [incident] = await tx
         .select()
         .from(incidents)
-        .where(and(eq(incidents.id, incidentId), eq(incidents.organizationId, organizationId)))
+        .where(eq(incidents.id, incidentId))
         .limit(1);
 
       if (!incident) {
@@ -443,19 +416,19 @@ export const IncidentService = {
         }
       }
 
-      await invalidateOrgCache(organizationId);
+      await invalidateCache();
 
       return { success: true };
     });
   },
 
-  async delete(incidentId: string, organizationId: string) {
+  async delete(incidentId: string) {
     return await db.transaction(async (tx) => {
       // Get incident to check if it exists and get affected components
       const [incident] = await tx
         .select()
         .from(incidents)
-        .where(and(eq(incidents.id, incidentId), eq(incidents.organizationId, organizationId)))
+        .where(eq(incidents.id, incidentId))
         .limit(1);
 
       if (!incident) {
@@ -481,7 +454,7 @@ export const IncidentService = {
       // Delete incident (cascades to updates and components)
       await tx.delete(incidents).where(eq(incidents.id, incidentId));
 
-      await invalidateOrgCache(organizationId);
+      await invalidateCache();
 
       return { success: true };
     });
@@ -489,7 +462,6 @@ export const IncidentService = {
 
   // Auto-incident from monitor failure
   async createFromMonitorFailure(data: {
-    organizationId: string;
     monitorId: string;
     componentId: string;
     componentName: string;
@@ -499,20 +471,13 @@ export const IncidentService = {
     const [existing] = await db
       .select()
       .from(incidents)
-      .where(
-        and(
-          eq(incidents.organizationId, data.organizationId),
-          eq(incidents.triggeredByMonitorId, data.monitorId),
-          isNull(incidents.resolvedAt)
-        )
-      )
+      .where(and(eq(incidents.triggeredByMonitorId, data.monitorId), isNull(incidents.resolvedAt)))
       .limit(1);
 
     if (existing) {
       // Add update to existing incident
       await this.addUpdate({
         incidentId: existing.id,
-        organizationId: data.organizationId,
         status: "investigating",
         message: `Monitor continues to report failures: ${data.errorMessage}`,
       });
@@ -521,7 +486,6 @@ export const IncidentService = {
 
     // Create new incident
     return this.create({
-      organizationId: data.organizationId,
       title: `${data.componentName} is experiencing issues`,
       severity: "major",
       status: "investigating",
@@ -532,23 +496,16 @@ export const IncidentService = {
   },
 
   // Auto-resolve when monitor recovers
-  async resolveFromMonitorRecovery(data: { organizationId: string; monitorId: string }) {
+  async resolveFromMonitorRecovery(data: { monitorId: string }) {
     const [incident] = await db
       .select()
       .from(incidents)
-      .where(
-        and(
-          eq(incidents.organizationId, data.organizationId),
-          eq(incidents.triggeredByMonitorId, data.monitorId),
-          isNull(incidents.resolvedAt)
-        )
-      )
+      .where(and(eq(incidents.triggeredByMonitorId, data.monitorId), isNull(incidents.resolvedAt)))
       .limit(1);
 
     if (incident) {
       await this.resolve({
         incidentId: incident.id,
-        organizationId: data.organizationId,
         message: "Automated resolution: Monitor is now healthy.",
       });
       return incident;
