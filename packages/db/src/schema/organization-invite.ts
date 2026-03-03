@@ -11,9 +11,7 @@ export const organizationInvites = pgTable(
     email: text("email").notNull(),
     role: inviteRoleEnum("role").notNull().default("member"),
     token: text("token").notNull().unique(),
-    invitedBy: text("invited_by")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    invitedBy: text("invited_by").references(() => users.id, { onDelete: "set null" }),
     expiresAt: timestamp("expires_at").notNull(),
     acceptedAt: timestamp("accepted_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),

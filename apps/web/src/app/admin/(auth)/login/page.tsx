@@ -27,8 +27,10 @@ function LoginForm() {
         return;
       }
       // Use hard navigation to trigger server-side session check
+      // Only allow relative redirects to prevent open redirect attacks
       const redirect = searchParams.get("redirect");
-      window.location.href = redirect || "/admin";
+      const isSafeRedirect = redirect && redirect.startsWith("/") && !redirect.startsWith("//");
+      window.location.href = isSafeRedirect ? redirect : "/admin";
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to sign in";
       setError(message);

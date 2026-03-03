@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { db, organizationInvites, users, eq, and, isNull, isNotNull, gt } from "@fyrendev/db";
-import { authMiddleware } from "../../middleware/auth";
+
 import { requireRole } from "../../middleware/session";
 import { errorResponse, NotFoundError, ForbiddenError, ConflictError } from "../../lib/errors";
 import type { AuthUser } from "../../lib/auth";
@@ -33,7 +33,7 @@ const createInviteSchema = z.object({
 });
 
 // GET /api/v1/admin/invites - List pending invites
-adminInvites.get("/invites", authMiddleware, requireRole("owner", "admin"), async (c) => {
+adminInvites.get("/invites", requireRole("owner", "admin"), async (c) => {
   try {
     const invites = await db
       .select({
@@ -68,7 +68,7 @@ adminInvites.get("/invites", authMiddleware, requireRole("owner", "admin"), asyn
 });
 
 // POST /api/v1/admin/invites - Create invite
-adminInvites.post("/invites", authMiddleware, requireRole("owner", "admin"), async (c) => {
+adminInvites.post("/invites", requireRole("owner", "admin"), async (c) => {
   try {
     const user = c.get("user");
     const authMethod = c.get("authMethod");
@@ -185,7 +185,7 @@ adminInvites.post("/invites", authMiddleware, requireRole("owner", "admin"), asy
 });
 
 // DELETE /api/v1/admin/invites/:id - Revoke invite
-adminInvites.delete("/invites/:id", authMiddleware, requireRole("owner", "admin"), async (c) => {
+adminInvites.delete("/invites/:id", requireRole("owner", "admin"), async (c) => {
   try {
     const inviteId = c.req.param("id");
 

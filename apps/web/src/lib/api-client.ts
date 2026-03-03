@@ -145,6 +145,7 @@ export interface Invite {
   id: string;
   email: string;
   role: "admin" | "member";
+  invitedBy: { id: string; name: string; email: string } | null;
   expiresAt: string;
   createdAt: string;
 }

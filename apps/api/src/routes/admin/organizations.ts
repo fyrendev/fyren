@@ -84,13 +84,6 @@ const sesConfigSchema = z.object({
   secretAccessKey: z.string().min(1),
 });
 
-z.discriminatedUnion("provider", [
-  z.object({ provider: z.literal("console") }),
-  z.object({ provider: z.literal("smtp"), config: smtpConfigSchema }),
-  z.object({ provider: z.literal("sendgrid"), config: sendgridConfigSchema }),
-  z.object({ provider: z.literal("ses"), config: sesConfigSchema }),
-]);
-
 const updateOrganizationSchema = z.object({
   // Basic info
   name: z.string().min(1).max(255).optional(),

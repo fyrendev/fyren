@@ -407,4 +407,33 @@ describe("Admin Invites API", () => {
       expect(res.status).toBe(404);
     });
   });
+
+  describe("invite survives creator removal", () => {
+    test("pending invite remains after inviting admin is removed", async () => {
+      await createTestOrganization();
+      const { token: ownerToken } = await signUpTestUser(
+        "owner@example.com",
+        undefined,
+        undefined,
+        "owner"
+      );
+      const admin = await createTestUser({ email: "admin@example.com" }, "admin");
+      await createTestInvite(admin.id, { email: "invitee@example.com" });
+
+      // Remove the admin who created the invite
+      const removeRes = await app.request(`/api/v1/admin/members/${admin.id}`, {
+        method: "DELETE",
+        headers: sessionCookieHeader(ownerToken),
+      });
+      expect(removeRes.status).toBe(200);
+
+      // Invite should still be listed
+      const listRes = await app.request("/api/v1/admin/invites", {
+        headers: sessionCookieHeader(ownerToken),
+      });
+      expect(listRes.status).toBe(200);
+      const data = await listRes.json();
+      expect(data.invites.map((i: { email: string }) => i.email)).toContain("invitee@example.com");
+    });
+  });
 });

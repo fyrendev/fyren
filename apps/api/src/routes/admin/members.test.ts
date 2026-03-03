@@ -300,6 +300,35 @@ describe("Admin Members API", () => {
 
       expect(res.status).toBe(404);
     });
+
+    test("removed member loses access immediately", async () => {
+      await createTestOrganization();
+      const { token: ownerToken } = await signUpTestUser(
+        "owner@example.com",
+        undefined,
+        undefined,
+        "owner"
+      );
+      const { user: member, token: memberToken } = await signUpTestUser(
+        "member@example.com",
+        undefined,
+        undefined,
+        "member"
+      );
+
+      // Owner removes member
+      const removeRes = await app.request(`/api/v1/admin/members/${member.id}`, {
+        method: "DELETE",
+        headers: sessionCookieHeader(ownerToken),
+      });
+      expect(removeRes.status).toBe(200);
+
+      // Removed member should no longer be able to list members
+      const res = await app.request("/api/v1/admin/members", {
+        headers: sessionCookieHeader(memberToken),
+      });
+      expect(res.status).toBe(403);
+    });
   });
 
   describe("POST /api/v1/admin/leave", () => {

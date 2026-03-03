@@ -36,6 +36,13 @@
       "when": 1770821784962,
       "tag": "0004_remove-multi-org",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1772572502784,
+      "tag": "0005_invite-fk-set-null",
+      "breakpoints": true
     }
   ]
 }

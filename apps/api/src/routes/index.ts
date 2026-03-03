@@ -66,9 +66,14 @@ export function setupRoutes(app: Hono) {
   app.route("/api/v1/admin/organization", adminOrganizations);
 
   // Admin members routes
+  app.use("/api/v1/admin/members", authMiddleware);
+  app.use("/api/v1/admin/members/*", authMiddleware);
+  app.use("/api/v1/admin/leave", authMiddleware);
   app.route("/api/v1/admin", adminMembers);
 
   // Admin invites routes
+  app.use("/api/v1/admin/invites", authMiddleware);
+  app.use("/api/v1/admin/invites/*", authMiddleware);
   app.route("/api/v1/admin", adminInvites);
 
   // Protected component routes

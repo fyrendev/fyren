@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { db, users, eq, isNotNull } from "@fyrendev/db";
-import { authMiddleware } from "../../middleware/auth";
+
 import { requireRole } from "../../middleware/session";
 import { errorResponse, NotFoundError, ForbiddenError, BadRequestError } from "../../lib/errors";
 import type { AuthUser } from "../../lib/auth";
@@ -18,7 +18,7 @@ const updateMemberSchema = z.object({
 });
 
 // GET /api/v1/admin/members - List org members
-adminMembers.get("/members", authMiddleware, requireRole("owner", "admin", "member"), async (c) => {
+adminMembers.get("/members", requireRole("owner", "admin", "member"), async (c) => {
   try {
     const members = await db.select().from(users).where(isNotNull(users.role));
 
@@ -38,7 +38,7 @@ adminMembers.get("/members", authMiddleware, requireRole("owner", "admin", "memb
 });
 
 // PUT /api/v1/admin/members/:id - Update member role
-adminMembers.put("/members/:id", authMiddleware, requireRole("owner", "admin"), async (c) => {
+adminMembers.put("/members/:id", requireRole("owner", "admin"), async (c) => {
   try {
     const userId = c.req.param("id");
     const currentUser = c.get("user");
@@ -91,7 +91,7 @@ adminMembers.put("/members/:id", authMiddleware, requireRole("owner", "admin"), 
 });
 
 // DELETE /api/v1/admin/members/:id - Remove member
-adminMembers.delete("/members/:id", authMiddleware, requireRole("owner", "admin"), async (c) => {
+adminMembers.delete("/members/:id", requireRole("owner", "admin"), async (c) => {
   try {
     const userId = c.req.param("id");
     const currentUser = c.get("user");
@@ -128,7 +128,7 @@ adminMembers.delete("/members/:id", authMiddleware, requireRole("owner", "admin"
 });
 
 // POST /api/v1/admin/leave - Leave organization (deletes own account)
-adminMembers.post("/leave", authMiddleware, requireRole("owner", "admin", "member"), async (c) => {
+adminMembers.post("/leave", requireRole("owner", "admin", "member"), async (c) => {
   try {
     const user = c.get("user");
     const authMethod = c.get("authMethod");
