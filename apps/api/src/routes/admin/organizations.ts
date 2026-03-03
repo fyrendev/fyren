@@ -189,6 +189,9 @@ adminOrganizations.post("/", async (c) => {
       keyPrefix: apiKeyData.keyPrefix,
     });
 
+    // Clear cached organization data (in case a prior request cached "not found")
+    clearOrganizationCache();
+
     // Audit log
     const auditLogger = createAuditLogger({
       userId: user?.id,

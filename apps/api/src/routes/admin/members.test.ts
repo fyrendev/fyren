@@ -30,12 +30,8 @@ describe("Admin Members API", () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.members).toHaveLength(2);
-      expect(data.members.map((m: { user: { email: string } }) => m.user.email)).toContain(
-        "owner@example.com"
-      );
-      expect(data.members.map((m: { user: { email: string } }) => m.user.email)).toContain(
-        "member@example.com"
-      );
+      expect(data.members.map((m: { email: string }) => m.email)).toContain("owner@example.com");
+      expect(data.members.map((m: { email: string }) => m.email)).toContain("member@example.com");
     });
 
     test("includes user info and role", async () => {
@@ -53,10 +49,10 @@ describe("Admin Members API", () => {
 
       expect(res.status).toBe(200);
       const data = await res.json();
-      const member = data.members.find((m: { user: { id: string } }) => m.user.id === user.id);
-      expect(member.user.id).toBe(user.id);
-      expect(member.user.email).toBe("test@example.com");
-      expect(member.user.name).toBe("Test User");
+      const member = data.members.find((m: { id: string }) => m.id === user.id);
+      expect(member.id).toBe(user.id);
+      expect(member.email).toBe("test@example.com");
+      expect(member.name).toBe("Test User");
       expect(member.role).toBe("admin");
       expect(member.createdAt).toBeDefined();
     });

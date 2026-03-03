@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { signIn } from "@/lib/auth-client";
 import { Card } from "@/components/admin/ui/Card";
 import { Button } from "@/components/admin/ui/Button";
 import { Input } from "@/components/admin/ui/Input";
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,7 +27,8 @@ export default function LoginPage() {
         return;
       }
       // Use hard navigation to trigger server-side session check
-      window.location.href = "/admin";
+      const redirect = searchParams.get("redirect");
+      window.location.href = redirect || "/admin";
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to sign in";
       setError(message);

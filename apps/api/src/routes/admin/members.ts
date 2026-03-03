@@ -25,12 +25,9 @@ adminMembers.get("/members", authMiddleware, requireRole("owner", "admin", "memb
     return c.json({
       members: members.map((m) => ({
         id: m.id,
-        user: {
-          id: m.id,
-          email: m.email,
-          name: m.name,
-          image: m.image,
-        },
+        email: m.email,
+        name: m.name,
+        image: m.image,
         role: m.role,
         createdAt: m.createdAt.toISOString(),
       })),
@@ -81,12 +78,9 @@ adminMembers.put("/members/:id", authMiddleware, requireRole("owner", "admin"), 
     return c.json({
       member: {
         id: updated.id,
-        user: {
-          id: updated.id,
-          email: updated.email,
-          name: updated.name,
-          image: updated.image,
-        },
+        email: updated.email,
+        name: updated.name,
+        image: updated.image,
         role: updated.role,
         createdAt: updated.createdAt.toISOString(),
       },
