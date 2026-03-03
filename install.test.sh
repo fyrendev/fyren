@@ -219,6 +219,21 @@ for cmd in openssl curl; do
   fi
 done
 
+# ─── Test: All reads use /dev/tty (for curl|bash compatibility) ───
+
+READ_LINES=$(grep -n 'read -r' "$SCRIPT_DIR/install.sh" || true)
+ALL_USE_TTY=true
+while IFS= read -r line; do
+  [ -z "$line" ] && continue
+  if ! echo "$line" | grep -q '/dev/tty'; then
+    ALL_USE_TTY=false
+    fail "read without /dev/tty: $line"
+  fi
+done <<< "$READ_LINES"
+if [ "$ALL_USE_TTY" = true ]; then
+  pass "all read calls use /dev/tty"
+fi
+
 # ─── Test: Compose URL is valid ───
 
 COMPOSE_URL="https://raw.githubusercontent.com/fyrendev/fyren/main/docker-compose.images.yml"
