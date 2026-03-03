@@ -29,6 +29,20 @@
       "when": 1770138600897,
       "tag": "0003_outgoing_fat_cobra",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1770821784962,
+      "tag": "0004_remove-multi-org",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1772572502784,
+      "tag": "0005_invite-fk-set-null",
+      "breakpoints": true
     }
   ]
 }

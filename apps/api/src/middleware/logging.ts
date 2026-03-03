@@ -38,16 +38,14 @@ export function loggingMiddleware() {
       const duration = Date.now() - startTime;
       const statusCode = c.res.status;
 
-      // Get user/org context if available
+      // Get user context if available
       const userId = c.get("user")?.id;
-      const organizationId = c.get("organizationId") ?? undefined;
 
       logger.http(method, path, statusCode, duration, {
         requestId,
         userAgent: userAgent ?? undefined,
         ip,
         userId,
-        organizationId,
       });
     }
   };

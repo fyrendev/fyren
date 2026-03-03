@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../../lib/db";
-import { apiKeys, eq, and } from "@fyrendev/db";
+import { apiKeys, eq } from "@fyrendev/db";
 import { generateApiKey } from "../../lib/api-key";
 import { NotFoundError, ForbiddenError, errorResponse } from "../../lib/errors";
 
@@ -15,8 +15,6 @@ const createApiKeySchema = z.object({
 // GET /api/v1/admin/api-keys - List all API keys
 adminApiKeys.get("/", async (c) => {
   try {
-    const orgId = c.get("organizationId")!;
-
     const keys = await db
       .select({
         id: apiKeys.id,
@@ -26,8 +24,7 @@ adminApiKeys.get("/", async (c) => {
         expiresAt: apiKeys.expiresAt,
         createdAt: apiKeys.createdAt,
       })
-      .from(apiKeys)
-      .where(eq(apiKeys.organizationId, orgId));
+      .from(apiKeys);
 
     return c.json({
       apiKeys: keys.map((key) => ({
@@ -47,7 +44,6 @@ adminApiKeys.get("/", async (c) => {
 // POST /api/v1/admin/api-keys - Create new API key
 adminApiKeys.post("/", async (c) => {
   try {
-    const orgId = c.get("organizationId")!;
     const body = await c.req.json();
     const data = createApiKeySchema.parse(body);
 
@@ -56,7 +52,6 @@ adminApiKeys.post("/", async (c) => {
     const result = await db
       .insert(apiKeys)
       .values({
-        organizationId: orgId,
         name: data.name,
         keyHash: apiKeyData.keyHash,
         keyPrefix: apiKeyData.keyPrefix,
@@ -91,7 +86,6 @@ adminApiKeys.post("/", async (c) => {
 // DELETE /api/v1/admin/api-keys/:id - Delete API key
 adminApiKeys.delete("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId")!;
     const apiKeyId = c.get("apiKeyId");
     const id = c.req.param("id");
 
@@ -100,10 +94,7 @@ adminApiKeys.delete("/:id", async (c) => {
       throw new ForbiddenError("Cannot delete the API key being used for this request");
     }
 
-    const result = await db
-      .delete(apiKeys)
-      .where(and(eq(apiKeys.id, id), eq(apiKeys.organizationId, orgId)))
-      .returning();
+    const result = await db.delete(apiKeys).where(eq(apiKeys.id, id)).returning();
 
     const key = result[0];
     if (!key) {

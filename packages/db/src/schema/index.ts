@@ -9,7 +9,6 @@ export * from "./verification";
 
 // Organization
 export * from "./organization";
-export * from "./user-organization";
 export * from "./organization-invite";
 
 // Components

@@ -2,7 +2,6 @@ import { describe, test, expect } from "bun:test";
 import {
   createTestApp,
   setupTestHooks,
-  createTestOrganization,
   createTestApiKey,
   createTestComponent,
   createTestIncident,
@@ -19,10 +18,9 @@ describe("Admin Incidents API", () => {
 
   describe("GET /api/v1/admin/incidents", () => {
     test("lists all incidents for organization", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      await createTestIncident(org.id, { title: "API Outage" });
-      await createTestIncident(org.id, { title: "Database Issues" });
+      const { rawKey } = await createTestApiKey();
+      await createTestIncident({ title: "API Outage" });
+      await createTestIncident({ title: "Database Issues" });
 
       const res = await app.request("/api/v1/admin/incidents", {
         headers: authHeader(rawKey),
@@ -36,10 +34,9 @@ describe("Admin Incidents API", () => {
     });
 
     test("filters incidents by active status", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      await createTestIncident(org.id, { title: "Active", status: "investigating" });
-      await createTestIncident(org.id, {
+      const { rawKey } = await createTestApiKey();
+      await createTestIncident({ title: "Active", status: "investigating" });
+      await createTestIncident({
         title: "Resolved",
         status: "resolved",
         resolvedAt: new Date(),
@@ -56,10 +53,9 @@ describe("Admin Incidents API", () => {
     });
 
     test("filters incidents by resolved status", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      await createTestIncident(org.id, { title: "Active", status: "investigating" });
-      await createTestIncident(org.id, {
+      const { rawKey } = await createTestApiKey();
+      await createTestIncident({ title: "Active", status: "investigating" });
+      await createTestIncident({
         title: "Resolved",
         status: "resolved",
         resolvedAt: new Date(),
@@ -76,10 +72,9 @@ describe("Admin Incidents API", () => {
     });
 
     test("filters incidents by severity", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      await createTestIncident(org.id, { title: "Minor Issue", severity: "minor" });
-      await createTestIncident(org.id, { title: "Critical Issue", severity: "critical" });
+      const { rawKey } = await createTestApiKey();
+      await createTestIncident({ title: "Minor Issue", severity: "minor" });
+      await createTestIncident({ title: "Critical Issue", severity: "critical" });
 
       const res = await app.request("/api/v1/admin/incidents?severity=critical", {
         headers: authHeader(rawKey),
@@ -92,10 +87,9 @@ describe("Admin Incidents API", () => {
     });
 
     test("paginates results", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
       for (let i = 0; i < 5; i++) {
-        await createTestIncident(org.id, { title: `Incident ${i}` });
+        await createTestIncident({ title: `Incident ${i}` });
       }
 
       const res = await app.request("/api/v1/admin/incidents?limit=2&offset=0", {
@@ -114,8 +108,7 @@ describe("Admin Incidents API", () => {
     });
 
     test("returns empty array when no incidents exist", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/incidents", {
         headers: authHeader(rawKey),
@@ -129,10 +122,9 @@ describe("Admin Incidents API", () => {
 
   describe("GET /api/v1/admin/incidents/:id", () => {
     test("returns incident by ID with updates and components", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id, { name: "API Server" });
-      const incident = await createTestIncident(org.id, { title: "Server Down" });
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent({ name: "API Server" });
+      const incident = await createTestIncident({ title: "Server Down" });
       await createTestIncidentUpdate(incident.id, { message: "Investigating the issue" });
       await createTestIncidentComponent(incident.id, component.id);
 
@@ -150,8 +142,7 @@ describe("Admin Incidents API", () => {
     });
 
     test("returns 404 for non-existent incident", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/incidents/00000000-0000-0000-0000-000000000000",
@@ -162,25 +153,11 @@ describe("Admin Incidents API", () => {
 
       expect(res.status).toBe(404);
     });
-
-    test("returns 404 for incident from different organization", async () => {
-      const org1 = await createTestOrganization({ slug: "org-1" });
-      const org2 = await createTestOrganization({ slug: "org-2" });
-      const { rawKey } = await createTestApiKey(org1.id);
-      const incident = await createTestIncident(org2.id, { title: "Other Org Incident" });
-
-      const res = await app.request(`/api/v1/admin/incidents/${incident.id}`, {
-        headers: authHeader(rawKey),
-      });
-
-      expect(res.status).toBe(404);
-    });
   });
 
   describe("POST /api/v1/admin/incidents", () => {
     test("creates a new incident", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/incidents", {
         method: "POST",
@@ -201,9 +178,8 @@ describe("Admin Incidents API", () => {
     });
 
     test("creates incident with affected components", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id, { name: "API Server" });
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent({ name: "API Server" });
 
       const res = await app.request("/api/v1/admin/incidents", {
         method: "POST",
@@ -222,8 +198,7 @@ describe("Admin Incidents API", () => {
     });
 
     test("returns 400 for missing required fields", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/incidents", {
         method: "POST",
@@ -253,9 +228,8 @@ describe("Admin Incidents API", () => {
 
   describe("PUT /api/v1/admin/incidents/:id", () => {
     test("updates incident title and severity", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const incident = await createTestIncident(org.id, {
+      const { rawKey } = await createTestApiKey();
+      const incident = await createTestIncident({
         title: "Original Title",
         severity: "minor",
       });
@@ -276,8 +250,7 @@ describe("Admin Incidents API", () => {
     });
 
     test("returns 404 for non-existent incident", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/incidents/00000000-0000-0000-0000-000000000000",
@@ -294,9 +267,8 @@ describe("Admin Incidents API", () => {
 
   describe("POST /api/v1/admin/incidents/:id/updates", () => {
     test("adds update to incident", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const incident = await createTestIncident(org.id, { status: "investigating" });
+      const { rawKey } = await createTestApiKey();
+      const incident = await createTestIncident({ status: "investigating" });
 
       const res = await app.request(`/api/v1/admin/incidents/${incident.id}/updates`, {
         method: "POST",
@@ -314,8 +286,7 @@ describe("Admin Incidents API", () => {
     });
 
     test("returns 404 for non-existent incident", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/incidents/00000000-0000-0000-0000-000000000000/updates",
@@ -335,9 +306,8 @@ describe("Admin Incidents API", () => {
 
   describe("PATCH /api/v1/admin/incidents/:id/resolve", () => {
     test("resolves incident", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const incident = await createTestIncident(org.id, { status: "monitoring" });
+      const { rawKey } = await createTestApiKey();
+      const incident = await createTestIncident({ status: "monitoring" });
 
       const res = await app.request(`/api/v1/admin/incidents/${incident.id}/resolve`, {
         method: "PATCH",
@@ -354,9 +324,8 @@ describe("Admin Incidents API", () => {
     });
 
     test("resolves incident without message", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const incident = await createTestIncident(org.id, { status: "monitoring" });
+      const { rawKey } = await createTestApiKey();
+      const incident = await createTestIncident({ status: "monitoring" });
 
       const res = await app.request(`/api/v1/admin/incidents/${incident.id}/resolve`, {
         method: "PATCH",
@@ -369,8 +338,7 @@ describe("Admin Incidents API", () => {
     });
 
     test("returns 404 for non-existent incident", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/incidents/00000000-0000-0000-0000-000000000000/resolve",
@@ -386,11 +354,10 @@ describe("Admin Incidents API", () => {
 
   describe("PUT /api/v1/admin/incidents/:id/components", () => {
     test("updates affected components", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component1 = await createTestComponent(org.id, { name: "API Server" });
-      const component2 = await createTestComponent(org.id, { name: "Database" });
-      const incident = await createTestIncident(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component1 = await createTestComponent({ name: "API Server" });
+      const component2 = await createTestComponent({ name: "Database" });
+      const incident = await createTestIncident();
 
       const res = await app.request(`/api/v1/admin/incidents/${incident.id}/components`, {
         method: "PUT",
@@ -406,9 +373,8 @@ describe("Admin Incidents API", () => {
     });
 
     test("returns 404 for non-existent incident", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
 
       const res = await app.request(
         "/api/v1/admin/incidents/00000000-0000-0000-0000-000000000000/components",
@@ -427,9 +393,8 @@ describe("Admin Incidents API", () => {
 
   describe("DELETE /api/v1/admin/incidents/:id", () => {
     test("deletes incident", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const incident = await createTestIncident(org.id);
+      const { rawKey } = await createTestApiKey();
+      const incident = await createTestIncident();
 
       const res = await app.request(`/api/v1/admin/incidents/${incident.id}`, {
         method: "DELETE",
@@ -448,8 +413,7 @@ describe("Admin Incidents API", () => {
     });
 
     test("returns 404 for non-existent incident", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/incidents/00000000-0000-0000-0000-000000000000",

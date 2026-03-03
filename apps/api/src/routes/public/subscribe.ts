@@ -1,11 +1,12 @@
 import { Hono } from "hono";
-import { db, eq, and, asc } from "@fyrendev/db";
-import { subscribers, organizations } from "@fyrendev/db";
+import { db, eq } from "@fyrendev/db";
+import { subscribers } from "@fyrendev/db";
 import { randomBytes } from "crypto";
 import { z } from "zod";
-import { getEmailProviderForOrg } from "../../lib/email";
+import { getEmailProvider } from "../../lib/email";
 import { verificationTemplate } from "../../lib/email/templates/verification";
-import { errorResponse, NotFoundError } from "../../lib/errors";
+import { errorResponse } from "../../lib/errors";
+import { getOrganization } from "../../lib/organization";
 import { env } from "../../env";
 
 export const subscribeRoutes = new Hono();
@@ -49,17 +50,6 @@ function renderActionPage({
 </html>`;
 }
 
-// Helper to get the organization
-async function getOrganization() {
-  const [org] = await db
-    .select()
-    .from(organizations)
-    .orderBy(asc(organizations.createdAt))
-    .limit(1);
-  if (!org) throw new NotFoundError("No organization configured");
-  return org;
-}
-
 const subscribeSchema = z.object({
   email: z.string().email(),
   componentIds: z.array(z.string().uuid()).optional(),
@@ -75,7 +65,7 @@ subscribeRoutes.post("/subscribe", async (c) => {
 
     // Check if already subscribed
     const existing = await db.query.subscribers.findFirst({
-      where: and(eq(subscribers.organizationId, org.id), eq(subscribers.email, email)),
+      where: eq(subscribers.email, email),
     });
 
     if (existing?.verified) {
@@ -98,7 +88,6 @@ subscribeRoutes.post("/subscribe", async (c) => {
     } else {
       // Create new subscription
       await db.insert(subscribers).values({
-        organizationId: org.id,
         email,
         verificationToken,
         unsubscribeToken,
@@ -113,7 +102,7 @@ subscribeRoutes.post("/subscribe", async (c) => {
       verificationUrl,
     });
 
-    const provider = await getEmailProviderForOrg(org.id);
+    const provider = await getEmailProvider();
     await provider.send({
       to: email,
       subject: emailContent.subject,
@@ -132,10 +121,8 @@ subscribeRoutes.get("/subscribe/verify/:token", async (c) => {
   try {
     const token = c.req.param("token");
 
-    const org = await getOrganization();
-
     const subscriber = await db.query.subscribers.findFirst({
-      where: and(eq(subscribers.organizationId, org.id), eq(subscribers.verificationToken, token)),
+      where: eq(subscribers.verificationToken, token),
     });
 
     if (!subscriber) {
@@ -187,10 +174,8 @@ subscribeRoutes.get("/unsubscribe/:token", async (c) => {
   try {
     const token = c.req.param("token");
 
-    const org = await getOrganization();
-
     const subscriber = await db.query.subscribers.findFirst({
-      where: and(eq(subscribers.organizationId, org.id), eq(subscribers.unsubscribeToken, token)),
+      where: eq(subscribers.unsubscribeToken, token),
     });
 
     if (!subscriber) {

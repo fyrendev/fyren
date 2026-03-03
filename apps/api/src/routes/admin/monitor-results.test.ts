@@ -2,7 +2,6 @@ import { describe, test, expect } from "bun:test";
 import {
   createTestApp,
   setupTestHooks,
-  createTestOrganization,
   createTestApiKey,
   createTestComponent,
   createTestMonitor,
@@ -17,9 +16,8 @@ describe("Admin Monitor Results API", () => {
 
   describe("GET /api/v1/admin/monitors/:id/results", () => {
     test("returns paginated results for a monitor", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
       const monitor = await createTestMonitor(component.id);
 
       // Create multiple results
@@ -42,9 +40,8 @@ describe("Admin Monitor Results API", () => {
     });
 
     test("respects limit parameter", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
       const monitor = await createTestMonitor(component.id);
 
       for (let i = 0; i < 10; i++) {
@@ -65,9 +62,8 @@ describe("Admin Monitor Results API", () => {
     });
 
     test("respects offset parameter", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
       const monitor = await createTestMonitor(component.id);
 
       for (let i = 0; i < 5; i++) {
@@ -91,9 +87,8 @@ describe("Admin Monitor Results API", () => {
     });
 
     test("filters by date range with from parameter", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
       const monitor = await createTestMonitor(component.id);
 
       const now = new Date();
@@ -117,9 +112,8 @@ describe("Admin Monitor Results API", () => {
     });
 
     test("filters by date range with to parameter", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
       const monitor = await createTestMonitor(component.id);
 
       const now = new Date();
@@ -143,9 +137,8 @@ describe("Admin Monitor Results API", () => {
     });
 
     test("returns results ordered by checkedAt descending", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
       const monitor = await createTestMonitor(component.id);
 
       const now = new Date();
@@ -170,8 +163,7 @@ describe("Admin Monitor Results API", () => {
     });
 
     test("returns 404 for non-existent monitor", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/monitors/00000000-0000-0000-0000-000000000000/results",
@@ -183,20 +175,6 @@ describe("Admin Monitor Results API", () => {
       expect(res.status).toBe(404);
     });
 
-    test("returns 403 for monitor from different organization", async () => {
-      const org1 = await createTestOrganization({ slug: "org-1" });
-      const org2 = await createTestOrganization({ slug: "org-2" });
-      const { rawKey } = await createTestApiKey(org1.id);
-      const component = await createTestComponent(org2.id);
-      const monitor = await createTestMonitor(component.id);
-
-      const res = await app.request(`/api/v1/admin/monitors/${monitor.id}/results`, {
-        headers: authHeader(rawKey),
-      });
-
-      expect(res.status).toBe(403);
-    });
-
     test("returns 401 without authentication", async () => {
       const res = await app.request(
         "/api/v1/admin/monitors/00000000-0000-0000-0000-000000000000/results"
@@ -205,9 +183,8 @@ describe("Admin Monitor Results API", () => {
     });
 
     test("returns empty array when no results exist", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
       const monitor = await createTestMonitor(component.id);
 
       const res = await app.request(`/api/v1/admin/monitors/${monitor.id}/results`, {

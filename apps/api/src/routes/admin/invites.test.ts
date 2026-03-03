@@ -4,7 +4,6 @@ import {
   setupTestHooks,
   createTestOrganization,
   createTestUser,
-  createTestMembership,
   signUpTestUser,
   createTestInvite,
   createTestApiKey,
@@ -16,7 +15,7 @@ const mockSend = mock(() => Promise.resolve({ success: true }));
 
 // Mock the email provider to avoid sending real emails
 mock.module("../../lib/email", () => ({
-  getEmailProviderForOrg: () => ({
+  getEmailProvider: () => ({
     send: mockSend,
   }),
 }));
@@ -26,16 +25,20 @@ describe("Admin Invites API", () => {
 
   const app = createTestApp();
 
-  describe("GET /api/v1/admin/organizations/invites", () => {
+  describe("GET /api/v1/admin/invites", () => {
     test("lists pending invites for organization", async () => {
-      const org = await createTestOrganization();
-      const { user: owner, token } = await signUpTestUser("owner@example.com");
-      await createTestMembership(owner.id, org.id, "owner");
-      await createTestInvite(org.id, owner.id, { email: "invite1@example.com" });
-      await createTestInvite(org.id, owner.id, { email: "invite2@example.com" });
+      await createTestOrganization();
+      const { user: owner, token } = await signUpTestUser(
+        "owner@example.com",
+        undefined,
+        undefined,
+        "owner"
+      );
+      await createTestInvite(owner.id, { email: "invite1@example.com" });
+      await createTestInvite(owner.id, { email: "invite2@example.com" });
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
-        headers: sessionCookieHeader(token, org.id),
+      const res = await app.request("/api/v1/admin/invites", {
+        headers: sessionCookieHeader(token),
       });
 
       expect(res.status).toBe(200);
@@ -46,16 +49,20 @@ describe("Admin Invites API", () => {
     });
 
     test("includes invite details", async () => {
-      const org = await createTestOrganization();
-      const { user: owner, token } = await signUpTestUser("owner@example.com", undefined, "Owner");
-      await createTestMembership(owner.id, org.id, "owner");
-      await createTestInvite(org.id, owner.id, {
+      await createTestOrganization();
+      const { user: owner, token } = await signUpTestUser(
+        "owner@example.com",
+        undefined,
+        "Owner",
+        "owner"
+      );
+      await createTestInvite(owner.id, {
         email: "invitee@example.com",
         role: "admin",
       });
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
-        headers: sessionCookieHeader(token, org.id),
+      const res = await app.request("/api/v1/admin/invites", {
+        headers: sessionCookieHeader(token),
       });
 
       expect(res.status).toBe(200);
@@ -68,20 +75,40 @@ describe("Admin Invites API", () => {
       expect(invite.createdAt).toBeDefined();
     });
 
+    test("does not include expired invites", async () => {
+      await createTestOrganization();
+      const { user: owner, token } = await signUpTestUser(undefined, undefined, undefined, "owner");
+      await createTestInvite(owner.id, {
+        email: "valid@example.com",
+      });
+      await createTestInvite(owner.id, {
+        email: "expired@example.com",
+        expiresAt: new Date(Date.now() - 86400000), // Yesterday
+      });
+
+      const res = await app.request("/api/v1/admin/invites", {
+        headers: sessionCookieHeader(token),
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.invites).toHaveLength(1);
+      expect(data.invites[0].email).toBe("valid@example.com");
+    });
+
     test("does not include accepted invites", async () => {
-      const org = await createTestOrganization();
-      const { user: owner, token } = await signUpTestUser();
-      await createTestMembership(owner.id, org.id, "owner");
-      await createTestInvite(org.id, owner.id, {
+      await createTestOrganization();
+      const { user: owner, token } = await signUpTestUser(undefined, undefined, undefined, "owner");
+      await createTestInvite(owner.id, {
         email: "pending@example.com",
       });
-      await createTestInvite(org.id, owner.id, {
+      await createTestInvite(owner.id, {
         email: "accepted@example.com",
         acceptedAt: new Date(),
       });
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
-        headers: sessionCookieHeader(token, org.id),
+      const res = await app.request("/api/v1/admin/invites", {
+        headers: sessionCookieHeader(token),
       });
 
       expect(res.status).toBe(200);
@@ -91,48 +118,44 @@ describe("Admin Invites API", () => {
     });
 
     test("admin can list invites", async () => {
-      const org = await createTestOrganization();
-      const owner = await createTestUser();
-      const { user: admin, token } = await signUpTestUser("admin@example.com");
-      await createTestMembership(owner.id, org.id, "owner");
-      await createTestMembership(admin.id, org.id, "admin");
-      await createTestInvite(org.id, owner.id, { email: "test@example.com" });
+      await createTestOrganization();
+      const owner = await createTestUser({}, "owner");
+      const { token } = await signUpTestUser("admin@example.com", undefined, undefined, "admin");
+      await createTestInvite(owner.id, { email: "test@example.com" });
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
-        headers: sessionCookieHeader(token, org.id),
+      const res = await app.request("/api/v1/admin/invites", {
+        headers: sessionCookieHeader(token),
       });
 
       expect(res.status).toBe(200);
     });
 
     test("member cannot list invites", async () => {
-      const org = await createTestOrganization();
-      const { user: member, token } = await signUpTestUser("member@example.com");
-      await createTestMembership(member.id, org.id, "member");
+      await createTestOrganization();
+      const { token } = await signUpTestUser("member@example.com", undefined, undefined, "member");
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
-        headers: sessionCookieHeader(token, org.id),
+      const res = await app.request("/api/v1/admin/invites", {
+        headers: sessionCookieHeader(token),
       });
 
       expect(res.status).toBe(403);
     });
 
     test("returns 401 without authentication", async () => {
-      const res = await app.request("/api/v1/admin/organizations/invites");
+      const res = await app.request("/api/v1/admin/invites");
 
       expect(res.status).toBe(401);
     });
   });
 
-  describe("POST /api/v1/admin/organizations/invites", () => {
+  describe("POST /api/v1/admin/invites", () => {
     test("owner can create invite for member role", async () => {
-      const org = await createTestOrganization();
-      const { user: owner, token } = await signUpTestUser("owner@example.com");
-      await createTestMembership(owner.id, org.id, "owner");
+      await createTestOrganization();
+      const { token } = await signUpTestUser("owner@example.com", undefined, undefined, "owner");
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
-        headers: jsonSessionHeaders(token, org.id),
+        headers: jsonSessionHeaders(token),
         body: JSON.stringify({
           email: "newuser@example.com",
           role: "member",
@@ -148,14 +171,13 @@ describe("Admin Invites API", () => {
     });
 
     test("sends invite email on creation", async () => {
-      const org = await createTestOrganization({ name: "Acme Corp" });
-      const { user: owner, token } = await signUpTestUser("owner@example.com", undefined, "Alice");
-      await createTestMembership(owner.id, org.id, "owner");
+      await createTestOrganization({ name: "Acme Corp" });
+      const { token } = await signUpTestUser("owner@example.com", undefined, "Alice", "owner");
       mockSend.mockClear();
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
-        headers: jsonSessionHeaders(token, org.id),
+        headers: jsonSessionHeaders(token),
         body: JSON.stringify({
           email: "newuser@example.com",
           role: "member",
@@ -174,13 +196,12 @@ describe("Admin Invites API", () => {
     });
 
     test("owner can create invite for admin role", async () => {
-      const org = await createTestOrganization();
-      const { user: owner, token } = await signUpTestUser();
-      await createTestMembership(owner.id, org.id, "owner");
+      await createTestOrganization();
+      const { token } = await signUpTestUser(undefined, undefined, undefined, "owner");
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
-        headers: jsonSessionHeaders(token, org.id),
+        headers: jsonSessionHeaders(token),
         body: JSON.stringify({
           email: "newadmin@example.com",
           role: "admin",
@@ -193,13 +214,12 @@ describe("Admin Invites API", () => {
     });
 
     test("admin can only invite as member", async () => {
-      const org = await createTestOrganization();
-      const { user: admin, token } = await signUpTestUser("admin@example.com");
-      await createTestMembership(admin.id, org.id, "admin");
+      await createTestOrganization();
+      const { token } = await signUpTestUser("admin@example.com", undefined, undefined, "admin");
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
-        headers: jsonSessionHeaders(token, org.id),
+        headers: jsonSessionHeaders(token),
         body: JSON.stringify({
           email: "newuser@example.com",
           role: "admin", // Trying to invite as admin
@@ -212,13 +232,12 @@ describe("Admin Invites API", () => {
     });
 
     test("admin can invite as member", async () => {
-      const org = await createTestOrganization();
-      const { user: admin, token } = await signUpTestUser("admin@example.com");
-      await createTestMembership(admin.id, org.id, "admin");
+      await createTestOrganization();
+      const { token } = await signUpTestUser("admin@example.com", undefined, undefined, "admin");
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
-        headers: jsonSessionHeaders(token, org.id),
+        headers: jsonSessionHeaders(token),
         body: JSON.stringify({
           email: "newuser@example.com",
           role: "member",
@@ -229,15 +248,13 @@ describe("Admin Invites API", () => {
     });
 
     test("returns 409 when user is already a member", async () => {
-      const org = await createTestOrganization();
-      const { user: owner, token } = await signUpTestUser("owner@example.com");
-      const existingMember = await createTestUser({ email: "existing@example.com" });
-      await createTestMembership(owner.id, org.id, "owner");
-      await createTestMembership(existingMember.id, org.id, "member");
+      await createTestOrganization();
+      const { token } = await signUpTestUser("owner@example.com", undefined, undefined, "owner");
+      await createTestUser({ email: "existing@example.com" }, "member");
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
-        headers: jsonSessionHeaders(token, org.id),
+        headers: jsonSessionHeaders(token),
         body: JSON.stringify({
           email: "existing@example.com",
         }),
@@ -249,14 +266,13 @@ describe("Admin Invites API", () => {
     });
 
     test("returns 409 when invite already pending", async () => {
-      const org = await createTestOrganization();
-      const { user: owner, token } = await signUpTestUser();
-      await createTestMembership(owner.id, org.id, "owner");
-      await createTestInvite(org.id, owner.id, { email: "pending@example.com" });
+      await createTestOrganization();
+      const { user: owner, token } = await signUpTestUser(undefined, undefined, undefined, "owner");
+      await createTestInvite(owner.id, { email: "pending@example.com" });
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
-        headers: jsonSessionHeaders(token, org.id),
+        headers: jsonSessionHeaders(token),
         body: JSON.stringify({
           email: "pending@example.com",
         }),
@@ -268,17 +284,16 @@ describe("Admin Invites API", () => {
     });
 
     test("replaces expired invite", async () => {
-      const org = await createTestOrganization();
-      const { user: owner, token } = await signUpTestUser();
-      await createTestMembership(owner.id, org.id, "owner");
-      await createTestInvite(org.id, owner.id, {
+      await createTestOrganization();
+      const { user: owner, token } = await signUpTestUser(undefined, undefined, undefined, "owner");
+      await createTestInvite(owner.id, {
         email: "expired@example.com",
         expiresAt: new Date(Date.now() - 86400000), // Yesterday
       });
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
-        headers: jsonSessionHeaders(token, org.id),
+        headers: jsonSessionHeaders(token),
         body: JSON.stringify({
           email: "expired@example.com",
         }),
@@ -288,10 +303,10 @@ describe("Admin Invites API", () => {
     });
 
     test("cannot create invite via API key", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      await createTestOrganization();
+      const { rawKey } = await createTestApiKey();
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -306,13 +321,12 @@ describe("Admin Invites API", () => {
     });
 
     test("returns 400 for invalid email", async () => {
-      const org = await createTestOrganization();
-      const { user: owner, token } = await signUpTestUser();
-      await createTestMembership(owner.id, org.id, "owner");
+      await createTestOrganization();
+      const { token } = await signUpTestUser(undefined, undefined, undefined, "owner");
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
-        headers: jsonSessionHeaders(token, org.id),
+        headers: jsonSessionHeaders(token),
         body: JSON.stringify({
           email: "not-an-email",
         }),
@@ -322,13 +336,12 @@ describe("Admin Invites API", () => {
     });
 
     test("member cannot create invites", async () => {
-      const org = await createTestOrganization();
-      const { user: member, token } = await signUpTestUser("member@example.com");
-      await createTestMembership(member.id, org.id, "member");
+      await createTestOrganization();
+      const { token } = await signUpTestUser("member@example.com", undefined, undefined, "member");
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
-        headers: jsonSessionHeaders(token, org.id),
+        headers: jsonSessionHeaders(token),
         body: JSON.stringify({
           email: "test@example.com",
         }),
@@ -338,16 +351,15 @@ describe("Admin Invites API", () => {
     });
   });
 
-  describe("DELETE /api/v1/admin/organizations/invites/:id", () => {
+  describe("DELETE /api/v1/admin/invites/:id", () => {
     test("owner can revoke invite", async () => {
-      const org = await createTestOrganization();
-      const { user: owner, token } = await signUpTestUser();
-      await createTestMembership(owner.id, org.id, "owner");
-      const invite = await createTestInvite(org.id, owner.id, { email: "revoke@example.com" });
+      await createTestOrganization();
+      const { user: owner, token } = await signUpTestUser(undefined, undefined, undefined, "owner");
+      const invite = await createTestInvite(owner.id, { email: "revoke@example.com" });
 
-      const res = await app.request(`/api/v1/admin/organizations/invites/${invite.id}`, {
+      const res = await app.request(`/api/v1/admin/invites/${invite.id}`, {
         method: "DELETE",
-        headers: sessionCookieHeader(token, org.id),
+        headers: sessionCookieHeader(token),
       });
 
       expect(res.status).toBe(200);
@@ -356,68 +368,72 @@ describe("Admin Invites API", () => {
     });
 
     test("admin can revoke invite", async () => {
-      const org = await createTestOrganization();
-      const owner = await createTestUser();
-      const { user: admin, token } = await signUpTestUser("admin@example.com");
-      await createTestMembership(owner.id, org.id, "owner");
-      await createTestMembership(admin.id, org.id, "admin");
-      const invite = await createTestInvite(org.id, owner.id, { email: "revoke@example.com" });
+      await createTestOrganization();
+      const owner = await createTestUser({}, "owner");
+      const { token } = await signUpTestUser("admin@example.com", undefined, undefined, "admin");
+      const invite = await createTestInvite(owner.id, { email: "revoke@example.com" });
 
-      const res = await app.request(`/api/v1/admin/organizations/invites/${invite.id}`, {
+      const res = await app.request(`/api/v1/admin/invites/${invite.id}`, {
         method: "DELETE",
-        headers: sessionCookieHeader(token, org.id),
+        headers: sessionCookieHeader(token),
       });
 
       expect(res.status).toBe(200);
     });
 
     test("member cannot revoke invite", async () => {
-      const org = await createTestOrganization();
-      const owner = await createTestUser();
-      const { user: member, token } = await signUpTestUser("member@example.com");
-      await createTestMembership(owner.id, org.id, "owner");
-      await createTestMembership(member.id, org.id, "member");
-      const invite = await createTestInvite(org.id, owner.id, { email: "test@example.com" });
+      await createTestOrganization();
+      const owner = await createTestUser({}, "owner");
+      const { token } = await signUpTestUser("member@example.com", undefined, undefined, "member");
+      const invite = await createTestInvite(owner.id, { email: "test@example.com" });
 
-      const res = await app.request(`/api/v1/admin/organizations/invites/${invite.id}`, {
+      const res = await app.request(`/api/v1/admin/invites/${invite.id}`, {
         method: "DELETE",
-        headers: sessionCookieHeader(token, org.id),
+        headers: sessionCookieHeader(token),
       });
 
       expect(res.status).toBe(403);
     });
 
     test("returns 404 for non-existent invite", async () => {
-      const org = await createTestOrganization();
-      const { user: owner, token } = await signUpTestUser();
-      await createTestMembership(owner.id, org.id, "owner");
+      await createTestOrganization();
+      const { token } = await signUpTestUser(undefined, undefined, undefined, "owner");
 
-      const res = await app.request(
-        "/api/v1/admin/organizations/invites/00000000-0000-0000-0000-000000000000",
-        {
-          method: "DELETE",
-          headers: sessionCookieHeader(token, org.id),
-        }
-      );
-
-      expect(res.status).toBe(404);
-    });
-
-    test("returns 404 for invite from different organization", async () => {
-      const org1 = await createTestOrganization({ slug: "org-1" });
-      const org2 = await createTestOrganization({ slug: "org-2" });
-      const { user: owner1, token } = await signUpTestUser("owner1@example.com");
-      const owner2 = await createTestUser({ email: "owner2@example.com" });
-      await createTestMembership(owner1.id, org1.id, "owner");
-      await createTestMembership(owner2.id, org2.id, "owner");
-      const invite = await createTestInvite(org2.id, owner2.id, { email: "test@example.com" });
-
-      const res = await app.request(`/api/v1/admin/organizations/invites/${invite.id}`, {
+      const res = await app.request("/api/v1/admin/invites/00000000-0000-0000-0000-000000000000", {
         method: "DELETE",
-        headers: sessionCookieHeader(token, org1.id),
+        headers: sessionCookieHeader(token),
       });
 
       expect(res.status).toBe(404);
+    });
+  });
+
+  describe("invite survives creator removal", () => {
+    test("pending invite remains after inviting admin is removed", async () => {
+      await createTestOrganization();
+      const { token: ownerToken } = await signUpTestUser(
+        "owner@example.com",
+        undefined,
+        undefined,
+        "owner"
+      );
+      const admin = await createTestUser({ email: "admin@example.com" }, "admin");
+      await createTestInvite(admin.id, { email: "invitee@example.com" });
+
+      // Remove the admin who created the invite
+      const removeRes = await app.request(`/api/v1/admin/members/${admin.id}`, {
+        method: "DELETE",
+        headers: sessionCookieHeader(ownerToken),
+      });
+      expect(removeRes.status).toBe(200);
+
+      // Invite should still be listed
+      const listRes = await app.request("/api/v1/admin/invites", {
+        headers: sessionCookieHeader(ownerToken),
+      });
+      expect(listRes.status).toBe(200);
+      const data = await listRes.json();
+      expect(data.invites.map((i: { email: string }) => i.email)).toContain("invitee@example.com");
     });
   });
 });

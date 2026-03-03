@@ -20,7 +20,7 @@ export function createTestApp() {
       origin: "http://localhost:3000",
       credentials: true,
       allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      allowHeaders: ["Content-Type", "Authorization", "X-Organization-Id"],
+      allowHeaders: ["Content-Type", "Authorization"],
     })
   );
 

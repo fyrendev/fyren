@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../../lib/db";
-import { components, componentStatusEnum, eq, and } from "@fyrendev/db";
+import { components, componentStatusEnum, eq } from "@fyrendev/db";
 import { NotFoundError, errorResponse } from "../../lib/errors";
 import { createAuditLogger } from "../../lib/logging/audit";
 
@@ -31,18 +31,12 @@ const updateStatusSchema = z.object({
 // GET /api/v1/admin/components - List all components
 adminComponents.get("/", async (c) => {
   try {
-    const orgId = c.get("organizationId")!;
     const status = c.req.query("status");
 
-    let query = db.select().from(components).where(eq(components.organizationId, orgId)).$dynamic();
+    let query = db.select().from(components).$dynamic();
 
     if (status && componentStatuses.includes(status as (typeof componentStatuses)[number])) {
-      query = query.where(
-        and(
-          eq(components.organizationId, orgId),
-          eq(components.status, status as (typeof componentStatuses)[number])
-        )
-      );
+      query = query.where(eq(components.status, status as (typeof componentStatuses)[number]));
     }
 
     const result = await query.orderBy(components.displayOrder);
@@ -67,14 +61,12 @@ adminComponents.get("/", async (c) => {
 // POST /api/v1/admin/components - Create component
 adminComponents.post("/", async (c) => {
   try {
-    const orgId = c.get("organizationId")!;
     const body = await c.req.json();
     const data = createComponentSchema.parse(body);
 
     const [comp] = await db
       .insert(components)
       .values({
-        organizationId: orgId,
         name: data.name,
         description: data.description,
         status: data.status,
@@ -91,7 +83,6 @@ adminComponents.post("/", async (c) => {
     const user = c.get("user");
     const auditLogger = createAuditLogger({
       userId: user?.id,
-      organizationId: orgId,
       requestId: c.get("requestId"),
     });
     auditLogger.componentCreated(comp.id, { name: comp.name });
@@ -119,14 +110,9 @@ adminComponents.post("/", async (c) => {
 // GET /api/v1/admin/components/:id - Get component by ID
 adminComponents.get("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId")!;
     const id = c.req.param("id");
 
-    const [comp] = await db
-      .select()
-      .from(components)
-      .where(and(eq(components.id, id), eq(components.organizationId, orgId)))
-      .limit(1);
+    const [comp] = await db.select().from(components).where(eq(components.id, id)).limit(1);
 
     if (!comp) {
       throw new NotFoundError("Component not found");
@@ -152,7 +138,6 @@ adminComponents.get("/:id", async (c) => {
 // PUT /api/v1/admin/components/:id - Update component
 adminComponents.put("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId")!;
     const id = c.req.param("id");
     const body = await c.req.json();
     const data = updateComponentSchema.parse(body);
@@ -163,7 +148,7 @@ adminComponents.put("/:id", async (c) => {
         ...data,
         updatedAt: new Date(),
       })
-      .where(and(eq(components.id, id), eq(components.organizationId, orgId)))
+      .where(eq(components.id, id))
       .returning();
 
     if (!comp) {
@@ -174,7 +159,6 @@ adminComponents.put("/:id", async (c) => {
     const user = c.get("user");
     const auditLogger = createAuditLogger({
       userId: user?.id,
-      organizationId: orgId,
       requestId: c.get("requestId"),
     });
     auditLogger.componentUpdated(id, data);
@@ -199,7 +183,6 @@ adminComponents.put("/:id", async (c) => {
 // PATCH /api/v1/admin/components/:id/status - Update component status
 adminComponents.patch("/:id/status", async (c) => {
   try {
-    const orgId = c.get("organizationId")!;
     const id = c.req.param("id");
     const body = await c.req.json();
     const data = updateStatusSchema.parse(body);
@@ -210,7 +193,7 @@ adminComponents.patch("/:id/status", async (c) => {
         status: data.status,
         updatedAt: new Date(),
       })
-      .where(and(eq(components.id, id), eq(components.organizationId, orgId)))
+      .where(eq(components.id, id))
       .returning();
 
     if (!comp) {
@@ -221,7 +204,6 @@ adminComponents.patch("/:id/status", async (c) => {
     const user = c.get("user");
     const auditLogger = createAuditLogger({
       userId: user?.id,
-      organizationId: orgId,
       requestId: c.get("requestId"),
     });
     auditLogger.componentStatusChanged(id, { from: "unknown", to: data.status });
@@ -246,13 +228,9 @@ adminComponents.patch("/:id/status", async (c) => {
 // DELETE /api/v1/admin/components/:id - Delete component
 adminComponents.delete("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId")!;
     const id = c.req.param("id");
 
-    const [comp] = await db
-      .delete(components)
-      .where(and(eq(components.id, id), eq(components.organizationId, orgId)))
-      .returning();
+    const [comp] = await db.delete(components).where(eq(components.id, id)).returning();
 
     if (!comp) {
       throw new NotFoundError("Component not found");
@@ -262,7 +240,6 @@ adminComponents.delete("/:id", async (c) => {
     const user = c.get("user");
     const auditLogger = createAuditLogger({
       userId: user?.id,
-      organizationId: orgId,
       requestId: c.get("requestId"),
     });
     auditLogger.componentDeleted(id);

@@ -5,18 +5,13 @@ import {
   updateMaintenanceSchema,
   listMaintenanceSchema,
 } from "../../validators/maintenance";
-import { ValidationError, NotFoundError, BadRequestError, errorResponse } from "../../lib/errors";
+import { NotFoundError, BadRequestError, errorResponse } from "../../lib/errors";
 
 export const adminMaintenance = new Hono();
 
 // GET /api/v1/admin/maintenance - List maintenance windows
 adminMaintenance.get("/", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const query = listMaintenanceSchema.parse({
       status: c.req.query("status"),
       upcoming: c.req.query("upcoming"),
@@ -24,7 +19,7 @@ adminMaintenance.get("/", async (c) => {
       offset: c.req.query("offset"),
     });
 
-    const result = await MaintenanceService.list(orgId, query);
+    const result = await MaintenanceService.list(query);
 
     return c.json({
       maintenances: result.maintenances.map((m) => ({
@@ -53,13 +48,8 @@ adminMaintenance.get("/", async (c) => {
 // GET /api/v1/admin/maintenance/:id - Get single maintenance
 adminMaintenance.get("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const maintenanceId = c.req.param("id");
-    const maintenance = await MaintenanceService.getById(maintenanceId, orgId);
+    const maintenance = await MaintenanceService.getById(maintenanceId);
 
     if (!maintenance) {
       throw new NotFoundError("Maintenance not found");
@@ -91,17 +81,11 @@ adminMaintenance.get("/:id", async (c) => {
 // POST /api/v1/admin/maintenance - Create maintenance
 adminMaintenance.post("/", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const user = c.get("user");
     const body = await c.req.json();
     const data = createMaintenanceSchema.parse(body);
 
     const maintenance = await MaintenanceService.create({
-      organizationId: orgId,
       title: data.title,
       description: data.description,
       scheduledStartAt: new Date(data.scheduledStartAt),
@@ -140,16 +124,11 @@ adminMaintenance.post("/", async (c) => {
 // PUT /api/v1/admin/maintenance/:id - Update maintenance
 adminMaintenance.put("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const maintenanceId = c.req.param("id");
     const body = await c.req.json();
     const data = updateMaintenanceSchema.parse(body);
 
-    const maintenance = await MaintenanceService.update(maintenanceId, orgId, {
+    const maintenance = await MaintenanceService.update(maintenanceId, {
       title: data.title,
       description: data.description,
       scheduledStartAt: data.scheduledStartAt ? new Date(data.scheduledStartAt) : undefined,
@@ -192,13 +171,8 @@ adminMaintenance.put("/:id", async (c) => {
 // PATCH /api/v1/admin/maintenance/:id/start - Start maintenance early
 adminMaintenance.patch("/:id/start", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const maintenanceId = c.req.param("id");
-    const maintenance = await MaintenanceService.start(maintenanceId, orgId);
+    const maintenance = await MaintenanceService.start(maintenanceId);
 
     if (!maintenance) {
       throw new NotFoundError("Maintenance not found");
@@ -229,13 +203,8 @@ adminMaintenance.patch("/:id/start", async (c) => {
 // PATCH /api/v1/admin/maintenance/:id/complete - Complete maintenance
 adminMaintenance.patch("/:id/complete", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const maintenanceId = c.req.param("id");
-    const maintenance = await MaintenanceService.complete(maintenanceId, orgId);
+    const maintenance = await MaintenanceService.complete(maintenanceId);
 
     if (!maintenance) {
       throw new NotFoundError("Maintenance not found");
@@ -266,13 +235,8 @@ adminMaintenance.patch("/:id/complete", async (c) => {
 // DELETE /api/v1/admin/maintenance/:id - Cancel maintenance
 adminMaintenance.delete("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const maintenanceId = c.req.param("id");
-    await MaintenanceService.cancel(maintenanceId, orgId);
+    await MaintenanceService.cancel(maintenanceId);
 
     return c.json({ success: true });
   } catch (error) {

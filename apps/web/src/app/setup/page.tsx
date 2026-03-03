@@ -119,7 +119,7 @@ export default function SetupPage() {
     setError("");
 
     try {
-      const res = await fetch(`/api/v1/admin/organizations`, {
+      const res = await fetch(`/api/v1/admin/organization`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -130,9 +130,6 @@ export default function SetupPage() {
         const data = await res.json();
         throw new Error(data.error?.message || "Failed to create organization");
       }
-
-      // Clear localStorage org ID so it picks up the new one
-      localStorage.removeItem("fyren_current_org_id");
 
       // Redirect to admin dashboard
       window.location.href = "/admin";

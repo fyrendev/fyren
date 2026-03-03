@@ -2,7 +2,6 @@ import { describe, test, expect } from "bun:test";
 import {
   createTestApp,
   setupTestHooks,
-  createTestOrganization,
   createTestApiKey,
   createTestComponent,
   createTestMonitor,
@@ -17,9 +16,8 @@ describe("Admin Monitors API", () => {
 
   describe("GET /api/v1/admin/monitors", () => {
     test("lists all monitors for organization", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
       await createTestMonitor(component.id, { url: "https://api.example.com" });
       await createTestMonitor(component.id, { url: "https://web.example.com" });
 
@@ -33,10 +31,9 @@ describe("Admin Monitors API", () => {
     });
 
     test("filters monitors by componentId", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component1 = await createTestComponent(org.id, { name: "API" });
-      const component2 = await createTestComponent(org.id, { name: "Web" });
+      const { rawKey } = await createTestApiKey();
+      const component1 = await createTestComponent({ name: "API" });
+      const component2 = await createTestComponent({ name: "Web" });
       await createTestMonitor(component1.id);
       await createTestMonitor(component2.id);
 
@@ -58,9 +55,8 @@ describe("Admin Monitors API", () => {
 
   describe("POST /api/v1/admin/monitors", () => {
     test("creates a new HTTP monitor", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
 
       const res = await app.request("/api/v1/admin/monitors", {
         method: "POST",
@@ -83,9 +79,8 @@ describe("Admin Monitors API", () => {
     });
 
     test("creates a TCP monitor", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
 
       const res = await app.request("/api/v1/admin/monitors", {
         method: "POST",
@@ -104,9 +99,8 @@ describe("Admin Monitors API", () => {
     });
 
     test("returns 400 for invalid URL format", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
 
       const res = await app.request("/api/v1/admin/monitors", {
         method: "POST",
@@ -122,8 +116,7 @@ describe("Admin Monitors API", () => {
     });
 
     test("returns 404 for non-existent component", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/monitors", {
         method: "POST",
@@ -139,9 +132,8 @@ describe("Admin Monitors API", () => {
     });
 
     test("creates a NATS monitor without auth", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
 
       const res = await app.request("/api/v1/admin/monitors", {
         method: "POST",
@@ -162,9 +154,8 @@ describe("Admin Monitors API", () => {
     });
 
     test("creates a NATS monitor with token auth", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
 
       const res = await app.request("/api/v1/admin/monitors", {
         method: "POST",
@@ -192,9 +183,8 @@ describe("Admin Monitors API", () => {
     });
 
     test("creates a NATS monitor with userpass auth", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
 
       const res = await app.request("/api/v1/admin/monitors", {
         method: "POST",
@@ -222,9 +212,8 @@ describe("Admin Monitors API", () => {
     });
 
     test("creates a NATS monitor with JWT auth", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
 
       const res = await app.request("/api/v1/admin/monitors", {
         method: "POST",
@@ -252,9 +241,8 @@ describe("Admin Monitors API", () => {
     });
 
     test("creates a NATS monitor with credentials file auth", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
 
       const credsContent = `-----BEGIN NATS USER JWT-----
 eyJhbGciOiJFRDI1NTE5In0.eyJqdGkiOiJBQkNERUYifQ.c2lnbmF0dXJl
@@ -286,9 +274,8 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
     });
 
     test("returns 400 for invalid NATS URL format", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
 
       const res = await app.request("/api/v1/admin/monitors", {
         method: "POST",
@@ -307,9 +294,8 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
     });
 
     test("accepts NATS URL without protocol prefix", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
 
       const res = await app.request("/api/v1/admin/monitors", {
         method: "POST",
@@ -328,9 +314,8 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
     });
 
     test("creates monitor without testing connection when testConnection is false", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
 
       // This URL won't be reachable, but should still create the monitor
       const res = await app.request("/api/v1/admin/monitors", {
@@ -350,9 +335,8 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
     });
 
     test("returns 400 when testConnection fails for unreachable NATS host", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
 
       const res = await app.request("/api/v1/admin/monitors", {
         method: "POST",
@@ -373,9 +357,8 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
     });
 
     test("returns 400 when testConnection fails for unreachable TCP host", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
 
       const res = await app.request("/api/v1/admin/monitors", {
         method: "POST",
@@ -398,8 +381,7 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
 
   describe("POST /api/v1/admin/monitors/test", () => {
     test("returns failure for unreachable TCP host", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       // Test TCP against unreachable host - this will fail but verify endpoint works
       const res = await app.request("/api/v1/admin/monitors/test", {
@@ -419,8 +401,7 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
     });
 
     test("returns failure for unreachable NATS server", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/monitors/test", {
         method: "POST",
@@ -440,8 +421,7 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
     });
 
     test("returns 400 for invalid NATS URL", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/monitors/test", {
         method: "POST",
@@ -473,9 +453,8 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
 
   describe("GET /api/v1/admin/monitors/:id", () => {
     test("returns monitor with recent results", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
       const monitor = await createTestMonitor(component.id);
 
       const res = await app.request(`/api/v1/admin/monitors/${monitor.id}`, {
@@ -490,8 +469,7 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
     });
 
     test("returns 404 for non-existent monitor", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/monitors/00000000-0000-0000-0000-000000000000", {
         headers: authHeader(rawKey),
@@ -503,9 +481,8 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
 
   describe("PUT /api/v1/admin/monitors/:id", () => {
     test("updates monitor settings", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
       const monitor = await createTestMonitor(component.id, {
         intervalSeconds: 60,
       });
@@ -526,9 +503,8 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
     });
 
     test("updates NATS monitor auth configuration", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
       const monitor = await createTestMonitor(component.id, {
         type: "nats",
         url: "nats://localhost:4222",
@@ -555,8 +531,7 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
     });
 
     test("returns 404 for non-existent monitor", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/monitors/00000000-0000-0000-0000-000000000000", {
         method: "PUT",
@@ -570,9 +545,8 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
 
   describe("PATCH /api/v1/admin/monitors/:id/toggle", () => {
     test("toggles monitor from active to inactive", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
       const monitor = await createTestMonitor(component.id, { isActive: true });
 
       const res = await app.request(`/api/v1/admin/monitors/${monitor.id}/toggle`, {
@@ -586,9 +560,8 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
     });
 
     test("toggles monitor from inactive to active", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
       const monitor = await createTestMonitor(component.id, { isActive: false });
 
       const res = await app.request(`/api/v1/admin/monitors/${monitor.id}/toggle`, {
@@ -602,8 +575,7 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
     });
 
     test("returns 404 for non-existent monitor", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/monitors/00000000-0000-0000-0000-000000000000/toggle",
@@ -616,24 +588,8 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
       expect(res.status).toBe(404);
     });
 
-    test("returns 403 for monitor from different organization", async () => {
-      const org1 = await createTestOrganization({ slug: "org-1" });
-      const org2 = await createTestOrganization({ slug: "org-2" });
-      const { rawKey } = await createTestApiKey(org1.id);
-      const component = await createTestComponent(org2.id);
-      const monitor = await createTestMonitor(component.id);
-
-      const res = await app.request(`/api/v1/admin/monitors/${monitor.id}/toggle`, {
-        method: "PATCH",
-        headers: authHeader(rawKey),
-      });
-
-      expect(res.status).toBe(403);
-    });
-
     test("returns 401 without authentication", async () => {
-      const org = await createTestOrganization();
-      const component = await createTestComponent(org.id);
+      const component = await createTestComponent();
       const monitor = await createTestMonitor(component.id);
 
       const res = await app.request(`/api/v1/admin/monitors/${monitor.id}/toggle`, {
@@ -646,9 +602,8 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
 
   describe("DELETE /api/v1/admin/monitors/:id", () => {
     test("deletes monitor", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
       const monitor = await createTestMonitor(component.id);
 
       const res = await app.request(`/api/v1/admin/monitors/${monitor.id}`, {
@@ -668,8 +623,7 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
     });
 
     test("returns 404 for non-existent monitor", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/monitors/00000000-0000-0000-0000-000000000000", {
         method: "DELETE",
@@ -682,9 +636,8 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
 
   describe("POST /api/v1/admin/monitors/:id/check", () => {
     test("triggers immediate check", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
       const monitor = await createTestMonitor(component.id, {
         url: "https://httpstat.us/200",
         type: "http",
@@ -702,8 +655,7 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
     });
 
     test("returns 404 for non-existent monitor", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/monitors/00000000-0000-0000-0000-000000000000/check",

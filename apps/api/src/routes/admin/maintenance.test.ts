@@ -2,7 +2,6 @@ import { describe, test, expect } from "bun:test";
 import {
   createTestApp,
   setupTestHooks,
-  createTestOrganization,
   createTestApiKey,
   createTestComponent,
   createTestMaintenance,
@@ -18,10 +17,9 @@ describe("Admin Maintenance API", () => {
 
   describe("GET /api/v1/admin/maintenance", () => {
     test("lists all maintenance windows for organization", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      await createTestMaintenance(org.id, { title: "Database Upgrade" });
-      await createTestMaintenance(org.id, { title: "Network Maintenance" });
+      const { rawKey } = await createTestApiKey();
+      await createTestMaintenance({ title: "Database Upgrade" });
+      await createTestMaintenance({ title: "Network Maintenance" });
 
       const res = await app.request("/api/v1/admin/maintenance", {
         headers: authHeader(rawKey),
@@ -39,10 +37,9 @@ describe("Admin Maintenance API", () => {
     });
 
     test("filters maintenance by status", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      await createTestMaintenance(org.id, { title: "Scheduled", status: "scheduled" });
-      await createTestMaintenance(org.id, { title: "In Progress", status: "in_progress" });
+      const { rawKey } = await createTestApiKey();
+      await createTestMaintenance({ title: "Scheduled", status: "scheduled" });
+      await createTestMaintenance({ title: "In Progress", status: "in_progress" });
 
       const res = await app.request("/api/v1/admin/maintenance?status=scheduled", {
         headers: authHeader(rawKey),
@@ -55,11 +52,10 @@ describe("Admin Maintenance API", () => {
     });
 
     test("filters upcoming maintenance", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
       const futureStart = new Date(Date.now() + 86400000 * 2); // 2 days from now
       const futureEnd = new Date(futureStart.getTime() + 3600000);
-      await createTestMaintenance(org.id, {
+      await createTestMaintenance({
         title: "Future",
         status: "scheduled",
         scheduledStartAt: futureStart,
@@ -76,10 +72,9 @@ describe("Admin Maintenance API", () => {
     });
 
     test("paginates results", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
       for (let i = 0; i < 5; i++) {
-        await createTestMaintenance(org.id, { title: `Maintenance ${i}` });
+        await createTestMaintenance({ title: `Maintenance ${i}` });
       }
 
       const res = await app.request("/api/v1/admin/maintenance?limit=2&offset=0", {
@@ -98,8 +93,7 @@ describe("Admin Maintenance API", () => {
     });
 
     test("returns empty array when no maintenance exists", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/maintenance", {
         headers: authHeader(rawKey),
@@ -113,10 +107,9 @@ describe("Admin Maintenance API", () => {
 
   describe("GET /api/v1/admin/maintenance/:id", () => {
     test("returns maintenance by ID with components", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id, { name: "API Server" });
-      const maintenance = await createTestMaintenance(org.id, { title: "Server Maintenance" });
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent({ name: "API Server" });
+      const maintenance = await createTestMaintenance({ title: "Server Maintenance" });
       await createTestMaintenanceComponent(maintenance.id, component.id);
 
       const res = await app.request(`/api/v1/admin/maintenance/${maintenance.id}`, {
@@ -131,8 +124,7 @@ describe("Admin Maintenance API", () => {
     });
 
     test("returns 404 for non-existent maintenance", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/maintenance/00000000-0000-0000-0000-000000000000",
@@ -143,26 +135,12 @@ describe("Admin Maintenance API", () => {
 
       expect(res.status).toBe(404);
     });
-
-    test("returns 404 for maintenance from different organization", async () => {
-      const org1 = await createTestOrganization({ slug: "org-1" });
-      const org2 = await createTestOrganization({ slug: "org-2" });
-      const { rawKey } = await createTestApiKey(org1.id);
-      const maintenance = await createTestMaintenance(org2.id, { title: "Other Org Maintenance" });
-
-      const res = await app.request(`/api/v1/admin/maintenance/${maintenance.id}`, {
-        headers: authHeader(rawKey),
-      });
-
-      expect(res.status).toBe(404);
-    });
   });
 
   describe("POST /api/v1/admin/maintenance", () => {
     test("creates a new maintenance window", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
       const scheduledStartAt = new Date(Date.now() + 86400000); // Tomorrow
       const scheduledEndAt = new Date(scheduledStartAt.getTime() + 3600000); // 1 hour later
 
@@ -187,9 +165,8 @@ describe("Admin Maintenance API", () => {
     });
 
     test("creates maintenance with affected components", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id, { name: "API Server" });
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent({ name: "API Server" });
       const scheduledStartAt = new Date(Date.now() + 86400000);
       const scheduledEndAt = new Date(scheduledStartAt.getTime() + 3600000);
 
@@ -210,9 +187,8 @@ describe("Admin Maintenance API", () => {
     });
 
     test("creates maintenance with auto-start and auto-complete options", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
       const scheduledStartAt = new Date(Date.now() + 86400000);
       const scheduledEndAt = new Date(scheduledStartAt.getTime() + 3600000);
 
@@ -236,8 +212,7 @@ describe("Admin Maintenance API", () => {
     });
 
     test("returns 400 for missing required fields", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/maintenance", {
         method: "POST",
@@ -268,9 +243,8 @@ describe("Admin Maintenance API", () => {
 
   describe("PUT /api/v1/admin/maintenance/:id", () => {
     test("updates maintenance", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const maintenance = await createTestMaintenance(org.id, {
+      const { rawKey } = await createTestApiKey();
+      const maintenance = await createTestMaintenance({
         title: "Original Title",
         description: "Original description",
       });
@@ -291,8 +265,7 @@ describe("Admin Maintenance API", () => {
     });
 
     test("returns 404 for non-existent maintenance", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/maintenance/00000000-0000-0000-0000-000000000000",
@@ -307,9 +280,8 @@ describe("Admin Maintenance API", () => {
     });
 
     test("returns 400 when updating non-scheduled maintenance", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const maintenance = await createTestMaintenance(org.id, {
+      const { rawKey } = await createTestApiKey();
+      const maintenance = await createTestMaintenance({
         title: "In Progress",
         status: "in_progress",
       });
@@ -328,9 +300,8 @@ describe("Admin Maintenance API", () => {
 
   describe("PATCH /api/v1/admin/maintenance/:id/start", () => {
     test("starts maintenance early", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const maintenance = await createTestMaintenance(org.id, { status: "scheduled" });
+      const { rawKey } = await createTestApiKey();
+      const maintenance = await createTestMaintenance({ status: "scheduled" });
 
       const res = await app.request(`/api/v1/admin/maintenance/${maintenance.id}/start`, {
         method: "PATCH",
@@ -344,8 +315,7 @@ describe("Admin Maintenance API", () => {
     });
 
     test("returns 404 for non-existent maintenance", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/maintenance/00000000-0000-0000-0000-000000000000/start",
@@ -359,9 +329,8 @@ describe("Admin Maintenance API", () => {
     });
 
     test("returns 400 when starting non-scheduled maintenance", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const maintenance = await createTestMaintenance(org.id, { status: "in_progress" });
+      const { rawKey } = await createTestApiKey();
+      const maintenance = await createTestMaintenance({ status: "in_progress" });
 
       const res = await app.request(`/api/v1/admin/maintenance/${maintenance.id}/start`, {
         method: "PATCH",
@@ -374,9 +343,8 @@ describe("Admin Maintenance API", () => {
 
   describe("PATCH /api/v1/admin/maintenance/:id/complete", () => {
     test("completes maintenance", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const maintenance = await createTestMaintenance(org.id, { status: "in_progress" });
+      const { rawKey } = await createTestApiKey();
+      const maintenance = await createTestMaintenance({ status: "in_progress" });
 
       const res = await app.request(`/api/v1/admin/maintenance/${maintenance.id}/complete`, {
         method: "PATCH",
@@ -390,8 +358,7 @@ describe("Admin Maintenance API", () => {
     });
 
     test("returns 404 for non-existent maintenance", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/maintenance/00000000-0000-0000-0000-000000000000/complete",
@@ -405,9 +372,8 @@ describe("Admin Maintenance API", () => {
     });
 
     test("returns 400 when completing non-in-progress maintenance", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const maintenance = await createTestMaintenance(org.id, { status: "scheduled" });
+      const { rawKey } = await createTestApiKey();
+      const maintenance = await createTestMaintenance({ status: "scheduled" });
 
       const res = await app.request(`/api/v1/admin/maintenance/${maintenance.id}/complete`, {
         method: "PATCH",
@@ -420,9 +386,8 @@ describe("Admin Maintenance API", () => {
 
   describe("DELETE /api/v1/admin/maintenance/:id", () => {
     test("cancels scheduled maintenance", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const maintenance = await createTestMaintenance(org.id, { status: "scheduled" });
+      const { rawKey } = await createTestApiKey();
+      const maintenance = await createTestMaintenance({ status: "scheduled" });
 
       const res = await app.request(`/api/v1/admin/maintenance/${maintenance.id}`, {
         method: "DELETE",
@@ -435,8 +400,7 @@ describe("Admin Maintenance API", () => {
     });
 
     test("returns 404 for non-existent maintenance", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/maintenance/00000000-0000-0000-0000-000000000000",
@@ -450,9 +414,8 @@ describe("Admin Maintenance API", () => {
     });
 
     test("returns 400 when cancelling completed maintenance", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const maintenance = await createTestMaintenance(org.id, { status: "completed" });
+      const { rawKey } = await createTestApiKey();
+      const maintenance = await createTestMaintenance({ status: "completed" });
 
       const res = await app.request(`/api/v1/admin/maintenance/${maintenance.id}`, {
         method: "DELETE",

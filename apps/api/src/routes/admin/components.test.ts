@@ -2,7 +2,6 @@ import { describe, test, expect } from "bun:test";
 import {
   createTestApp,
   setupTestHooks,
-  createTestOrganization,
   createTestApiKey,
   createTestComponent,
   jsonAuthHeaders,
@@ -16,10 +15,9 @@ describe("Admin Components API", () => {
 
   describe("GET /api/v1/admin/components", () => {
     test("lists all components for organization", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      await createTestComponent(org.id, { name: "API Server" });
-      await createTestComponent(org.id, { name: "Database" });
+      const { rawKey } = await createTestApiKey();
+      await createTestComponent({ name: "API Server" });
+      await createTestComponent({ name: "Database" });
 
       const res = await app.request("/api/v1/admin/components", {
         headers: authHeader(rawKey),
@@ -33,10 +31,9 @@ describe("Admin Components API", () => {
     });
 
     test("filters components by status", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      await createTestComponent(org.id, { name: "Healthy", status: "operational" });
-      await createTestComponent(org.id, { name: "Degraded", status: "degraded" });
+      const { rawKey } = await createTestApiKey();
+      await createTestComponent({ name: "Healthy", status: "operational" });
+      await createTestComponent({ name: "Degraded", status: "degraded" });
 
       const res = await app.request("/api/v1/admin/components?status=degraded", {
         headers: authHeader(rawKey),
@@ -55,8 +52,7 @@ describe("Admin Components API", () => {
     });
 
     test("returns empty array when no components exist", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/components", {
         headers: authHeader(rawKey),
@@ -70,8 +66,7 @@ describe("Admin Components API", () => {
 
   describe("POST /api/v1/admin/components", () => {
     test("creates a new component", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/components", {
         method: "POST",
@@ -92,8 +87,7 @@ describe("Admin Components API", () => {
     });
 
     test("creates component with default status", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/components", {
         method: "POST",
@@ -109,8 +103,7 @@ describe("Admin Components API", () => {
     });
 
     test("returns 400 for invalid data", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/components", {
         method: "POST",
@@ -129,9 +122,8 @@ describe("Admin Components API", () => {
 
   describe("GET /api/v1/admin/components/:id", () => {
     test("returns component by ID", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id, { name: "My Component" });
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent({ name: "My Component" });
 
       const res = await app.request(`/api/v1/admin/components/${component.id}`, {
         headers: authHeader(rawKey),
@@ -144,8 +136,7 @@ describe("Admin Components API", () => {
     });
 
     test("returns 404 for non-existent component", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/components/00000000-0000-0000-0000-000000000000",
@@ -156,26 +147,12 @@ describe("Admin Components API", () => {
 
       expect(res.status).toBe(404);
     });
-
-    test("returns 404 for component from different organization", async () => {
-      const org1 = await createTestOrganization({ slug: "org-1" });
-      const org2 = await createTestOrganization({ slug: "org-2" });
-      const { rawKey } = await createTestApiKey(org1.id);
-      const component = await createTestComponent(org2.id);
-
-      const res = await app.request(`/api/v1/admin/components/${component.id}`, {
-        headers: authHeader(rawKey),
-      });
-
-      expect(res.status).toBe(404);
-    });
   });
 
   describe("PUT /api/v1/admin/components/:id", () => {
     test("updates component", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id, { name: "Original" });
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent({ name: "Original" });
 
       const res = await app.request(`/api/v1/admin/components/${component.id}`, {
         method: "PUT",
@@ -193,8 +170,7 @@ describe("Admin Components API", () => {
     });
 
     test("returns 404 for non-existent component", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/components/00000000-0000-0000-0000-000000000000",
@@ -211,9 +187,8 @@ describe("Admin Components API", () => {
 
   describe("PATCH /api/v1/admin/components/:id/status", () => {
     test("updates component status", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id, { status: "operational" });
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent({ status: "operational" });
 
       const res = await app.request(`/api/v1/admin/components/${component.id}/status`, {
         method: "PATCH",
@@ -227,9 +202,8 @@ describe("Admin Components API", () => {
     });
 
     test("returns 400 for invalid status", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
 
       const res = await app.request(`/api/v1/admin/components/${component.id}/status`, {
         method: "PATCH",
@@ -243,9 +217,8 @@ describe("Admin Components API", () => {
 
   describe("DELETE /api/v1/admin/components/:id", () => {
     test("deletes component", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const component = await createTestComponent(org.id);
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
 
       const res = await app.request(`/api/v1/admin/components/${component.id}`, {
         method: "DELETE",
@@ -264,8 +237,7 @@ describe("Admin Components API", () => {
     });
 
     test("returns 404 for non-existent component", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/components/00000000-0000-0000-0000-000000000000",

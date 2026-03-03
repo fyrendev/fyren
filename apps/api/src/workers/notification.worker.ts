@@ -2,7 +2,7 @@ import { Worker, Job } from "bullmq";
 import { bullmqRedis } from "../lib/redis";
 import { db, eq, sql } from "@fyrendev/db";
 import { notificationLogs, webhookEndpoints } from "@fyrendev/db";
-import { getEmailProviderForOrg } from "../lib/email";
+import { getEmailProvider } from "../lib/email";
 import { formatWebhook } from "../lib/webhooks";
 import {
   incidentCreatedTemplate,
@@ -27,7 +27,6 @@ export const notificationWorker = new Worker<NotificationJobData>(
       jobId: job.id,
       jobName: job.name,
       type: job.data.type,
-      organizationId: job.data.organizationId,
     });
 
     try {
@@ -42,7 +41,6 @@ export const notificationWorker = new Worker<NotificationJobData>(
       logger.workerError("NotificationWorker", `Error processing job ${job.id}`, error as Error, {
         jobId: job.id,
         type: job.data.type,
-        organizationId: job.data.organizationId,
       });
       throw error;
     }
@@ -61,7 +59,6 @@ async function processEmailJob(job: Job<NotificationJobData>): Promise<void> {
     unsubscribeToken,
     organizationName,
     organizationSlug,
-    organizationId,
     event,
     entityType,
     entityId,
@@ -162,8 +159,8 @@ async function processEmailJob(job: Job<NotificationJobData>): Promise<void> {
       throw new Error(`Unknown event type: ${event}`);
   }
 
-  // Send email using organization's configured provider
-  const provider = await getEmailProviderForOrg(organizationId);
+  // Send email using configured provider
+  const provider = await getEmailProvider();
   const result = await provider.send({
     to: email,
     subject: emailContent.subject,
@@ -173,7 +170,6 @@ async function processEmailJob(job: Job<NotificationJobData>): Promise<void> {
 
   // Log notification
   await db.insert(notificationLogs).values({
-    organizationId,
     type: "email",
     status: result.success ? "sent" : "failed",
     event,
@@ -196,7 +192,6 @@ async function processWebhookJob(job: Job<NotificationJobData>): Promise<void> {
     webhookType,
     webhookUrl,
     webhookSecret,
-    organizationId,
     organizationName,
     organizationSlug,
     event,
@@ -269,7 +264,6 @@ async function processWebhookJob(job: Job<NotificationJobData>): Promise<void> {
 
   // Log notification
   await db.insert(notificationLogs).values({
-    organizationId,
     type: "webhook",
     status: success ? "sent" : "failed",
     event,

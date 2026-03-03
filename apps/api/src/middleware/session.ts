@@ -1,8 +1,7 @@
 import { createMiddleware } from "hono/factory";
 import { auth, type Session } from "../lib/auth";
-import { db, userOrganizations, eq, and } from "@fyrendev/db";
-import { UnauthorizedError, ForbiddenError, BadRequestError, errorResponse } from "../lib/errors";
-import type { OrgRole } from "@fyrendev/db";
+import { UnauthorizedError, ForbiddenError, errorResponse } from "../lib/errors";
+import { db, eq, users, type OrgRole } from "@fyrendev/db";
 
 // Get session from request
 export async function getSession(headers: Headers): Promise<Session | null> {
@@ -26,54 +25,18 @@ export const requireSession = createMiddleware(async (c, next) => {
       throw new UnauthorizedError("Session required");
     }
 
+    // Fetch current role from DB (BetterAuth cookie cache may be stale)
+    const [dbUser] = await db
+      .select({ role: users.role })
+      .from(users)
+      .where(eq(users.id, session.user.id))
+      .limit(1);
+    const userWithRole = { ...session.user, role: dbUser?.role || null };
+
     // Attach session and user to context
     c.set("session", session);
-    c.set("user", session.user);
+    c.set("user", userWithRole);
     c.set("authMethod", "session");
-
-    await next();
-  } catch (error) {
-    return errorResponse(c, error);
-  }
-});
-
-// Middleware: Require org membership (must be used after requireSession or requireAuthOrApiKey)
-export const requireOrgMembership = createMiddleware(async (c, next) => {
-  try {
-    const user = c.get("user");
-    const authMethod = c.get("authMethod");
-
-    // API key auth already has org context set
-    if (authMethod === "api_key") {
-      await next();
-      return;
-    }
-
-    if (!user) {
-      throw new UnauthorizedError("Authentication required");
-    }
-
-    const orgId = c.req.header("X-Organization-Id");
-
-    if (!orgId) {
-      throw new BadRequestError("Organization ID required (use X-Organization-Id header)");
-    }
-
-    // Check user belongs to org
-    const [membership] = await db
-      .select()
-      .from(userOrganizations)
-      .where(
-        and(eq(userOrganizations.userId, user.id), eq(userOrganizations.organizationId, orgId))
-      )
-      .limit(1);
-
-    if (!membership) {
-      throw new ForbiddenError("Not a member of this organization");
-    }
-
-    c.set("membership", membership);
-    c.set("organizationId", orgId);
 
     await next();
   } catch (error) {
@@ -87,19 +50,19 @@ export function requireRole(...roles: OrgRole[]) {
     try {
       const authMethod = c.get("authMethod");
 
-      // API key auth bypasses role check (it's already scoped to the org)
+      // API key auth bypasses role check (it's already scoped to the instance)
       if (authMethod === "api_key") {
         await next();
         return;
       }
 
-      const membership = c.get("membership");
+      const user = c.get("user");
 
-      if (!membership) {
+      if (!user || !user.role) {
         throw new ForbiddenError("Organization membership required");
       }
 
-      if (!roles.includes(membership.role as OrgRole)) {
+      if (!roles.includes(user.role as OrgRole)) {
         throw new ForbiddenError(`Requires one of: ${roles.join(", ")}`);
       }
 

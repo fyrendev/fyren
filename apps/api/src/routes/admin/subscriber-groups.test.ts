@@ -2,7 +2,6 @@ import { describe, test, expect } from "bun:test";
 import {
   createTestApp,
   setupTestHooks,
-  createTestOrganization,
   createTestApiKey,
   createTestComponent,
   createTestSubscriberGroup,
@@ -18,10 +17,9 @@ describe("Admin Subscriber Groups API", () => {
 
   describe("GET /api/v1/admin/subscriber-groups", () => {
     test("lists all subscriber groups for organization", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      await createTestSubscriberGroup(org.id, { name: "Acme Corp" });
-      await createTestSubscriberGroup(org.id, { name: "Beta Inc" });
+      const { rawKey } = await createTestApiKey();
+      await createTestSubscriberGroup({ name: "Acme Corp" });
+      await createTestSubscriberGroup({ name: "Beta Inc" });
 
       const res = await app.request("/api/v1/admin/subscriber-groups", {
         headers: authHeader(rawKey),
@@ -36,11 +34,10 @@ describe("Admin Subscriber Groups API", () => {
     });
 
     test("includes member count for each group", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const group = await createTestSubscriberGroup(org.id, { name: "Acme Corp" });
-      await createTestSubscriber(org.id, { groupId: group.id });
-      await createTestSubscriber(org.id, { groupId: group.id });
+      const { rawKey } = await createTestApiKey();
+      const group = await createTestSubscriberGroup({ name: "Acme Corp" });
+      await createTestSubscriber({ groupId: group.id });
+      await createTestSubscriber({ groupId: group.id });
 
       const res = await app.request("/api/v1/admin/subscriber-groups", {
         headers: authHeader(rawKey),
@@ -53,8 +50,7 @@ describe("Admin Subscriber Groups API", () => {
     });
 
     test("returns empty array when no groups exist", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/subscriber-groups", {
         headers: authHeader(rawKey),
@@ -70,31 +66,12 @@ describe("Admin Subscriber Groups API", () => {
 
       expect(res.status).toBe(401);
     });
-
-    test("only returns groups for authenticated organization", async () => {
-      const org1 = await createTestOrganization({ slug: "org-1" });
-      const org2 = await createTestOrganization({ slug: "org-2" });
-      const { rawKey } = await createTestApiKey(org1.id);
-
-      await createTestSubscriberGroup(org1.id, { name: "Org1 Group" });
-      await createTestSubscriberGroup(org2.id, { name: "Org2 Group" });
-
-      const res = await app.request("/api/v1/admin/subscriber-groups", {
-        headers: authHeader(rawKey),
-      });
-
-      expect(res.status).toBe(200);
-      const data = await res.json();
-      expect(data.subscriberGroups).toHaveLength(1);
-      expect(data.subscriberGroups[0].name).toBe("Org1 Group");
-    });
   });
 
   describe("GET /api/v1/admin/subscriber-groups/:id", () => {
     test("returns subscriber group by ID", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const group = await createTestSubscriberGroup(org.id, {
+      const { rawKey } = await createTestApiKey();
+      const group = await createTestSubscriberGroup({
         name: "Acme Corp",
         description: "Acme Corporation customers",
       });
@@ -111,12 +88,11 @@ describe("Admin Subscriber Groups API", () => {
     });
 
     test("includes member count", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const group = await createTestSubscriberGroup(org.id, { name: "Acme Corp" });
-      await createTestSubscriber(org.id, { groupId: group.id });
-      await createTestSubscriber(org.id, { groupId: group.id });
-      await createTestSubscriber(org.id, { groupId: group.id });
+      const { rawKey } = await createTestApiKey();
+      const group = await createTestSubscriberGroup({ name: "Acme Corp" });
+      await createTestSubscriber({ groupId: group.id });
+      await createTestSubscriber({ groupId: group.id });
+      await createTestSubscriber({ groupId: group.id });
 
       const res = await app.request(`/api/v1/admin/subscriber-groups/${group.id}`, {
         headers: authHeader(rawKey),
@@ -128,8 +104,7 @@ describe("Admin Subscriber Groups API", () => {
     });
 
     test("returns 404 for non-existent group", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/subscriber-groups/00000000-0000-0000-0000-000000000000",
@@ -140,25 +115,11 @@ describe("Admin Subscriber Groups API", () => {
 
       expect(res.status).toBe(404);
     });
-
-    test("returns 403 for group from different organization", async () => {
-      const org1 = await createTestOrganization({ slug: "org-1" });
-      const org2 = await createTestOrganization({ slug: "org-2" });
-      const { rawKey } = await createTestApiKey(org1.id);
-      const group = await createTestSubscriberGroup(org2.id, { name: "Other Org Group" });
-
-      const res = await app.request(`/api/v1/admin/subscriber-groups/${group.id}`, {
-        headers: authHeader(rawKey),
-      });
-
-      expect(res.status).toBe(403);
-    });
   });
 
   describe("POST /api/v1/admin/subscriber-groups", () => {
     test("creates a new subscriber group", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/subscriber-groups", {
         method: "POST",
@@ -178,10 +139,9 @@ describe("Admin Subscriber Groups API", () => {
     });
 
     test("creates group with component filter", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const comp1 = await createTestComponent(org.id, { name: "API" });
-      const comp2 = await createTestComponent(org.id, { name: "Database" });
+      const { rawKey } = await createTestApiKey();
+      const comp1 = await createTestComponent({ name: "API" });
+      const comp2 = await createTestComponent({ name: "Database" });
 
       const res = await app.request("/api/v1/admin/subscriber-groups", {
         method: "POST",
@@ -200,8 +160,7 @@ describe("Admin Subscriber Groups API", () => {
     });
 
     test("creates group with null componentIds (subscribed to all)", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/subscriber-groups", {
         method: "POST",
@@ -218,8 +177,7 @@ describe("Admin Subscriber Groups API", () => {
     });
 
     test("returns 400 for missing name", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/subscriber-groups", {
         method: "POST",
@@ -233,8 +191,7 @@ describe("Admin Subscriber Groups API", () => {
     });
 
     test("returns 400 for empty name", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/subscriber-groups", {
         method: "POST",
@@ -262,9 +219,8 @@ describe("Admin Subscriber Groups API", () => {
 
   describe("PUT /api/v1/admin/subscriber-groups/:id", () => {
     test("updates subscriber group name", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const group = await createTestSubscriberGroup(org.id, { name: "Old Name" });
+      const { rawKey } = await createTestApiKey();
+      const group = await createTestSubscriberGroup({ name: "Old Name" });
 
       const res = await app.request(`/api/v1/admin/subscriber-groups/${group.id}`, {
         method: "PUT",
@@ -280,9 +236,8 @@ describe("Admin Subscriber Groups API", () => {
     });
 
     test("updates subscriber group description", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const group = await createTestSubscriberGroup(org.id, {
+      const { rawKey } = await createTestApiKey();
+      const group = await createTestSubscriberGroup({
         name: "Test Group",
         description: "Old description",
       });
@@ -301,10 +256,9 @@ describe("Admin Subscriber Groups API", () => {
     });
 
     test("updates subscriber group componentIds", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const comp = await createTestComponent(org.id, { name: "API" });
-      const group = await createTestSubscriberGroup(org.id, {
+      const { rawKey } = await createTestApiKey();
+      const comp = await createTestComponent({ name: "API" });
+      const group = await createTestSubscriberGroup({
         name: "Test Group",
         componentIds: null,
       });
@@ -323,10 +277,9 @@ describe("Admin Subscriber Groups API", () => {
     });
 
     test("clears componentIds to subscribe to all", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const comp = await createTestComponent(org.id, { name: "API" });
-      const group = await createTestSubscriberGroup(org.id, {
+      const { rawKey } = await createTestApiKey();
+      const comp = await createTestComponent({ name: "API" });
+      const group = await createTestSubscriberGroup({
         name: "Test Group",
         componentIds: [comp.id],
       });
@@ -345,8 +298,7 @@ describe("Admin Subscriber Groups API", () => {
     });
 
     test("returns 404 for non-existent group", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/subscriber-groups/00000000-0000-0000-0000-000000000000",
@@ -359,28 +311,12 @@ describe("Admin Subscriber Groups API", () => {
 
       expect(res.status).toBe(404);
     });
-
-    test("returns 403 for group from different organization", async () => {
-      const org1 = await createTestOrganization({ slug: "org-1" });
-      const org2 = await createTestOrganization({ slug: "org-2" });
-      const { rawKey } = await createTestApiKey(org1.id);
-      const group = await createTestSubscriberGroup(org2.id, { name: "Other Org Group" });
-
-      const res = await app.request(`/api/v1/admin/subscriber-groups/${group.id}`, {
-        method: "PUT",
-        headers: jsonAuthHeaders(rawKey),
-        body: JSON.stringify({ name: "Hijacked" }),
-      });
-
-      expect(res.status).toBe(403);
-    });
   });
 
   describe("DELETE /api/v1/admin/subscriber-groups/:id", () => {
     test("deletes empty subscriber group", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const group = await createTestSubscriberGroup(org.id, { name: "Empty Group" });
+      const { rawKey } = await createTestApiKey();
+      const group = await createTestSubscriberGroup({ name: "Empty Group" });
 
       const res = await app.request(`/api/v1/admin/subscriber-groups/${group.id}`, {
         method: "DELETE",
@@ -399,10 +335,9 @@ describe("Admin Subscriber Groups API", () => {
     });
 
     test("returns 400 when group has subscribers", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const group = await createTestSubscriberGroup(org.id, { name: "Non-empty Group" });
-      await createTestSubscriber(org.id, { groupId: group.id });
+      const { rawKey } = await createTestApiKey();
+      const group = await createTestSubscriberGroup({ name: "Non-empty Group" });
+      await createTestSubscriber({ groupId: group.id });
 
       const res = await app.request(`/api/v1/admin/subscriber-groups/${group.id}`, {
         method: "DELETE",
@@ -415,8 +350,7 @@ describe("Admin Subscriber Groups API", () => {
     });
 
     test("returns 404 for non-existent group", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/subscriber-groups/00000000-0000-0000-0000-000000000000",
@@ -428,29 +362,14 @@ describe("Admin Subscriber Groups API", () => {
 
       expect(res.status).toBe(404);
     });
-
-    test("returns 403 for group from different organization", async () => {
-      const org1 = await createTestOrganization({ slug: "org-1" });
-      const org2 = await createTestOrganization({ slug: "org-2" });
-      const { rawKey } = await createTestApiKey(org1.id);
-      const group = await createTestSubscriberGroup(org2.id, { name: "Other Org Group" });
-
-      const res = await app.request(`/api/v1/admin/subscriber-groups/${group.id}`, {
-        method: "DELETE",
-        headers: authHeader(rawKey),
-      });
-
-      expect(res.status).toBe(403);
-    });
   });
 
   describe("GET /api/v1/admin/subscriber-groups/:id/members", () => {
     test("returns members of a subscriber group", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const group = await createTestSubscriberGroup(org.id, { name: "Acme Corp" });
-      await createTestSubscriber(org.id, { email: "alice@acme.com", groupId: group.id });
-      await createTestSubscriber(org.id, { email: "bob@acme.com", groupId: group.id });
+      const { rawKey } = await createTestApiKey();
+      const group = await createTestSubscriberGroup({ name: "Acme Corp" });
+      await createTestSubscriber({ email: "alice@acme.com", groupId: group.id });
+      await createTestSubscriber({ email: "bob@acme.com", groupId: group.id });
 
       const res = await app.request(`/api/v1/admin/subscriber-groups/${group.id}/members`, {
         headers: authHeader(rawKey),
@@ -465,9 +384,8 @@ describe("Admin Subscriber Groups API", () => {
     });
 
     test("returns empty array for group with no members", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const group = await createTestSubscriberGroup(org.id, { name: "Empty Group" });
+      const { rawKey } = await createTestApiKey();
+      const group = await createTestSubscriberGroup({ name: "Empty Group" });
 
       const res = await app.request(`/api/v1/admin/subscriber-groups/${group.id}/members`, {
         headers: authHeader(rawKey),
@@ -479,10 +397,9 @@ describe("Admin Subscriber Groups API", () => {
     });
 
     test("returns subscriber details", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const group = await createTestSubscriberGroup(org.id, { name: "Acme Corp" });
-      await createTestSubscriber(org.id, {
+      const { rawKey } = await createTestApiKey();
+      const group = await createTestSubscriberGroup({ name: "Acme Corp" });
+      await createTestSubscriber({
         email: "alice@acme.com",
         groupId: group.id,
         verified: true,
@@ -504,8 +421,7 @@ describe("Admin Subscriber Groups API", () => {
     });
 
     test("returns 404 for non-existent group", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/subscriber-groups/00000000-0000-0000-0000-000000000000/members",
@@ -515,19 +431,6 @@ describe("Admin Subscriber Groups API", () => {
       );
 
       expect(res.status).toBe(404);
-    });
-
-    test("returns 403 for group from different organization", async () => {
-      const org1 = await createTestOrganization({ slug: "org-1" });
-      const org2 = await createTestOrganization({ slug: "org-2" });
-      const { rawKey } = await createTestApiKey(org1.id);
-      const group = await createTestSubscriberGroup(org2.id, { name: "Other Org Group" });
-
-      const res = await app.request(`/api/v1/admin/subscriber-groups/${group.id}/members`, {
-        headers: authHeader(rawKey),
-      });
-
-      expect(res.status).toBe(403);
     });
   });
 });

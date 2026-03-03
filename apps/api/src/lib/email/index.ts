@@ -3,32 +3,31 @@ import { SESProvider, type SESConfig } from "./providers/ses";
 import { SendGridProvider, type SendGridConfig } from "./providers/sendgrid";
 import { SMTPProvider, type SMTPConfig } from "./providers/smtp";
 import { ConsoleProvider } from "./providers/console";
-import { db } from "../db";
-import { organizations, eq } from "@fyrendev/db";
+import { getOrganization } from "../organization";
 import { decryptJson, isEncryptionAvailable } from "../encryption";
 import { logger } from "../logging";
 
-// Cache of email providers by organization ID
-const providerCache = new Map<string, { provider: EmailProvider; createdAt: number }>();
+// Cached email provider (singleton — one org per instance)
+let providerCache: { provider: EmailProvider; createdAt: number } | null = null;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
- * Get an email provider configured for a specific organization.
+ * Get the email provider configured for this Fyren instance.
  * Reads the organization's email configuration from the database,
  * decrypts credentials, and creates the appropriate provider.
  */
-export async function getEmailProviderForOrg(orgId: string): Promise<EmailProvider> {
+export async function getEmailProvider(): Promise<EmailProvider> {
   // Check cache first
-  const cached = providerCache.get(orgId);
-  if (cached && Date.now() - cached.createdAt < CACHE_TTL_MS) {
-    return cached.provider;
+  if (providerCache && Date.now() - providerCache.createdAt < CACHE_TTL_MS) {
+    return providerCache.provider;
   }
 
   // Fetch organization from database
-  const [org] = await db.select().from(organizations).where(eq(organizations.id, orgId)).limit(1);
-
-  if (!org) {
-    logger.warn(`Organization ${orgId} not found, using console provider`, { orgId });
+  let org;
+  try {
+    org = await getOrganization();
+  } catch {
+    logger.warn("No organization configured, using console email provider");
     return new ConsoleProvider();
   }
 
@@ -40,14 +39,12 @@ export async function getEmailProviderForOrg(orgId: string): Promise<EmailProvid
   switch (providerType) {
     case "smtp": {
       if (!org.emailConfig) {
-        logger.warn(`SMTP config missing for org ${orgId}, using console provider`, { orgId });
+        logger.warn("SMTP config missing, using console provider");
         provider = new ConsoleProvider(fromAddress);
         break;
       }
       if (!isEncryptionAvailable()) {
-        logger.error(`Cannot decrypt SMTP config for org ${orgId}, ENCRYPTION_KEY not set`, {
-          orgId,
-        });
+        logger.error("Cannot decrypt SMTP config, ENCRYPTION_KEY not set");
         provider = new ConsoleProvider(fromAddress);
         break;
       }
@@ -57,14 +54,12 @@ export async function getEmailProviderForOrg(orgId: string): Promise<EmailProvid
     }
     case "sendgrid": {
       if (!org.emailConfig) {
-        logger.warn(`SendGrid config missing for org ${orgId}, using console provider`, { orgId });
+        logger.warn("SendGrid config missing, using console provider");
         provider = new ConsoleProvider(fromAddress);
         break;
       }
       if (!isEncryptionAvailable()) {
-        logger.error(`Cannot decrypt SendGrid config for org ${orgId}, ENCRYPTION_KEY not set`, {
-          orgId,
-        });
+        logger.error("Cannot decrypt SendGrid config, ENCRYPTION_KEY not set");
         provider = new ConsoleProvider(fromAddress);
         break;
       }
@@ -74,14 +69,12 @@ export async function getEmailProviderForOrg(orgId: string): Promise<EmailProvid
     }
     case "ses": {
       if (!org.emailConfig) {
-        logger.warn(`SES config missing for org ${orgId}, using console provider`, { orgId });
+        logger.warn("SES config missing, using console provider");
         provider = new ConsoleProvider(fromAddress);
         break;
       }
       if (!isEncryptionAvailable()) {
-        logger.error(`Cannot decrypt SES config for org ${orgId}, ENCRYPTION_KEY not set`, {
-          orgId,
-        });
+        logger.error("Cannot decrypt SES config, ENCRYPTION_KEY not set");
         provider = new ConsoleProvider(fromAddress);
         break;
       }
@@ -95,24 +88,17 @@ export async function getEmailProviderForOrg(orgId: string): Promise<EmailProvid
   }
 
   // Cache the provider
-  providerCache.set(orgId, { provider, createdAt: Date.now() });
+  providerCache = { provider, createdAt: Date.now() };
 
   return provider;
 }
 
 /**
- * Clear the cached provider for an organization.
+ * Clear the cached provider.
  * Call this when organization email settings are updated.
  */
-export function clearProviderCache(orgId: string): void {
-  providerCache.delete(orgId);
-}
-
-/**
- * Clear all cached providers.
- */
-export function clearAllProviderCaches(): void {
-  providerCache.clear();
+export function clearProviderCache(): void {
+  providerCache = null;
 }
 
 export * from "./types";

@@ -1,7 +1,8 @@
 import { Hono } from "hono";
-import { db, eq, and, asc, organizations, components } from "@fyrendev/db";
+import { db, eq, components } from "@fyrendev/db";
 import type { ComponentStatus } from "@fyrendev/db";
-import { errorResponse, NotFoundError } from "../../lib/errors";
+import { errorResponse } from "../../lib/errors";
+import { getOrganization } from "../../lib/organization";
 import { widgetCorsHeaders, cacheHeaders } from "../../middleware/security";
 import { badgeRateLimit } from "../../middleware/rateLimit";
 import { env } from "../../env";
@@ -16,17 +17,6 @@ const STATUS_COLORS = {
   major_outage: { color: "#ef4444", label: "Major Outage" },
   maintenance: { color: "#3b82f6", label: "Maintenance" },
 } as const;
-
-// Helper to get the organization
-async function getOrganization() {
-  const [org] = await db
-    .select()
-    .from(organizations)
-    .orderBy(asc(organizations.createdAt))
-    .limit(1);
-  if (!org) throw new NotFoundError("No organization configured");
-  return org;
-}
 
 // Calculate overall status from component statuses
 function calculateOverallStatus(statuses: ComponentStatus[]): {
@@ -117,16 +107,14 @@ badgeRoutes.get("/badge.svg", async (c) => {
     const style = (c.req.query("style") as "flat" | "flat-square" | "plastic") || "flat";
     const label = c.req.query("label") || "status";
 
-    const org = await getOrganization();
-
     // Get all public components
-    const orgComponents = await db
+    const publicComps = await db
       .select({ status: components.status })
       .from(components)
-      .where(and(eq(components.organizationId, org.id), eq(components.isPublic, true)));
+      .where(eq(components.isPublic, true));
 
     // Calculate overall status
-    const statuses = orgComponents.map((c) => c.status as ComponentStatus);
+    const statuses = publicComps.map((c) => c.status as ComponentStatus);
     const overall = calculateOverallStatus(statuses);
 
     const svg = generateBadgeSvg(label, overall.label, overall.color, style);
@@ -155,13 +143,13 @@ badgeRoutes.get("/badge.json", async (c) => {
     const org = await getOrganization();
 
     // Get all public components
-    const orgComponents = await db
+    const publicComps = await db
       .select({ status: components.status })
       .from(components)
-      .where(and(eq(components.organizationId, org.id), eq(components.isPublic, true)));
+      .where(eq(components.isPublic, true));
 
     // Calculate overall status
-    const statuses = orgComponents.map((c) => c.status as ComponentStatus);
+    const statuses = publicComps.map((c) => c.status as ComponentStatus);
     const overall = calculateOverallStatus(statuses);
 
     return c.json({

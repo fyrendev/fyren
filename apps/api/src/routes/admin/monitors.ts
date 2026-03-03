@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { db, monitors, components, monitorResults, eq, and, desc } from "@fyrendev/db";
-import { NotFoundError, ValidationError, ForbiddenError, errorResponse } from "../../lib/errors";
+import { db, monitors, components, monitorResults, eq, desc } from "@fyrendev/db";
+import { NotFoundError, ValidationError, errorResponse } from "../../lib/errors";
 import { scheduleMonitor, unscheduleMonitor, rescheduleMonitor } from "../../lib/queue";
 import { executeCheck } from "../../lib/checkers";
 import { parseNatsUrl } from "../../lib/checkers/nats";
@@ -44,22 +44,9 @@ const updateMonitorSchema = z.object({
 // GET /api/v1/admin/monitors - List monitors
 adminMonitors.get("/", async (c) => {
   try {
-    const orgId = c.get("organizationId")!;
     const componentId = c.req.query("componentId");
     const type = c.req.query("type") as "http" | "tcp" | "ssl_expiry" | "nats" | undefined;
     const isActive = c.req.query("isActive");
-
-    // Get all components for this organization to filter monitors
-    const orgComponents = await db
-      .select({ id: components.id })
-      .from(components)
-      .where(eq(components.organizationId, orgId));
-
-    const componentIds = orgComponents.map((c) => c.id);
-
-    if (componentIds.length === 0) {
-      return c.json({ monitors: [] });
-    }
 
     // Build query with joins
     const query = db
@@ -71,8 +58,7 @@ adminMonitors.get("/", async (c) => {
         },
       })
       .from(monitors)
-      .innerJoin(components, eq(monitors.componentId, components.id))
-      .where(eq(components.organizationId, orgId));
+      .innerJoin(components, eq(monitors.componentId, components.id));
 
     // Apply filters
     const allMonitors = await query.orderBy(desc(monitors.createdAt));
@@ -120,22 +106,19 @@ adminMonitors.get("/", async (c) => {
 // POST /api/v1/admin/monitors - Create monitor
 adminMonitors.post("/", async (c) => {
   try {
-    const orgId = c.get("organizationId")!;
     const body = await c.req.json();
 
     const validatedData = createMonitorSchema.parse(body);
 
-    // Verify component belongs to the organization
+    // Verify component exists
     const [component] = await db
       .select()
       .from(components)
-      .where(
-        and(eq(components.id, validatedData.componentId), eq(components.organizationId, orgId))
-      )
+      .where(eq(components.id, validatedData.componentId))
       .limit(1);
 
     if (!component) {
-      throw new NotFoundError("Component not found or does not belong to your organization");
+      throw new NotFoundError("Component not found");
     }
 
     // Type-specific validation
@@ -306,7 +289,6 @@ adminMonitors.post("/test", async (c) => {
 // GET /api/v1/admin/monitors/:id - Get monitor with recent results
 adminMonitors.get("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId")!;
     const monitorId = c.req.param("id");
 
     // Get monitor with component info
@@ -320,7 +302,7 @@ adminMonitors.get("/:id", async (c) => {
       })
       .from(monitors)
       .innerJoin(components, eq(monitors.componentId, components.id))
-      .where(and(eq(monitors.id, monitorId), eq(components.organizationId, orgId)))
+      .where(eq(monitors.id, monitorId))
       .limit(1);
 
     const firstResult = result[0];
@@ -353,33 +335,21 @@ adminMonitors.get("/:id", async (c) => {
 // PUT /api/v1/admin/monitors/:id - Update monitor
 adminMonitors.put("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId")!;
     const monitorId = c.req.param("id");
     const body = await c.req.json();
 
     const validatedData = updateMonitorSchema.parse(body);
 
-    // Verify monitor exists and belongs to org
-    const existingResult = await db
-      .select({
-        monitor: monitors,
-        organizationId: components.organizationId,
-      })
+    // Verify monitor exists
+    const [existingMonitor] = await db
+      .select()
       .from(monitors)
-      .innerJoin(components, eq(monitors.componentId, components.id))
       .where(eq(monitors.id, monitorId))
       .limit(1);
 
-    const existing = existingResult[0];
-    if (!existing) {
+    if (!existingMonitor) {
       throw new NotFoundError("Monitor not found");
     }
-
-    if (existing.organizationId !== orgId) {
-      throw new ForbiddenError("Monitor does not belong to your organization");
-    }
-
-    const existingMonitor = existing.monitor;
 
     // Type-specific validation
     if (validatedData.type === "http" && validatedData.url) {
@@ -454,27 +424,13 @@ adminMonitors.put("/:id", async (c) => {
 // DELETE /api/v1/admin/monitors/:id - Delete monitor
 adminMonitors.delete("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId")!;
     const monitorId = c.req.param("id");
 
-    // Verify monitor exists and belongs to org
-    const existingResult = await db
-      .select({
-        monitor: monitors,
-        organizationId: components.organizationId,
-      })
-      .from(monitors)
-      .innerJoin(components, eq(monitors.componentId, components.id))
-      .where(eq(monitors.id, monitorId))
-      .limit(1);
+    // Verify monitor exists
+    const [existing] = await db.select().from(monitors).where(eq(monitors.id, monitorId)).limit(1);
 
-    const existing = existingResult[0];
     if (!existing) {
       throw new NotFoundError("Monitor not found");
-    }
-
-    if (existing.organizationId !== orgId) {
-      throw new ForbiddenError("Monitor does not belong to your organization");
     }
 
     // Remove from schedule
@@ -492,30 +448,16 @@ adminMonitors.delete("/:id", async (c) => {
 // PATCH /api/v1/admin/monitors/:id/toggle - Toggle monitor active state
 adminMonitors.patch("/:id/toggle", async (c) => {
   try {
-    const orgId = c.get("organizationId")!;
     const monitorId = c.req.param("id");
 
-    // Verify monitor exists and belongs to org
-    const existingResult = await db
-      .select({
-        monitor: monitors,
-        organizationId: components.organizationId,
-      })
-      .from(monitors)
-      .innerJoin(components, eq(monitors.componentId, components.id))
-      .where(eq(monitors.id, monitorId))
-      .limit(1);
+    // Verify monitor exists
+    const [existing] = await db.select().from(monitors).where(eq(monitors.id, monitorId)).limit(1);
 
-    const existing = existingResult[0];
     if (!existing) {
       throw new NotFoundError("Monitor not found");
     }
 
-    if (existing.organizationId !== orgId) {
-      throw new ForbiddenError("Monitor does not belong to your organization");
-    }
-
-    const newIsActive = !existing.monitor.isActive;
+    const newIsActive = !existing.isActive;
 
     // Update the monitor
     const [updatedMonitor] = await db
@@ -543,33 +485,17 @@ adminMonitors.patch("/:id/toggle", async (c) => {
 // POST /api/v1/admin/monitors/:id/check - Trigger immediate check
 adminMonitors.post("/:id/check", async (c) => {
   try {
-    const orgId = c.get("organizationId")!;
     const monitorId = c.req.param("id");
 
-    // Verify monitor exists and belongs to org
-    const existingResult = await db
-      .select({
-        monitor: monitors,
-        organizationId: components.organizationId,
-      })
-      .from(monitors)
-      .innerJoin(components, eq(monitors.componentId, components.id))
-      .where(eq(monitors.id, monitorId))
-      .limit(1);
+    // Verify monitor exists
+    const [existing] = await db.select().from(monitors).where(eq(monitors.id, monitorId)).limit(1);
 
-    const existing = existingResult[0];
     if (!existing) {
       throw new NotFoundError("Monitor not found");
     }
 
-    if (existing.organizationId !== orgId) {
-      throw new ForbiddenError("Monitor does not belong to your organization");
-    }
-
-    const monitor = existing.monitor;
-
     // Execute check immediately
-    const result = await executeCheck(monitor);
+    const result = await executeCheck(existing);
 
     // Store the result
     await storeCheckResult(monitorId, result);

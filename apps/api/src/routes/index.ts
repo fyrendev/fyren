@@ -59,17 +59,22 @@ export function setupRoutes(app: Hono) {
   // Admin user routes (session only)
   app.route("/api/v1/admin", adminUsers);
 
-  // Admin organization routes
+  // Admin organization route (single-tenant: one org per instance)
   // Use optional auth for POST (no auth needed), required auth for GET/PUT
-  app.use("/api/v1/admin/organizations", optionalAuthMiddleware);
-  app.use("/api/v1/admin/organizations/*", optionalAuthMiddleware);
-  app.route("/api/v1/admin/organizations", adminOrganizations);
+  app.use("/api/v1/admin/organization", optionalAuthMiddleware);
+  app.use("/api/v1/admin/organization/*", optionalAuthMiddleware);
+  app.route("/api/v1/admin/organization", adminOrganizations);
 
-  // Admin members routes (under organizations)
-  app.route("/api/v1/admin/organizations", adminMembers);
+  // Admin members routes
+  app.use("/api/v1/admin/members", authMiddleware);
+  app.use("/api/v1/admin/members/*", authMiddleware);
+  app.use("/api/v1/admin/leave", authMiddleware);
+  app.route("/api/v1/admin", adminMembers);
 
-  // Admin invites routes (under organizations)
-  app.route("/api/v1/admin/organizations", adminInvites);
+  // Admin invites routes
+  app.use("/api/v1/admin/invites", authMiddleware);
+  app.use("/api/v1/admin/invites/*", authMiddleware);
+  app.route("/api/v1/admin", adminInvites);
 
   // Protected component routes
   app.use("/api/v1/admin/components", authMiddleware);

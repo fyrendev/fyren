@@ -17,10 +17,10 @@ import {
   monitorResults,
   monitors,
   or,
-  organizations,
 } from "@fyrendev/db";
 import { Hono } from "hono";
 import { errorResponse, NotFoundError } from "../../lib/errors";
+import { getOrganization } from "../../lib/organization";
 import {
   cacheComponentStatus,
   getCachedComponentStatus,
@@ -30,20 +30,9 @@ import { calculateUptime, getOverallStatus } from "../../services/monitor.servic
 
 export const publicStatus = new Hono();
 
-// Helper to get the organization
-async function getOrganization() {
-  const [org] = await db
-    .select()
-    .from(organizations)
-    .orderBy(asc(organizations.createdAt))
-    .limit(1);
-  if (!org) throw new NotFoundError("No organization configured");
-  return org;
-}
-
-// Helper to get public components for an org
-async function getOrgComponents(orgId: string): Promise<ComponentWithStatus[]> {
-  const orgComponents = await db
+// Helper to get public components
+async function getPublicComponents(): Promise<ComponentWithStatus[]> {
+  const publicComponents = await db
     .select({
       id: components.id,
       name: components.name,
@@ -53,17 +42,17 @@ async function getOrgComponents(orgId: string): Promise<ComponentWithStatus[]> {
       updatedAt: components.updatedAt,
     })
     .from(components)
-    .where(and(eq(components.organizationId, orgId), eq(components.isPublic, true)))
+    .where(eq(components.isPublic, true))
     .orderBy(asc(components.displayOrder));
 
-  return orgComponents.map((comp) => ({
+  return publicComponents.map((comp) => ({
     ...comp,
     status: comp.status as ComponentStatus,
   }));
 }
 
-// Helper to get active incidents for an org
-async function getActiveIncidents(orgId: string) {
+// Helper to get active incidents
+async function getActiveIncidents() {
   const activeIncidents = await db
     .select({
       id: incidents.id,
@@ -76,13 +65,10 @@ async function getActiveIncidents(orgId: string) {
     })
     .from(incidents)
     .where(
-      and(
-        eq(incidents.organizationId, orgId),
-        or(
-          eq(incidents.status, "investigating"),
-          eq(incidents.status, "identified"),
-          eq(incidents.status, "monitoring")
-        )
+      or(
+        eq(incidents.status, "investigating"),
+        eq(incidents.status, "identified"),
+        eq(incidents.status, "monitoring")
       )
     )
     .orderBy(desc(incidents.startedAt));
@@ -129,7 +115,7 @@ async function getActiveIncidents(orgId: string) {
 }
 
 // Helper to get scheduled/in-progress maintenance
-async function getUpcomingMaintenance(orgId: string) {
+async function getUpcomingMaintenance() {
   const upcomingMaintenance = await db
     .select({
       id: maintenances.id,
@@ -141,12 +127,7 @@ async function getUpcomingMaintenance(orgId: string) {
       startedAt: maintenances.startedAt,
     })
     .from(maintenances)
-    .where(
-      and(
-        eq(maintenances.organizationId, orgId),
-        or(eq(maintenances.status, "scheduled"), eq(maintenances.status, "in_progress"))
-      )
-    )
+    .where(or(eq(maintenances.status, "scheduled"), eq(maintenances.status, "in_progress")))
     .orderBy(asc(maintenances.scheduledStartAt));
 
   // Get affected components for each maintenance
@@ -186,7 +167,7 @@ publicStatus.get("/", async (c) => {
     let componentList = await getCachedComponentStatus(org.slug);
 
     if (!componentList) {
-      componentList = await getOrgComponents(org.id);
+      componentList = await getPublicComponents();
       await cacheComponentStatus(org.slug, componentList);
     }
 
@@ -196,8 +177,8 @@ publicStatus.get("/", async (c) => {
 
     // Get active incidents and scheduled maintenance
     const [activeIncidents, scheduledMaintenance] = await Promise.all([
-      getActiveIncidents(org.id),
-      getUpcomingMaintenance(org.id),
+      getActiveIncidents(),
+      getUpcomingMaintenance(),
     ]);
 
     return c.json({
@@ -241,7 +222,7 @@ publicStatus.get("/components", async (c) => {
     let componentList = await getCachedComponentStatus(org.slug);
 
     if (!componentList) {
-      componentList = await getOrgComponents(org.id);
+      componentList = await getPublicComponents();
       await cacheComponentStatus(org.slug, componentList);
     }
 
@@ -263,23 +244,21 @@ publicStatus.get("/components", async (c) => {
 // GET /api/v1/status/uptime - Uptime percentages
 publicStatus.get("/uptime", async (c) => {
   try {
-    const org = await getOrganization();
-
     // Get all public components
-    const orgComponents = await db
+    const publicComps = await db
       .select({
         id: components.id,
         name: components.name,
       })
       .from(components)
-      .where(and(eq(components.organizationId, org.id), eq(components.isPublic, true)))
+      .where(eq(components.isPublic, true))
       .orderBy(asc(components.displayOrder));
 
     // Calculate uptime for each component
     const periods: Array<"24h" | "7d" | "30d" | "90d"> = ["24h", "7d", "30d", "90d"];
 
     const componentsWithUptime = await Promise.all(
-      orgComponents.map(async (comp) => {
+      publicComps.map(async (comp) => {
         const uptime: Record<string, number> = {};
 
         for (const period of periods) {
@@ -340,16 +319,14 @@ publicStatus.get("/uptime/:componentId/history", async (c) => {
     const daysParam = c.req.query("days");
     const days = daysParam ? Math.min(parseInt(daysParam, 10), 90) : 90;
 
-    const org = await getOrganization();
-
-    // Verify component belongs to org
+    // Verify component exists
     const [component] = await db
       .select({
         id: components.id,
         name: components.name,
       })
       .from(components)
-      .where(and(eq(components.id, componentId), eq(components.organizationId, org.id)))
+      .where(eq(components.id, componentId))
       .limit(1);
 
     if (!component) {
@@ -454,10 +431,8 @@ publicStatus.get("/incidents", async (c) => {
     const limit = Math.min(parseInt(limitParam || "10", 10), 50);
     const offset = parseInt(offsetParam || "0", 10);
 
-    const org = await getOrganization();
-
     // Build where clause
-    const whereConditions = [eq(incidents.organizationId, org.id)];
+    const whereConditions = [];
 
     if (statusFilter && statusFilter !== "all") {
       const validStatuses = ["investigating", "identified", "monitoring", "resolved"];
@@ -468,11 +443,10 @@ publicStatus.get("/incidents", async (c) => {
       }
     }
 
+    const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
+
     // Get total count
-    const countResult = await db
-      .select({ total: count() })
-      .from(incidents)
-      .where(and(...whereConditions));
+    const countResult = await db.select({ total: count() }).from(incidents).where(whereClause);
     const totalCount = countResult[0]?.total ?? 0;
 
     // Get incidents
@@ -488,7 +462,7 @@ publicStatus.get("/incidents", async (c) => {
         updatedAt: incidents.updatedAt,
       })
       .from(incidents)
-      .where(and(...whereConditions))
+      .where(whereClause)
       .orderBy(desc(incidents.startedAt))
       .limit(limit)
       .offset(offset);
@@ -555,8 +529,6 @@ publicStatus.get("/incidents/:id", async (c) => {
   try {
     const incidentId = c.req.param("id");
 
-    const org = await getOrganization();
-
     // Get incident
     const [incident] = await db
       .select({
@@ -570,7 +542,7 @@ publicStatus.get("/incidents/:id", async (c) => {
         updatedAt: incidents.updatedAt,
       })
       .from(incidents)
-      .where(and(eq(incidents.id, incidentId), eq(incidents.organizationId, org.id)))
+      .where(eq(incidents.id, incidentId))
       .limit(1);
 
     if (!incident) {
@@ -626,9 +598,7 @@ publicStatus.get("/incidents/:id", async (c) => {
 // GET /api/v1/status/maintenance - Upcoming and in-progress maintenance
 publicStatus.get("/maintenance", async (c) => {
   try {
-    const org = await getOrganization();
-
-    const maintenanceList = await getUpcomingMaintenance(org.id);
+    const maintenanceList = await getUpcomingMaintenance();
 
     return c.json({
       maintenance: maintenanceList,

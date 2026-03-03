@@ -15,7 +15,6 @@ describe("SubscriberService", () => {
     test("returns group componentIds when subscriber has a group", () => {
       const subscriberWithGroup: SubscriberWithGroup = {
         id: "sub-1",
-        organizationId: "org-1",
         email: "test@example.com",
         verified: true,
         verifiedAt: new Date(),
@@ -29,7 +28,6 @@ describe("SubscriberService", () => {
         updatedAt: new Date(),
         group: {
           id: "group-1",
-          organizationId: "org-1",
           name: "Test Group",
           description: null,
           componentIds: ["comp-3"], // Group filter takes precedence
@@ -45,7 +43,6 @@ describe("SubscriberService", () => {
     test("returns subscriber componentIds when no group", () => {
       const subscriberWithoutGroup: SubscriberWithGroup = {
         id: "sub-1",
-        organizationId: "org-1",
         email: "test@example.com",
         verified: true,
         verifiedAt: new Date(),
@@ -67,7 +64,6 @@ describe("SubscriberService", () => {
     test("returns null when group has null componentIds", () => {
       const subscriberWithGroup: SubscriberWithGroup = {
         id: "sub-1",
-        organizationId: "org-1",
         email: "test@example.com",
         verified: true,
         verifiedAt: new Date(),
@@ -81,7 +77,6 @@ describe("SubscriberService", () => {
         updatedAt: new Date(),
         group: {
           id: "group-1",
-          organizationId: "org-1",
           name: "Test Group",
           description: null,
           componentIds: null, // Group subscribed to all
@@ -98,7 +93,6 @@ describe("SubscriberService", () => {
   describe("shouldNotifyForComponents", () => {
     const baseSubscriber: SubscriberWithGroup = {
       id: "sub-1",
-      organizationId: "org-1",
       email: "test@example.com",
       verified: true,
       verifiedAt: new Date(),
@@ -168,7 +162,6 @@ describe("SubscriberService", () => {
         componentIds: ["comp-1"], // Individual filter - should be ignored
         group: {
           id: "group-1",
-          organizationId: "org-1",
           name: "Test Group",
           description: null,
           componentIds: ["comp-3"], // Group filter takes precedence
@@ -189,12 +182,11 @@ describe("SubscriberService", () => {
 
   describe("getEligibleSubscribers", () => {
     test("returns only verified subscribers", async () => {
-      const org = await createTestOrganization();
-      await createTestSubscriber(org.id, { email: "verified@test.com", verified: true });
-      await createTestSubscriber(org.id, { email: "unverified@test.com", verified: false });
+      await createTestOrganization();
+      await createTestSubscriber({ email: "verified@test.com", verified: true });
+      await createTestSubscriber({ email: "unverified@test.com", verified: false });
 
       const result = await SubscriberService.getEligibleSubscribers({
-        organizationId: org.id,
         eventType: "incident",
       });
 
@@ -203,18 +195,17 @@ describe("SubscriberService", () => {
     });
 
     test("filters by incident notification preference", async () => {
-      const org = await createTestOrganization();
-      await createTestSubscriber(org.id, {
+      await createTestOrganization();
+      await createTestSubscriber({
         email: "wants-incidents@test.com",
         notifyOnIncident: true,
       });
-      await createTestSubscriber(org.id, {
+      await createTestSubscriber({
         email: "no-incidents@test.com",
         notifyOnIncident: false,
       });
 
       const result = await SubscriberService.getEligibleSubscribers({
-        organizationId: org.id,
         eventType: "incident",
       });
 
@@ -223,18 +214,17 @@ describe("SubscriberService", () => {
     });
 
     test("filters by maintenance notification preference", async () => {
-      const org = await createTestOrganization();
-      await createTestSubscriber(org.id, {
+      await createTestOrganization();
+      await createTestSubscriber({
         email: "wants-maintenance@test.com",
         notifyOnMaintenance: true,
       });
-      await createTestSubscriber(org.id, {
+      await createTestSubscriber({
         email: "no-maintenance@test.com",
         notifyOnMaintenance: false,
       });
 
       const result = await SubscriberService.getEligibleSubscribers({
-        organizationId: org.id,
         eventType: "maintenance",
       });
 
@@ -243,25 +233,24 @@ describe("SubscriberService", () => {
     });
 
     test("filters by component subscription", async () => {
-      const org = await createTestOrganization();
-      const comp1 = await createTestComponent(org.id, { name: "API" });
-      const comp2 = await createTestComponent(org.id, { name: "Database" });
+      await createTestOrganization();
+      const comp1 = await createTestComponent({ name: "API" });
+      const comp2 = await createTestComponent({ name: "Database" });
 
-      await createTestSubscriber(org.id, {
+      await createTestSubscriber({
         email: "api-only@test.com",
         componentIds: [comp1.id],
       });
-      await createTestSubscriber(org.id, {
+      await createTestSubscriber({
         email: "db-only@test.com",
         componentIds: [comp2.id],
       });
-      await createTestSubscriber(org.id, {
+      await createTestSubscriber({
         email: "all@test.com",
         componentIds: null,
       });
 
       const result = await SubscriberService.getEligibleSubscribers({
-        organizationId: org.id,
         eventType: "incident",
         componentIds: [comp1.id],
       });
@@ -272,31 +261,30 @@ describe("SubscriberService", () => {
     });
 
     test("uses group component filter for subscribers in groups", async () => {
-      const org = await createTestOrganization();
-      const comp1 = await createTestComponent(org.id, { name: "API" });
-      const comp2 = await createTestComponent(org.id, { name: "Database" });
+      await createTestOrganization();
+      const comp1 = await createTestComponent({ name: "API" });
+      const comp2 = await createTestComponent({ name: "Database" });
 
-      const group = await createTestSubscriberGroup(org.id, {
+      const group = await createTestSubscriberGroup({
         name: "API Customers",
         componentIds: [comp1.id],
       });
 
       // Subscriber in group with individual filter (should be ignored)
-      await createTestSubscriber(org.id, {
+      await createTestSubscriber({
         email: "grouped@test.com",
         groupId: group.id,
         componentIds: [comp2.id], // Individual says DB, but group says API
       });
 
       // Individual subscriber to DB
-      await createTestSubscriber(org.id, {
+      await createTestSubscriber({
         email: "individual@test.com",
         componentIds: [comp2.id],
       });
 
       // Incident affects API
       const result = await SubscriberService.getEligibleSubscribers({
-        organizationId: org.id,
         eventType: "incident",
         componentIds: [comp1.id],
       });
@@ -306,17 +294,16 @@ describe("SubscriberService", () => {
     });
 
     test("global events notify all subscribers regardless of component filter", async () => {
-      const org = await createTestOrganization();
-      const comp1 = await createTestComponent(org.id, { name: "API" });
+      await createTestOrganization();
+      const comp1 = await createTestComponent({ name: "API" });
 
-      await createTestSubscriber(org.id, {
+      await createTestSubscriber({
         email: "api-only@test.com",
         componentIds: [comp1.id],
       });
 
       // Global event with no component filter
       const result = await SubscriberService.getEligibleSubscribers({
-        organizationId: org.id,
         eventType: "incident",
         isGlobalEvent: true,
       });
@@ -326,16 +313,15 @@ describe("SubscriberService", () => {
     });
 
     test("includes group information in returned subscribers", async () => {
-      const org = await createTestOrganization();
-      const group = await createTestSubscriberGroup(org.id, { name: "Acme Corp" });
+      await createTestOrganization();
+      const group = await createTestSubscriberGroup({ name: "Acme Corp" });
 
-      await createTestSubscriber(org.id, {
+      await createTestSubscriber({
         email: "grouped@test.com",
         groupId: group.id,
       });
 
       const result = await SubscriberService.getEligibleSubscribers({
-        organizationId: org.id,
         eventType: "incident",
       });
 
@@ -347,10 +333,9 @@ describe("SubscriberService", () => {
 
   describe("createManualSubscriber", () => {
     test("creates auto-verified subscriber", async () => {
-      const org = await createTestOrganization();
+      await createTestOrganization();
 
       const subscriber = await SubscriberService.createManualSubscriber({
-        organizationId: org.id,
         email: "manual@test.com",
       });
 
@@ -361,11 +346,10 @@ describe("SubscriberService", () => {
     });
 
     test("creates subscriber with group assignment", async () => {
-      const org = await createTestOrganization();
-      const group = await createTestSubscriberGroup(org.id, { name: "Test Group" });
+      await createTestOrganization();
+      const group = await createTestSubscriberGroup({ name: "Test Group" });
 
       const subscriber = await SubscriberService.createManualSubscriber({
-        organizationId: org.id,
         email: "grouped@test.com",
         groupId: group.id,
       });
@@ -374,11 +358,10 @@ describe("SubscriberService", () => {
     });
 
     test("creates subscriber with component filter", async () => {
-      const org = await createTestOrganization();
-      const comp = await createTestComponent(org.id, { name: "API" });
+      await createTestOrganization();
+      const comp = await createTestComponent({ name: "API" });
 
       const subscriber = await SubscriberService.createManualSubscriber({
-        organizationId: org.id,
         email: "filtered@test.com",
         componentIds: [comp.id],
       });
@@ -387,10 +370,9 @@ describe("SubscriberService", () => {
     });
 
     test("creates subscriber with custom notification preferences", async () => {
-      const org = await createTestOrganization();
+      await createTestOrganization();
 
       const subscriber = await SubscriberService.createManualSubscriber({
-        organizationId: org.id,
         email: "custom@test.com",
         notifyOnIncident: false,
         notifyOnMaintenance: true,
@@ -401,10 +383,9 @@ describe("SubscriberService", () => {
     });
 
     test("defaults notification preferences to true", async () => {
-      const org = await createTestOrganization();
+      await createTestOrganization();
 
       const subscriber = await SubscriberService.createManualSubscriber({
-        organizationId: org.id,
         email: "default@test.com",
       });
 
@@ -415,8 +396,8 @@ describe("SubscriberService", () => {
 
   describe("updateSubscriber", () => {
     test("updates subscriber email", async () => {
-      const org = await createTestOrganization();
-      const subscriber = await createTestSubscriber(org.id, { email: "old@test.com" });
+      await createTestOrganization();
+      const subscriber = await createTestSubscriber({ email: "old@test.com" });
 
       const updated = await SubscriberService.updateSubscriber(subscriber.id, {
         email: "new@test.com",
@@ -426,9 +407,9 @@ describe("SubscriberService", () => {
     });
 
     test("updates subscriber group", async () => {
-      const org = await createTestOrganization();
-      const group = await createTestSubscriberGroup(org.id, { name: "New Group" });
-      const subscriber = await createTestSubscriber(org.id, { groupId: null });
+      await createTestOrganization();
+      const group = await createTestSubscriberGroup({ name: "New Group" });
+      const subscriber = await createTestSubscriber({ groupId: null });
 
       const updated = await SubscriberService.updateSubscriber(subscriber.id, {
         groupId: group.id,
@@ -438,9 +419,9 @@ describe("SubscriberService", () => {
     });
 
     test("removes subscriber from group", async () => {
-      const org = await createTestOrganization();
-      const group = await createTestSubscriberGroup(org.id, { name: "Old Group" });
-      const subscriber = await createTestSubscriber(org.id, { groupId: group.id });
+      await createTestOrganization();
+      const group = await createTestSubscriberGroup({ name: "Old Group" });
+      const subscriber = await createTestSubscriber({ groupId: group.id });
 
       const updated = await SubscriberService.updateSubscriber(subscriber.id, {
         groupId: null,
@@ -450,9 +431,9 @@ describe("SubscriberService", () => {
     });
 
     test("updates component filter", async () => {
-      const org = await createTestOrganization();
-      const comp = await createTestComponent(org.id, { name: "API" });
-      const subscriber = await createTestSubscriber(org.id, { componentIds: null });
+      await createTestOrganization();
+      const comp = await createTestComponent({ name: "API" });
+      const subscriber = await createTestSubscriber({ componentIds: null });
 
       const updated = await SubscriberService.updateSubscriber(subscriber.id, {
         componentIds: [comp.id],
@@ -462,8 +443,8 @@ describe("SubscriberService", () => {
     });
 
     test("updates notification preferences", async () => {
-      const org = await createTestOrganization();
-      const subscriber = await createTestSubscriber(org.id, {
+      await createTestOrganization();
+      const subscriber = await createTestSubscriber({
         notifyOnIncident: true,
         notifyOnMaintenance: true,
       });
@@ -488,9 +469,9 @@ describe("SubscriberService", () => {
 
   describe("getSubscriberWithGroup", () => {
     test("returns subscriber with group information", async () => {
-      const org = await createTestOrganization();
-      const group = await createTestSubscriberGroup(org.id, { name: "Acme Corp" });
-      const subscriber = await createTestSubscriber(org.id, {
+      await createTestOrganization();
+      const group = await createTestSubscriberGroup({ name: "Acme Corp" });
+      const subscriber = await createTestSubscriber({
         email: "test@test.com",
         groupId: group.id,
       });
@@ -504,8 +485,8 @@ describe("SubscriberService", () => {
     });
 
     test("returns subscriber without group", async () => {
-      const org = await createTestOrganization();
-      const subscriber = await createTestSubscriber(org.id, {
+      await createTestOrganization();
+      const subscriber = await createTestSubscriber({
         email: "test@test.com",
         groupId: null,
       });
@@ -526,14 +507,14 @@ describe("SubscriberService", () => {
   });
 
   describe("getSubscribersWithGroups", () => {
-    test("returns all subscribers for organization with groups", async () => {
-      const org = await createTestOrganization();
-      const group = await createTestSubscriberGroup(org.id, { name: "Acme Corp" });
+    test("returns all subscribers with groups", async () => {
+      await createTestOrganization();
+      const group = await createTestSubscriberGroup({ name: "Acme Corp" });
 
-      await createTestSubscriber(org.id, { email: "grouped@test.com", groupId: group.id });
-      await createTestSubscriber(org.id, { email: "individual@test.com", groupId: null });
+      await createTestSubscriber({ email: "grouped@test.com", groupId: group.id });
+      await createTestSubscriber({ email: "individual@test.com", groupId: null });
 
-      const result = await SubscriberService.getSubscribersWithGroups(org.id);
+      const result = await SubscriberService.getSubscribersWithGroups();
 
       expect(result).toHaveLength(2);
 
@@ -546,24 +527,11 @@ describe("SubscriberService", () => {
     });
 
     test("returns empty array when no subscribers", async () => {
-      const org = await createTestOrganization();
+      await createTestOrganization();
 
-      const result = await SubscriberService.getSubscribersWithGroups(org.id);
+      const result = await SubscriberService.getSubscribersWithGroups();
 
       expect(result).toHaveLength(0);
-    });
-
-    test("only returns subscribers for specified organization", async () => {
-      const org1 = await createTestOrganization({ slug: "org-1" });
-      const org2 = await createTestOrganization({ slug: "org-2" });
-
-      await createTestSubscriber(org1.id, { email: "org1@test.com" });
-      await createTestSubscriber(org2.id, { email: "org2@test.com" });
-
-      const result = await SubscriberService.getSubscribersWithGroups(org1.id);
-
-      expect(result).toHaveLength(1);
-      expect(result[0]!.email).toBe("org1@test.com");
     });
   });
 });

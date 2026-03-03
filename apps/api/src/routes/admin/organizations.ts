@@ -1,14 +1,16 @@
-import { apiKeys, eq, organizations, userOrganizations } from "@fyrendev/db";
+import { apiKeys, eq, organizations, users } from "@fyrendev/db";
 import { Hono } from "hono";
 import { z } from "zod";
 import { generateApiKey } from "../../lib/api-key";
 import type { AuthUser } from "../../lib/auth";
 import { db } from "../../lib/db";
-import { clearProviderCache, getEmailProviderForOrg } from "../../lib/email";
+import { clearProviderCache, getEmailProvider } from "../../lib/email";
 import { encryptJson, isEncryptionAvailable } from "../../lib/encryption";
-import { BadRequestError, errorResponse, ForbiddenError, NotFoundError } from "../../lib/errors";
+import { BadRequestError, ConflictError, errorResponse, NotFoundError } from "../../lib/errors";
 import { sanitizeCustomCss, sanitizeTwitterHandle } from "../../lib/sanitize";
 import { createAuditLogger } from "../../lib/logging/audit";
+import { clearOrganizationCache, getOrganization } from "../../lib/organization";
+import { requireRole } from "../../middleware/session";
 
 const adminOrganizations = new Hono();
 
@@ -82,13 +84,6 @@ const sesConfigSchema = z.object({
   secretAccessKey: z.string().min(1),
 });
 
-z.discriminatedUnion("provider", [
-  z.object({ provider: z.literal("console") }),
-  z.object({ provider: z.literal("smtp"), config: smtpConfigSchema }),
-  z.object({ provider: z.literal("sendgrid"), config: sendgridConfigSchema }),
-  z.object({ provider: z.literal("ses"), config: sesConfigSchema }),
-]);
-
 const updateOrganizationSchema = z.object({
   // Basic info
   name: z.string().min(1).max(255).optional(),
@@ -146,10 +141,16 @@ const updateOrganizationSchema = z.object({
     .optional(),
 });
 
-// POST /organizations - Create organization
+// POST /organization - Create organization
 // If user is logged in, they become the owner. Otherwise, creates an org without owner (for bootstrap).
 adminOrganizations.post("/", async (c) => {
   try {
+    // Single-tenant mode: only one organization allowed
+    const existing = await db.select({ id: organizations.id }).from(organizations).limit(1);
+    if (existing.length > 0) {
+      throw new ConflictError("Organization already exists. This is a single-tenant instance.");
+    }
+
     const body = await c.req.json();
     const data = createOrganizationSchema.parse(body);
     const user = c.get("user");
@@ -168,23 +169,21 @@ adminOrganizations.post("/", async (c) => {
       throw new Error("Failed to create organization");
     }
 
-    // If user is logged in, add them as owner
+    // If user is logged in, set them as owner
     if (user) {
-      await db.insert(userOrganizations).values({
-        userId: user.id,
-        organizationId: org.id,
-        role: "owner",
-      });
+      await db.update(users).set({ role: "owner" }).where(eq(users.id, user.id));
     }
 
     // Generate API key for the new organization
     const apiKeyData = await generateApiKey();
     await db.insert(apiKeys).values({
-      organizationId: org.id,
       name: "Default API Key",
       keyHash: apiKeyData.keyHash,
       keyPrefix: apiKeyData.keyPrefix,
     });
+
+    // Clear cached organization data (in case a prior request cached "not found")
+    clearOrganizationCache();
 
     // Audit log
     const auditLogger = createAuditLogger({
@@ -206,19 +205,10 @@ adminOrganizations.post("/", async (c) => {
   }
 });
 
-// GET /organizations - Get current organization (auth required)
-adminOrganizations.get("/", async (c) => {
+// GET /organization - Get current organization (auth required)
+adminOrganizations.get("/", requireRole("owner", "admin", "member"), async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ForbiddenError("Authentication required");
-    }
-
-    const [org] = await db.select().from(organizations).where(eq(organizations.id, orgId)).limit(1);
-
-    if (!org) {
-      throw new NotFoundError("Organization not found");
-    }
+    const org = await getOrganization();
 
     return c.json({
       organization: serializeOrganization(org),
@@ -228,13 +218,10 @@ adminOrganizations.get("/", async (c) => {
   }
 });
 
-// PUT /organizations - Update current organization (auth required)
-adminOrganizations.put("/", async (c) => {
+// PUT /organization - Update current organization (auth required)
+adminOrganizations.put("/", requireRole("owner", "admin"), async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ForbiddenError("Authentication required");
-    }
+    const org = await getOrganization();
 
     const body = await c.req.json();
     const data = updateOrganizationSchema.parse(body);
@@ -276,18 +263,21 @@ adminOrganizations.put("/", async (c) => {
       emailConfig: encryptedEmailConfig,
     };
 
-    const [org] = await db
+    const [updatedOrg] = await db
       .update(organizations)
       .set({
         ...sanitizedData,
         updatedAt: new Date(),
       })
-      .where(eq(organizations.id, orgId))
+      .where(eq(organizations.id, org.id))
       .returning();
 
-    if (!org) {
+    if (!updatedOrg) {
       throw new NotFoundError("Organization not found");
     }
+
+    // Clear cached organization data
+    clearOrganizationCache();
 
     // Clear cached email provider if email settings changed
     if (
@@ -295,42 +285,37 @@ adminOrganizations.put("/", async (c) => {
       data.emailFromAddress !== undefined ||
       data.emailConfig !== undefined
     ) {
-      clearProviderCache(orgId);
+      clearProviderCache();
     }
 
     // Audit log
     const user = c.get("user") as AuthUser | undefined;
     const auditLogger = createAuditLogger({
       userId: user?.id,
-      organizationId: orgId,
+      organizationId: org.id,
       requestId: c.get("requestId"),
     });
-    auditLogger.orgUpdated(orgId, data);
+    auditLogger.orgUpdated(org.id, data);
 
     return c.json({
-      organization: serializeOrganization(org),
+      organization: serializeOrganization(updatedOrg),
     });
   } catch (error) {
     return errorResponse(c, error);
   }
 });
 
-// POST /organizations/test-email - Send test email (auth required)
-adminOrganizations.post("/test-email", async (c) => {
+// POST /organization/test-email - Send test email (auth required)
+adminOrganizations.post("/test-email", requireRole("owner", "admin"), async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ForbiddenError("Authentication required");
-    }
-
     // Get the current user's email
     const user = c.get("user") as AuthUser | undefined;
     if (!user?.email) {
       throw new BadRequestError("No email address found for current user");
     }
 
-    // Get email provider for this organization
-    const provider = await getEmailProviderForOrg(orgId);
+    // Get email provider for this instance
+    const provider = await getEmailProvider();
 
     // Send test email
     await provider.send({

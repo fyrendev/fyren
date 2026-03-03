@@ -1,10 +1,11 @@
 import { Hono } from "hono";
-import { db, eq, and, desc } from "@fyrendev/db";
-import { webhookEndpoints, organizations } from "@fyrendev/db";
+import { db, eq, desc } from "@fyrendev/db";
+import { webhookEndpoints } from "@fyrendev/db";
 import { z } from "zod";
 import { randomBytes } from "crypto";
-import { errorResponse, NotFoundError, ValidationError } from "../../lib/errors";
+import { errorResponse, NotFoundError } from "../../lib/errors";
 import { formatWebhook } from "../../lib/webhooks";
+import { getOrganization } from "../../lib/organization";
 
 export const adminWebhooks = new Hono();
 
@@ -23,13 +24,7 @@ const updateWebhookSchema = createWebhookSchema.partial();
 // List webhooks
 adminWebhooks.get("/", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const webhooks = await db.query.webhookEndpoints.findMany({
-      where: eq(webhookEndpoints.organizationId, orgId),
       orderBy: [desc(webhookEndpoints.createdAt)],
     });
 
@@ -42,15 +37,10 @@ adminWebhooks.get("/", async (c) => {
 // Get single webhook
 adminWebhooks.get("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const webhookId = c.req.param("id");
 
     const webhook = await db.query.webhookEndpoints.findFirst({
-      where: and(eq(webhookEndpoints.id, webhookId), eq(webhookEndpoints.organizationId, orgId)),
+      where: eq(webhookEndpoints.id, webhookId),
     });
 
     if (!webhook) {
@@ -66,11 +56,6 @@ adminWebhooks.get("/:id", async (c) => {
 // Create webhook
 adminWebhooks.post("/", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const body = await c.req.json();
     const data = createWebhookSchema.parse(body);
 
@@ -80,7 +65,6 @@ adminWebhooks.post("/", async (c) => {
     const [webhook] = await db
       .insert(webhookEndpoints)
       .values({
-        organizationId: orgId,
         name: data.name,
         type: data.type,
         url: data.url,
@@ -101,17 +85,12 @@ adminWebhooks.post("/", async (c) => {
 // Update webhook
 adminWebhooks.put("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const webhookId = c.req.param("id");
     const body = await c.req.json();
     const data = updateWebhookSchema.parse(body);
 
     const existing = await db.query.webhookEndpoints.findFirst({
-      where: and(eq(webhookEndpoints.id, webhookId), eq(webhookEndpoints.organizationId, orgId)),
+      where: eq(webhookEndpoints.id, webhookId),
     });
 
     if (!existing) {
@@ -147,15 +126,10 @@ adminWebhooks.put("/:id", async (c) => {
 // Delete webhook
 adminWebhooks.delete("/:id", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const webhookId = c.req.param("id");
 
     const existing = await db.query.webhookEndpoints.findFirst({
-      where: and(eq(webhookEndpoints.id, webhookId), eq(webhookEndpoints.organizationId, orgId)),
+      where: eq(webhookEndpoints.id, webhookId),
     });
 
     if (!existing) {
@@ -173,15 +147,10 @@ adminWebhooks.delete("/:id", async (c) => {
 // Toggle webhook enabled/disabled
 adminWebhooks.patch("/:id/toggle", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const webhookId = c.req.param("id");
 
     const existing = await db.query.webhookEndpoints.findFirst({
-      where: and(eq(webhookEndpoints.id, webhookId), eq(webhookEndpoints.organizationId, orgId)),
+      where: eq(webhookEndpoints.id, webhookId),
     });
 
     if (!existing) {
@@ -206,25 +175,17 @@ adminWebhooks.patch("/:id/toggle", async (c) => {
 // Test webhook
 adminWebhooks.post("/:id/test", async (c) => {
   try {
-    const orgId = c.get("organizationId");
-    if (!orgId) {
-      throw new ValidationError("Organization ID required");
-    }
-
     const webhookId = c.req.param("id");
 
     const webhook = await db.query.webhookEndpoints.findFirst({
-      where: and(eq(webhookEndpoints.id, webhookId), eq(webhookEndpoints.organizationId, orgId)),
+      where: eq(webhookEndpoints.id, webhookId),
     });
 
     if (!webhook) {
       throw new NotFoundError("Webhook not found");
     }
 
-    const org = await db.query.organizations.findFirst({
-      where: eq(organizations.id, orgId),
-      columns: { name: true, slug: true },
-    });
+    const org = await getOrganization();
 
     // Send test webhook
     const formatted = formatWebhook(
@@ -232,7 +193,7 @@ adminWebhooks.post("/:id/test", async (c) => {
       {
         event: "test",
         timestamp: new Date().toISOString(),
-        organization: { name: org!.name, slug: org!.slug },
+        organization: { name: org.name, slug: org.slug },
         data: { message: "This is a test webhook from Fyren" },
       },
       webhook.secret || undefined

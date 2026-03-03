@@ -3,7 +3,6 @@ import {
   createTestApp,
   setupTestHooks,
   createTestOrganization,
-  createTestMembership,
   signUpTestUser,
   jsonSessionHeaders,
   sessionCookieHeader,
@@ -15,14 +14,16 @@ describe("Admin Users API", () => {
   const app = createTestApp();
 
   describe("GET /api/v1/admin/me", () => {
-    test("returns current user with organizations", async () => {
-      const org1 = await createTestOrganization({ name: "Org 1", slug: "org-1" });
-      const org2 = await createTestOrganization({ name: "Org 2", slug: "org-2" });
+    test("returns current user with organization", async () => {
+      await createTestOrganization({ name: "My Org", slug: "my-org" });
 
       // Sign up creates both the user and a valid session
-      const { user, token } = await signUpTestUser("user@example.com", undefined, "Test User");
-      await createTestMembership(user.id, org1.id, "owner");
-      await createTestMembership(user.id, org2.id, "member");
+      const { user, token } = await signUpTestUser(
+        "user@example.com",
+        undefined,
+        "Test User",
+        "owner"
+      );
 
       const res = await app.request("/api/v1/admin/me", {
         headers: sessionCookieHeader(token),
@@ -33,15 +34,14 @@ describe("Admin Users API", () => {
       expect(data.user.id).toBe(user.id);
       expect(data.user.email).toBe("user@example.com");
       expect(data.user.name).toBe("Test User");
-      expect(data.organizations).toHaveLength(2);
-      expect(data.organizations.map((o: { name: string }) => o.name)).toContain("Org 1");
-      expect(data.organizations.map((o: { name: string }) => o.name)).toContain("Org 2");
+      expect(data.organization).toBeDefined();
+      expect(data.organization.name).toBe("My Org");
+      expect(data.organization.role).toBe("owner");
     });
 
-    test("includes role in organization list", async () => {
-      const org = await createTestOrganization({ name: "My Org", slug: "my-org" });
-      const { user, token } = await signUpTestUser("owner@example.com");
-      await createTestMembership(user.id, org.id, "owner");
+    test("includes role in organization", async () => {
+      await createTestOrganization({ name: "My Org", slug: "my-org" });
+      const { token } = await signUpTestUser("owner@example.com", undefined, undefined, "owner");
 
       const res = await app.request("/api/v1/admin/me", {
         headers: sessionCookieHeader(token),
@@ -49,11 +49,11 @@ describe("Admin Users API", () => {
 
       expect(res.status).toBe(200);
       const data = await res.json();
-      const myOrg = data.organizations.find((o: { slug: string }) => o.slug === "my-org");
-      expect(myOrg.role).toBe("owner");
+      expect(data.organization.slug).toBe("my-org");
+      expect(data.organization.role).toBe("owner");
     });
 
-    test("returns user with no organizations", async () => {
+    test("returns user with no organization when none exists", async () => {
       const { token } = await signUpTestUser("lonely@example.com");
 
       const res = await app.request("/api/v1/admin/me", {
@@ -63,7 +63,7 @@ describe("Admin Users API", () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.user.email).toBe("lonely@example.com");
-      expect(data.organizations).toHaveLength(0);
+      expect(data.organization).toBeNull();
     });
 
     test("returns 401 without session", async () => {

@@ -2,7 +2,6 @@ import { describe, test, expect } from "bun:test";
 import {
   createTestApp,
   setupTestHooks,
-  createTestOrganization,
   createTestApiKey,
   createTestSubscriber,
   createTestSubscriberGroup,
@@ -18,10 +17,9 @@ describe("Admin Subscribers API", () => {
 
   describe("GET /api/v1/admin/subscribers", () => {
     test("lists all subscribers for organization", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      await createTestSubscriber(org.id, { email: "user1@example.com" });
-      await createTestSubscriber(org.id, { email: "user2@example.com" });
+      const { rawKey } = await createTestApiKey();
+      await createTestSubscriber({ email: "user1@example.com" });
+      await createTestSubscriber({ email: "user2@example.com" });
 
       const res = await app.request("/api/v1/admin/subscribers", {
         headers: authHeader(rawKey),
@@ -39,10 +37,9 @@ describe("Admin Subscribers API", () => {
     });
 
     test("filters subscribers by verified status", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      await createTestSubscriber(org.id, { email: "verified@example.com", verified: true });
-      await createTestSubscriber(org.id, { email: "unverified@example.com", verified: false });
+      const { rawKey } = await createTestApiKey();
+      await createTestSubscriber({ email: "verified@example.com", verified: true });
+      await createTestSubscriber({ email: "unverified@example.com", verified: false });
 
       const res = await app.request("/api/v1/admin/subscribers?verified=true", {
         headers: authHeader(rawKey),
@@ -55,11 +52,10 @@ describe("Admin Subscribers API", () => {
     });
 
     test("filters subscribers by group", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const group = await createTestSubscriberGroup(org.id, { name: "VIP Group" });
-      await createTestSubscriber(org.id, { email: "grouped@example.com", groupId: group.id });
-      await createTestSubscriber(org.id, { email: "ungrouped@example.com" });
+      const { rawKey } = await createTestApiKey();
+      const group = await createTestSubscriberGroup({ name: "VIP Group" });
+      await createTestSubscriber({ email: "grouped@example.com", groupId: group.id });
+      await createTestSubscriber({ email: "ungrouped@example.com" });
 
       const res = await app.request(`/api/v1/admin/subscribers?groupId=${group.id}`, {
         headers: authHeader(rawKey),
@@ -72,10 +68,9 @@ describe("Admin Subscribers API", () => {
     });
 
     test("paginates results", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
       for (let i = 0; i < 5; i++) {
-        await createTestSubscriber(org.id, { email: `user${i}@example.com` });
+        await createTestSubscriber({ email: `user${i}@example.com` });
       }
 
       const res = await app.request("/api/v1/admin/subscribers?limit=2&offset=0", {
@@ -94,8 +89,7 @@ describe("Admin Subscribers API", () => {
     });
 
     test("returns empty array when no subscribers exist", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/subscribers", {
         headers: authHeader(rawKey),
@@ -109,9 +103,8 @@ describe("Admin Subscribers API", () => {
 
   describe("GET /api/v1/admin/subscribers/:id", () => {
     test("returns subscriber by ID", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const subscriber = await createTestSubscriber(org.id, {
+      const { rawKey } = await createTestApiKey();
+      const subscriber = await createTestSubscriber({
         email: "test@example.com",
         verified: true,
       });
@@ -128,10 +121,9 @@ describe("Admin Subscribers API", () => {
     });
 
     test("returns subscriber with group info", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const group = await createTestSubscriberGroup(org.id, { name: "VIP Group" });
-      const subscriber = await createTestSubscriber(org.id, {
+      const { rawKey } = await createTestApiKey();
+      const group = await createTestSubscriberGroup({ name: "VIP Group" });
+      const subscriber = await createTestSubscriber({
         email: "vip@example.com",
         groupId: group.id,
       });
@@ -147,8 +139,7 @@ describe("Admin Subscribers API", () => {
     });
 
     test("returns 404 for non-existent subscriber", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/subscribers/00000000-0000-0000-0000-000000000000",
@@ -159,25 +150,11 @@ describe("Admin Subscribers API", () => {
 
       expect(res.status).toBe(404);
     });
-
-    test("returns 404 for subscriber from different organization", async () => {
-      const org1 = await createTestOrganization({ slug: "org-1" });
-      const org2 = await createTestOrganization({ slug: "org-2" });
-      const { rawKey } = await createTestApiKey(org1.id);
-      const subscriber = await createTestSubscriber(org2.id, { email: "other@example.com" });
-
-      const res = await app.request(`/api/v1/admin/subscribers/${subscriber.id}`, {
-        headers: authHeader(rawKey),
-      });
-
-      expect(res.status).toBe(404);
-    });
   });
 
   describe("POST /api/v1/admin/subscribers", () => {
     test("creates a new subscriber (auto-verified)", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/subscribers", {
         method: "POST",
@@ -195,10 +172,9 @@ describe("Admin Subscribers API", () => {
     });
 
     test("creates subscriber with group and component preferences", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const group = await createTestSubscriberGroup(org.id, { name: "Enterprise" });
-      const component = await createTestComponent(org.id, { name: "API Server" });
+      const { rawKey } = await createTestApiKey();
+      const group = await createTestSubscriberGroup({ name: "Enterprise" });
+      const component = await createTestComponent({ name: "API Server" });
 
       const res = await app.request("/api/v1/admin/subscribers", {
         method: "POST",
@@ -221,9 +197,8 @@ describe("Admin Subscribers API", () => {
     });
 
     test("returns 400 for duplicate email", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      await createTestSubscriber(org.id, { email: "existing@example.com" });
+      const { rawKey } = await createTestApiKey();
+      await createTestSubscriber({ email: "existing@example.com" });
 
       const res = await app.request("/api/v1/admin/subscribers", {
         method: "POST",
@@ -237,8 +212,7 @@ describe("Admin Subscribers API", () => {
     });
 
     test("returns 400 for invalid email", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/subscribers", {
         method: "POST",
@@ -254,9 +228,8 @@ describe("Admin Subscribers API", () => {
 
   describe("PUT /api/v1/admin/subscribers/:id", () => {
     test("updates subscriber preferences", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const subscriber = await createTestSubscriber(org.id, {
+      const { rawKey } = await createTestApiKey();
+      const subscriber = await createTestSubscriber({
         email: "original@example.com",
         notifyOnIncident: true,
         notifyOnMaintenance: true,
@@ -278,9 +251,8 @@ describe("Admin Subscribers API", () => {
     });
 
     test("updates subscriber email", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const subscriber = await createTestSubscriber(org.id, { email: "old@example.com" });
+      const { rawKey } = await createTestApiKey();
+      const subscriber = await createTestSubscriber({ email: "old@example.com" });
 
       const res = await app.request(`/api/v1/admin/subscribers/${subscriber.id}`, {
         method: "PUT",
@@ -296,10 +268,9 @@ describe("Admin Subscribers API", () => {
     });
 
     test("returns 400 when changing to existing email", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      await createTestSubscriber(org.id, { email: "taken@example.com" });
-      const subscriber = await createTestSubscriber(org.id, { email: "original@example.com" });
+      const { rawKey } = await createTestApiKey();
+      await createTestSubscriber({ email: "taken@example.com" });
+      const subscriber = await createTestSubscriber({ email: "original@example.com" });
 
       const res = await app.request(`/api/v1/admin/subscribers/${subscriber.id}`, {
         method: "PUT",
@@ -313,8 +284,7 @@ describe("Admin Subscribers API", () => {
     });
 
     test("returns 404 for non-existent subscriber", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/subscribers/00000000-0000-0000-0000-000000000000",
@@ -331,9 +301,8 @@ describe("Admin Subscribers API", () => {
 
   describe("DELETE /api/v1/admin/subscribers/:id", () => {
     test("deletes subscriber", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      const subscriber = await createTestSubscriber(org.id, { email: "delete@example.com" });
+      const { rawKey } = await createTestApiKey();
+      const subscriber = await createTestSubscriber({ email: "delete@example.com" });
 
       const res = await app.request(`/api/v1/admin/subscribers/${subscriber.id}`, {
         method: "DELETE",
@@ -352,8 +321,7 @@ describe("Admin Subscribers API", () => {
     });
 
     test("returns 404 for non-existent subscriber", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request(
         "/api/v1/admin/subscribers/00000000-0000-0000-0000-000000000000",
@@ -369,11 +337,10 @@ describe("Admin Subscribers API", () => {
 
   describe("GET /api/v1/admin/subscribers/export", () => {
     test("exports verified subscribers as CSV", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      await createTestSubscriber(org.id, { email: "verified1@example.com", verified: true });
-      await createTestSubscriber(org.id, { email: "verified2@example.com", verified: true });
-      await createTestSubscriber(org.id, { email: "unverified@example.com", verified: false });
+      const { rawKey } = await createTestApiKey();
+      await createTestSubscriber({ email: "verified1@example.com", verified: true });
+      await createTestSubscriber({ email: "verified2@example.com", verified: true });
+      await createTestSubscriber({ email: "unverified@example.com", verified: false });
 
       const res = await app.request("/api/v1/admin/subscribers/export", {
         headers: authHeader(rawKey),
@@ -391,9 +358,8 @@ describe("Admin Subscribers API", () => {
     });
 
     test("exports empty CSV when no verified subscribers", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
-      await createTestSubscriber(org.id, { email: "unverified@example.com", verified: false });
+      const { rawKey } = await createTestApiKey();
+      await createTestSubscriber({ email: "unverified@example.com", verified: false });
 
       const res = await app.request("/api/v1/admin/subscribers/export", {
         headers: authHeader(rawKey),

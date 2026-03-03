@@ -2,7 +2,6 @@ import { describe, test, expect } from "bun:test";
 import {
   createTestApp,
   setupTestHooks,
-  createTestOrganization,
   createTestApiKey,
   jsonAuthHeaders,
   authHeader,
@@ -15,9 +14,8 @@ describe("Admin API Keys API", () => {
 
   describe("GET /api/v1/admin/api-keys", () => {
     test("lists all API keys for organization", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id, { name: "Default Key" });
-      await createTestApiKey(org.id, { name: "Secondary Key" });
+      const { rawKey } = await createTestApiKey({ name: "Default Key" });
+      await createTestApiKey({ name: "Secondary Key" });
 
       const res = await app.request("/api/v1/admin/api-keys", {
         headers: authHeader(rawKey),
@@ -31,8 +29,7 @@ describe("Admin API Keys API", () => {
     });
 
     test("returns key prefix but not full key hash", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id, { name: "Test Key" });
+      const { rawKey } = await createTestApiKey({ name: "Test Key" });
 
       const res = await app.request("/api/v1/admin/api-keys", {
         headers: authHeader(rawKey),
@@ -52,8 +49,7 @@ describe("Admin API Keys API", () => {
     });
 
     test("includes timestamps in response", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/api-keys", {
         headers: authHeader(rawKey),
@@ -67,8 +63,7 @@ describe("Admin API Keys API", () => {
 
   describe("POST /api/v1/admin/api-keys", () => {
     test("creates a new API key", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/api-keys", {
         method: "POST",
@@ -87,8 +82,7 @@ describe("Admin API Keys API", () => {
     });
 
     test("creates API key with expiration date", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
       const expiresAt = new Date(Date.now() + 86400000 * 30); // 30 days
 
       const res = await app.request("/api/v1/admin/api-keys", {
@@ -106,8 +100,7 @@ describe("Admin API Keys API", () => {
     });
 
     test("returns 400 for missing name", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/api-keys", {
         method: "POST",
@@ -135,9 +128,8 @@ describe("Admin API Keys API", () => {
 
   describe("DELETE /api/v1/admin/api-keys/:id", () => {
     test("deletes an API key", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id, { name: "Primary Key" });
-      const { apiKey: secondaryKey } = await createTestApiKey(org.id, { name: "Secondary Key" });
+      const { rawKey } = await createTestApiKey({ name: "Primary Key" });
+      const { apiKey: secondaryKey } = await createTestApiKey({ name: "Secondary Key" });
 
       const res = await app.request(`/api/v1/admin/api-keys/${secondaryKey.id}`, {
         method: "DELETE",
@@ -150,8 +142,7 @@ describe("Admin API Keys API", () => {
     });
 
     test("cannot delete the key used for the current request", async () => {
-      const org = await createTestOrganization();
-      const { rawKey, apiKey } = await createTestApiKey(org.id);
+      const { rawKey, apiKey } = await createTestApiKey();
 
       const res = await app.request(`/api/v1/admin/api-keys/${apiKey.id}`, {
         method: "DELETE",
@@ -164,24 +155,9 @@ describe("Admin API Keys API", () => {
     });
 
     test("returns 404 for non-existent API key", async () => {
-      const org = await createTestOrganization();
-      const { rawKey } = await createTestApiKey(org.id);
+      const { rawKey } = await createTestApiKey();
 
       const res = await app.request("/api/v1/admin/api-keys/00000000-0000-0000-0000-000000000000", {
-        method: "DELETE",
-        headers: authHeader(rawKey),
-      });
-
-      expect(res.status).toBe(404);
-    });
-
-    test("returns 404 for API key from different organization", async () => {
-      const org1 = await createTestOrganization({ slug: "org-1" });
-      const org2 = await createTestOrganization({ slug: "org-2" });
-      const { rawKey } = await createTestApiKey(org1.id);
-      const { apiKey: otherKey } = await createTestApiKey(org2.id);
-
-      const res = await app.request(`/api/v1/admin/api-keys/${otherKey.id}`, {
         method: "DELETE",
         headers: authHeader(rawKey),
       });

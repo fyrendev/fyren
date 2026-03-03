@@ -64,4 +64,7 @@ export const auth = betterAuth({
 
 // Export auth types
 export type Session = typeof auth.$Infer.Session;
-export type AuthUser = typeof auth.$Infer.Session.user;
+// Extend BetterAuth's user type with our custom role field
+export type AuthUser = typeof auth.$Infer.Session.user & {
+  role?: import("@fyrendev/db").OrgRole | null;
+};

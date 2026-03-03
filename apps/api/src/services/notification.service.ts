@@ -1,16 +1,16 @@
-import { db, eq, and } from "@fyrendev/db";
-import { webhookEndpoints, organizations } from "@fyrendev/db";
+import { db, eq } from "@fyrendev/db";
+import { webhookEndpoints } from "@fyrendev/db";
 import type { WebhookType } from "@fyrendev/shared";
 import { Queue } from "bullmq";
 import { bullmqRedis } from "../lib/redis";
 import { SubscriberService } from "./subscriber.service";
+import { getOrganization } from "../lib/organization";
 
 const QUEUE_NAME = "notifications";
 
 export interface NotificationJobData {
   type: "email" | "webhook";
   // Common fields
-  organizationId: string;
   organizationName: string;
   organizationSlug: string;
   event: NotificationEvent;
@@ -51,7 +51,6 @@ export type NotificationEvent =
   | "component.status_changed";
 
 interface NotificationData {
-  organizationId: string;
   event: NotificationEvent;
   entityType: "incident" | "maintenance" | "component";
   entityId: string;
@@ -61,15 +60,13 @@ interface NotificationData {
 
 export const NotificationService = {
   async trigger(notification: NotificationData): Promise<void> {
-    const { organizationId } = notification;
-
     // Get organization details
-    const org = await db.query.organizations.findFirst({
-      where: eq(organizations.id, organizationId),
-      columns: { id: true, name: true, slug: true },
-    });
-
-    if (!org) return;
+    let org;
+    try {
+      org = await getOrganization();
+    } catch {
+      return; // No org configured
+    }
 
     // Queue email notifications to subscribers
     await this.queueEmailNotifications(notification, org);
@@ -94,13 +91,10 @@ export const NotificationService = {
         : "component";
 
     // Global events have no component filter - they should always notify
-    // (e.g., a global incident with no specific components)
     const isGlobalEvent = !componentIds || componentIds.length === 0;
 
     // Use SubscriberService to get eligible subscribers
-    // This handles group-based component filtering automatically
     const eligibleSubs = await SubscriberService.getEligibleSubscribers({
-      organizationId: org.id,
       eventType,
       componentIds,
       isGlobalEvent,
@@ -113,7 +107,6 @@ export const NotificationService = {
         subscriberId: sub.id,
         email: sub.email,
         unsubscribeToken: sub.unsubscribeToken,
-        organizationId: org.id,
         organizationName: org.name,
         organizationSlug: org.slug,
         event: notification.event,
@@ -135,9 +128,9 @@ export const NotificationService = {
     const isMaintenanceEvent = event.startsWith("maintenance.");
     const isComponentEvent = event.startsWith("component.");
 
-    // Get all enabled webhooks for this org
+    // Get all enabled webhooks
     const allWebhooks = await db.query.webhookEndpoints.findMany({
-      where: and(eq(webhookEndpoints.organizationId, org.id), eq(webhookEndpoints.enabled, true)),
+      where: eq(webhookEndpoints.enabled, true),
     });
 
     // Filter by notification preferences
@@ -167,7 +160,6 @@ export const NotificationService = {
         webhookType: webhook.type,
         webhookUrl: webhook.url,
         webhookSecret: webhook.secret || undefined,
-        organizationId: org.id,
         organizationName: org.name,
         organizationSlug: org.slug,
         event: notification.event,

@@ -1,16 +1,12 @@
 import { pgTable, uuid, text, boolean, timestamp, jsonb, index, unique } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { organizations } from "./organization";
 import { subscriberGroups } from "./subscriber-group";
 
 export const subscribers = pgTable(
   "subscribers",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    organizationId: uuid("organization_id")
-      .notNull()
-      .references(() => organizations.id, { onDelete: "cascade" }),
 
     email: text("email").notNull(),
 
@@ -37,20 +33,15 @@ export const subscribers = pgTable(
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
   (table) => [
-    index("subscribers_organization_id_idx").on(table.organizationId),
     index("subscribers_email_idx").on(table.email),
     index("subscribers_group_id_idx").on(table.groupId),
     index("subscribers_verification_token_idx").on(table.verificationToken),
     index("subscribers_unsubscribe_token_idx").on(table.unsubscribeToken),
-    unique("subscribers_org_email_unique").on(table.organizationId, table.email),
+    unique("subscribers_email_unique").on(table.email),
   ]
 );
 
 export const subscribersRelations = relations(subscribers, ({ one }) => ({
-  organization: one(organizations, {
-    fields: [subscribers.organizationId],
-    references: [organizations.id],
-  }),
   group: one(subscriberGroups, {
     fields: [subscribers.groupId],
     references: [subscriberGroups.id],

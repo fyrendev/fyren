@@ -2,6 +2,7 @@ import type { MaintenanceStatus } from "@fyrendev/db";
 import {
   and,
   components,
+  db,
   desc,
   eq,
   gte,
@@ -9,30 +10,25 @@ import {
   maintenanceComponents,
   maintenances,
   or,
-  organizations,
   sql,
 } from "@fyrendev/db";
-import { db } from "../lib/db";
 import { invalidateStatusCache } from "./cache.service";
 import { MaintenanceScheduler } from "./maintenance-scheduler.service";
 import { NotificationService } from "./notification.service";
+import { getOrganization } from "../lib/organization";
 
-// Helper to invalidate cache for an organization
-async function invalidateOrgCache(organizationId: string): Promise<void> {
-  const [org] = await db
-    .select({ slug: organizations.slug })
-    .from(organizations)
-    .where(eq(organizations.id, organizationId))
-    .limit(1);
-
-  if (org) {
+// Helper to invalidate cache
+async function invalidateCache(): Promise<void> {
+  try {
+    const org = await getOrganization();
     await invalidateStatusCache(org.slug);
+  } catch {
+    // No org configured yet, nothing to invalidate
   }
 }
 
 export const MaintenanceService = {
   async create(data: {
-    organizationId: string;
     title: string;
     description?: string;
     scheduledStartAt: Date;
@@ -47,7 +43,6 @@ export const MaintenanceService = {
       const [maintenance] = await tx
         .insert(maintenances)
         .values({
-          organizationId: data.organizationId,
           title: data.title,
           description: data.description,
           scheduledStartAt: data.scheduledStartAt,
@@ -81,7 +76,7 @@ export const MaintenanceService = {
       }
 
       // 4. Invalidate cache
-      await invalidateOrgCache(data.organizationId);
+      await invalidateCache();
 
       // 5. Trigger notifications
       let affectedComponentNames: string[] = [];
@@ -94,7 +89,6 @@ export const MaintenanceService = {
       }
 
       await NotificationService.trigger({
-        organizationId: data.organizationId,
         event: "maintenance.scheduled",
         entityType: "maintenance",
         entityId: maintenance.id,
@@ -114,7 +108,6 @@ export const MaintenanceService = {
 
   async update(
     maintenanceId: string,
-    organizationId: string,
     data: Partial<{
       title: string;
       description: string | null;
@@ -126,13 +119,11 @@ export const MaintenanceService = {
     }>
   ) {
     return await db.transaction(async (tx) => {
-      // 1. Verify maintenance exists and belongs to org
+      // 1. Verify maintenance exists
       const [existing] = await tx
         .select()
         .from(maintenances)
-        .where(
-          and(eq(maintenances.id, maintenanceId), eq(maintenances.organizationId, organizationId))
-        )
+        .where(eq(maintenances.id, maintenanceId))
         .limit(1);
 
       if (!existing) {
@@ -197,20 +188,18 @@ export const MaintenanceService = {
       }
 
       // 5. Invalidate cache
-      await invalidateOrgCache(organizationId);
+      await invalidateCache();
 
       return updated;
     });
   },
 
-  async start(maintenanceId: string, organizationId: string) {
+  async start(maintenanceId: string) {
     return await db.transaction(async (tx) => {
       const [maintenance] = await tx
         .select()
         .from(maintenances)
-        .where(
-          and(eq(maintenances.id, maintenanceId), eq(maintenances.organizationId, organizationId))
-        )
+        .where(eq(maintenances.id, maintenanceId))
         .limit(1);
 
       if (!maintenance) {
@@ -251,7 +240,7 @@ export const MaintenanceService = {
       }
 
       // 3. Invalidate cache
-      await invalidateOrgCache(organizationId);
+      await invalidateCache();
 
       // 4. Trigger notifications
       let affectedComponentNames: string[] = [];
@@ -264,7 +253,6 @@ export const MaintenanceService = {
       }
 
       await NotificationService.trigger({
-        organizationId,
         event: "maintenance.started",
         entityType: "maintenance",
         entityId: maintenanceId,
@@ -282,14 +270,12 @@ export const MaintenanceService = {
     });
   },
 
-  async complete(maintenanceId: string, organizationId: string) {
+  async complete(maintenanceId: string) {
     return await db.transaction(async (tx) => {
       const [maintenance] = await tx
         .select()
         .from(maintenances)
-        .where(
-          and(eq(maintenances.id, maintenanceId), eq(maintenances.organizationId, organizationId))
-        )
+        .where(eq(maintenances.id, maintenanceId))
         .limit(1);
 
       if (!maintenance) {
@@ -333,7 +319,7 @@ export const MaintenanceService = {
       await MaintenanceScheduler.cancelComplete(maintenanceId);
 
       // 4. Invalidate cache
-      await invalidateOrgCache(organizationId);
+      await invalidateCache();
 
       // 5. Trigger notifications
       let affectedComponentNames: string[] = [];
@@ -346,7 +332,6 @@ export const MaintenanceService = {
       }
 
       await NotificationService.trigger({
-        organizationId,
         event: "maintenance.completed",
         entityType: "maintenance",
         entityId: maintenanceId,
@@ -364,14 +349,12 @@ export const MaintenanceService = {
     });
   },
 
-  async cancel(maintenanceId: string, organizationId: string) {
+  async cancel(maintenanceId: string) {
     return await db.transaction(async (tx) => {
       const [maintenance] = await tx
         .select()
         .from(maintenances)
-        .where(
-          and(eq(maintenances.id, maintenanceId), eq(maintenances.organizationId, organizationId))
-        )
+        .where(eq(maintenances.id, maintenanceId))
         .limit(1);
 
       if (!maintenance) {
@@ -416,19 +399,17 @@ export const MaintenanceService = {
       await MaintenanceScheduler.cancelComplete(maintenanceId);
 
       // 3. Invalidate cache
-      await invalidateOrgCache(organizationId);
+      await invalidateCache();
 
       return updated;
     });
   },
 
-  async getById(maintenanceId: string, organizationId: string) {
+  async getById(maintenanceId: string) {
     const [maintenance] = await db
       .select()
       .from(maintenances)
-      .where(
-        and(eq(maintenances.id, maintenanceId), eq(maintenances.organizationId, organizationId))
-      )
+      .where(eq(maintenances.id, maintenanceId))
       .limit(1);
 
     if (!maintenance) {
@@ -452,16 +433,13 @@ export const MaintenanceService = {
     };
   },
 
-  async list(
-    organizationId: string,
-    options: {
-      status?: MaintenanceStatus;
-      upcoming?: boolean;
-      limit: number;
-      offset: number;
-    }
-  ) {
-    const conditions = [eq(maintenances.organizationId, organizationId)];
+  async list(options: {
+    status?: MaintenanceStatus;
+    upcoming?: boolean;
+    limit: number;
+    offset: number;
+  }) {
+    const conditions = [];
 
     if (options.status) {
       conditions.push(eq(maintenances.status, options.status));
@@ -475,18 +453,20 @@ export const MaintenanceService = {
       conditions.push(gte(maintenances.scheduledEndAt, new Date()));
     }
 
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
     const [items, countResult] = await Promise.all([
       db
         .select()
         .from(maintenances)
-        .where(and(...conditions))
+        .where(whereClause)
         .orderBy(desc(maintenances.scheduledStartAt))
         .limit(options.limit)
         .offset(options.offset),
       db
         .select({ count: sql<number>`count(*)::int` })
         .from(maintenances)
-        .where(and(...conditions)),
+        .where(whereClause),
     ]);
 
     // Get affected components for each maintenance
@@ -522,7 +502,6 @@ export const MaintenanceService = {
   async autoStart(maintenanceId: string) {
     const [maintenance] = await db
       .select({
-        organizationId: maintenances.organizationId,
         status: maintenances.status,
       })
       .from(maintenances)
@@ -533,14 +512,13 @@ export const MaintenanceService = {
       return; // Already started/cancelled/completed
     }
 
-    await this.start(maintenanceId, maintenance.organizationId);
+    await this.start(maintenanceId);
   },
 
   // Called by scheduler when auto-complete time is reached
   async autoComplete(maintenanceId: string) {
     const [maintenance] = await db
       .select({
-        organizationId: maintenances.organizationId,
         status: maintenances.status,
       })
       .from(maintenances)
@@ -551,6 +529,6 @@ export const MaintenanceService = {
       return; // Not in progress
     }
 
-    await this.complete(maintenanceId, maintenance.organizationId);
+    await this.complete(maintenanceId);
   },
 };
