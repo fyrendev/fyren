@@ -2,6 +2,7 @@ import type { MaintenanceStatus } from "@fyrendev/db";
 import {
   and,
   components,
+  db,
   desc,
   eq,
   gte,
@@ -11,7 +12,6 @@ import {
   or,
   sql,
 } from "@fyrendev/db";
-import { db } from "../lib/db";
 import { invalidateStatusCache } from "./cache.service";
 import { MaintenanceScheduler } from "./maintenance-scheduler.service";
 import { NotificationService } from "./notification.service";

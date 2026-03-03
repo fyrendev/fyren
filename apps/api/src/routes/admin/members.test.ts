@@ -1,4 +1,5 @@
 import { describe, test, expect } from "bun:test";
+import { db, users, eq } from "@fyrendev/db";
 import {
   createTestApp,
   setupTestHooks,
@@ -16,13 +17,13 @@ describe("Admin Members API", () => {
 
   const app = createTestApp();
 
-  describe("GET /api/v1/admin/organizations/members", () => {
+  describe("GET /api/v1/admin/members", () => {
     test("lists all members for organization", async () => {
       await createTestOrganization();
       const { token } = await signUpTestUser("owner@example.com", undefined, "Owner", "owner");
       await createTestUser({ email: "member@example.com", name: "Member" }, "member");
 
-      const res = await app.request("/api/v1/admin/organizations/members", {
+      const res = await app.request("/api/v1/admin/members", {
         headers: sessionCookieHeader(token),
       });
 
@@ -46,7 +47,7 @@ describe("Admin Members API", () => {
         "admin"
       );
 
-      const res = await app.request("/api/v1/admin/organizations/members", {
+      const res = await app.request("/api/v1/admin/members", {
         headers: sessionCookieHeader(token),
       });
 
@@ -65,7 +66,7 @@ describe("Admin Members API", () => {
       await createTestUser({}, "owner");
       const { rawKey } = await createTestApiKey();
 
-      const res = await app.request("/api/v1/admin/organizations/members", {
+      const res = await app.request("/api/v1/admin/members", {
         headers: authHeader(rawKey),
       });
 
@@ -75,7 +76,7 @@ describe("Admin Members API", () => {
     });
 
     test("returns 401 without authentication", async () => {
-      const res = await app.request("/api/v1/admin/organizations/members");
+      const res = await app.request("/api/v1/admin/members");
 
       expect(res.status).toBe(401);
     });
@@ -84,7 +85,7 @@ describe("Admin Members API", () => {
       await createTestOrganization();
       const { token } = await signUpTestUser(); // No role set
 
-      const res = await app.request("/api/v1/admin/organizations/members", {
+      const res = await app.request("/api/v1/admin/members", {
         headers: sessionCookieHeader(token),
       });
 
@@ -92,13 +93,13 @@ describe("Admin Members API", () => {
     });
   });
 
-  describe("PUT /api/v1/admin/organizations/members/:id", () => {
+  describe("PUT /api/v1/admin/members/:id", () => {
     test("owner can update member role to admin", async () => {
       await createTestOrganization();
       const { token } = await signUpTestUser("owner@example.com", undefined, undefined, "owner");
       const member = await createTestUser({ email: "member@example.com" }, "member");
 
-      const res = await app.request(`/api/v1/admin/organizations/members/${member.id}`, {
+      const res = await app.request(`/api/v1/admin/members/${member.id}`, {
         method: "PUT",
         headers: jsonSessionHeaders(token),
         body: JSON.stringify({ role: "admin" }),
@@ -114,7 +115,7 @@ describe("Admin Members API", () => {
       const { token } = await signUpTestUser("owner@example.com", undefined, undefined, "owner");
       const admin = await createTestUser({ email: "admin@example.com" }, "admin");
 
-      const res = await app.request(`/api/v1/admin/organizations/members/${admin.id}`, {
+      const res = await app.request(`/api/v1/admin/members/${admin.id}`, {
         method: "PUT",
         headers: jsonSessionHeaders(token),
         body: JSON.stringify({ role: "member" }),
@@ -130,7 +131,7 @@ describe("Admin Members API", () => {
       const { token } = await signUpTestUser("admin@example.com", undefined, undefined, "admin");
       const member = await createTestUser({ email: "member@example.com" }, "member");
 
-      const res = await app.request(`/api/v1/admin/organizations/members/${member.id}`, {
+      const res = await app.request(`/api/v1/admin/members/${member.id}`, {
         method: "PUT",
         headers: jsonSessionHeaders(token),
         body: JSON.stringify({ role: "admin" }),
@@ -144,7 +145,7 @@ describe("Admin Members API", () => {
       const { token } = await signUpTestUser("admin1@example.com", undefined, undefined, "admin");
       const admin2 = await createTestUser({ email: "admin2@example.com" }, "admin");
 
-      const res = await app.request(`/api/v1/admin/organizations/members/${admin2.id}`, {
+      const res = await app.request(`/api/v1/admin/members/${admin2.id}`, {
         method: "PUT",
         headers: jsonSessionHeaders(token),
         body: JSON.stringify({ role: "member" }),
@@ -158,7 +159,7 @@ describe("Admin Members API", () => {
       const owner = await createTestUser({ email: "owner@example.com" }, "owner");
       const { token } = await signUpTestUser("admin@example.com", undefined, undefined, "admin");
 
-      const res = await app.request(`/api/v1/admin/organizations/members/${owner.id}`, {
+      const res = await app.request(`/api/v1/admin/members/${owner.id}`, {
         method: "PUT",
         headers: jsonSessionHeaders(token),
         body: JSON.stringify({ role: "member" }),
@@ -174,7 +175,7 @@ describe("Admin Members API", () => {
       const { token } = await signUpTestUser("member1@example.com", undefined, undefined, "member");
       const member2 = await createTestUser({ email: "member2@example.com" }, "member");
 
-      const res = await app.request(`/api/v1/admin/organizations/members/${member2.id}`, {
+      const res = await app.request(`/api/v1/admin/members/${member2.id}`, {
         method: "PUT",
         headers: jsonSessionHeaders(token),
         body: JSON.stringify({ role: "admin" }),
@@ -187,26 +188,23 @@ describe("Admin Members API", () => {
       await createTestOrganization();
       const { token } = await signUpTestUser(undefined, undefined, undefined, "owner");
 
-      const res = await app.request(
-        "/api/v1/admin/organizations/members/00000000-0000-0000-0000-000000000000",
-        {
-          method: "PUT",
-          headers: jsonSessionHeaders(token),
-          body: JSON.stringify({ role: "admin" }),
-        }
-      );
+      const res = await app.request("/api/v1/admin/members/00000000-0000-0000-0000-000000000000", {
+        method: "PUT",
+        headers: jsonSessionHeaders(token),
+        body: JSON.stringify({ role: "admin" }),
+      });
 
       expect(res.status).toBe(404);
     });
   });
 
-  describe("DELETE /api/v1/admin/organizations/members/:id", () => {
-    test("owner can remove member", async () => {
+  describe("DELETE /api/v1/admin/members/:id", () => {
+    test("owner can remove member and user still exists with null role", async () => {
       await createTestOrganization();
       const { token } = await signUpTestUser("owner@example.com", undefined, undefined, "owner");
       const member = await createTestUser({ email: "member@example.com" }, "member");
 
-      const res = await app.request(`/api/v1/admin/organizations/members/${member.id}`, {
+      const res = await app.request(`/api/v1/admin/members/${member.id}`, {
         method: "DELETE",
         headers: sessionCookieHeader(token),
       });
@@ -214,6 +212,12 @@ describe("Admin Members API", () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.success).toBe(true);
+
+      // Verify user still exists but with null role
+      const [removedUser] = await db.select().from(users).where(eq(users.id, member.id)).limit(1);
+      expect(removedUser).toBeDefined();
+      expect(removedUser!.role).toBeNull();
+      expect(removedUser!.email).toBe("member@example.com");
     });
 
     test("owner can remove admin", async () => {
@@ -221,7 +225,7 @@ describe("Admin Members API", () => {
       const { token } = await signUpTestUser("owner@example.com", undefined, undefined, "owner");
       const admin = await createTestUser({ email: "admin@example.com" }, "admin");
 
-      const res = await app.request(`/api/v1/admin/organizations/members/${admin.id}`, {
+      const res = await app.request(`/api/v1/admin/members/${admin.id}`, {
         method: "DELETE",
         headers: sessionCookieHeader(token),
       });
@@ -234,7 +238,7 @@ describe("Admin Members API", () => {
       const { token } = await signUpTestUser("admin@example.com", undefined, undefined, "admin");
       const member = await createTestUser({ email: "member@example.com" }, "member");
 
-      const res = await app.request(`/api/v1/admin/organizations/members/${member.id}`, {
+      const res = await app.request(`/api/v1/admin/members/${member.id}`, {
         method: "DELETE",
         headers: sessionCookieHeader(token),
       });
@@ -247,7 +251,7 @@ describe("Admin Members API", () => {
       const { token } = await signUpTestUser("admin1@example.com", undefined, undefined, "admin");
       const admin2 = await createTestUser({ email: "admin2@example.com" }, "admin");
 
-      const res = await app.request(`/api/v1/admin/organizations/members/${admin2.id}`, {
+      const res = await app.request(`/api/v1/admin/members/${admin2.id}`, {
         method: "DELETE",
         headers: sessionCookieHeader(token),
       });
@@ -260,7 +264,7 @@ describe("Admin Members API", () => {
       const owner = await createTestUser({ email: "owner@example.com" }, "owner");
       const { token } = await signUpTestUser("admin@example.com", undefined, undefined, "admin");
 
-      const res = await app.request(`/api/v1/admin/organizations/members/${owner.id}`, {
+      const res = await app.request(`/api/v1/admin/members/${owner.id}`, {
         method: "DELETE",
         headers: sessionCookieHeader(token),
       });
@@ -279,7 +283,7 @@ describe("Admin Members API", () => {
         "admin"
       );
 
-      const res = await app.request(`/api/v1/admin/organizations/members/${admin.id}`, {
+      const res = await app.request(`/api/v1/admin/members/${admin.id}`, {
         method: "DELETE",
         headers: sessionCookieHeader(token),
       });
@@ -293,25 +297,27 @@ describe("Admin Members API", () => {
       await createTestOrganization();
       const { token } = await signUpTestUser(undefined, undefined, undefined, "owner");
 
-      const res = await app.request(
-        "/api/v1/admin/organizations/members/00000000-0000-0000-0000-000000000000",
-        {
-          method: "DELETE",
-          headers: sessionCookieHeader(token),
-        }
-      );
+      const res = await app.request("/api/v1/admin/members/00000000-0000-0000-0000-000000000000", {
+        method: "DELETE",
+        headers: sessionCookieHeader(token),
+      });
 
       expect(res.status).toBe(404);
     });
   });
 
-  describe("POST /api/v1/admin/organizations/leave", () => {
-    test("member can leave organization", async () => {
+  describe("POST /api/v1/admin/leave", () => {
+    test("member can leave organization and user still exists with null role", async () => {
       await createTestOrganization();
       await createTestUser({}, "owner");
-      const { token } = await signUpTestUser("member@example.com", undefined, undefined, "member");
+      const { user: memberUser, token } = await signUpTestUser(
+        "member@example.com",
+        undefined,
+        undefined,
+        "member"
+      );
 
-      const res = await app.request("/api/v1/admin/organizations/leave", {
+      const res = await app.request("/api/v1/admin/leave", {
         method: "POST",
         headers: sessionCookieHeader(token),
       });
@@ -319,6 +325,11 @@ describe("Admin Members API", () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.success).toBe(true);
+
+      // Verify user still exists but with null role
+      const [leftUser] = await db.select().from(users).where(eq(users.id, memberUser.id)).limit(1);
+      expect(leftUser).toBeDefined();
+      expect(leftUser!.role).toBeNull();
     });
 
     test("admin can leave organization", async () => {
@@ -326,7 +337,7 @@ describe("Admin Members API", () => {
       await createTestUser({}, "owner");
       const { token } = await signUpTestUser("admin@example.com", undefined, undefined, "admin");
 
-      const res = await app.request("/api/v1/admin/organizations/leave", {
+      const res = await app.request("/api/v1/admin/leave", {
         method: "POST",
         headers: sessionCookieHeader(token),
       });
@@ -338,7 +349,7 @@ describe("Admin Members API", () => {
       await createTestOrganization();
       const { token } = await signUpTestUser("owner@example.com", undefined, undefined, "owner");
 
-      const res = await app.request("/api/v1/admin/organizations/leave", {
+      const res = await app.request("/api/v1/admin/leave", {
         method: "POST",
         headers: sessionCookieHeader(token),
       });
@@ -352,7 +363,7 @@ describe("Admin Members API", () => {
       await createTestOrganization();
       const { rawKey } = await createTestApiKey();
 
-      const res = await app.request("/api/v1/admin/organizations/leave", {
+      const res = await app.request("/api/v1/admin/leave", {
         method: "POST",
         headers: authHeader(rawKey),
       });
@@ -364,7 +375,7 @@ describe("Admin Members API", () => {
       await createTestOrganization();
       const { token } = await signUpTestUser(); // No role set
 
-      const res = await app.request("/api/v1/admin/organizations/leave", {
+      const res = await app.request("/api/v1/admin/leave", {
         method: "POST",
         headers: sessionCookieHeader(token),
       });

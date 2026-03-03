@@ -160,8 +160,10 @@ export const optionalAuthMiddleware = createMiddleware(async (c, next) => {
     }
 
     await next();
-  } catch {
-    // On any error, just continue without auth
+  } catch (error) {
+    logger.warn("Optional auth check failed, continuing unauthenticated", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     await next();
   }
 });

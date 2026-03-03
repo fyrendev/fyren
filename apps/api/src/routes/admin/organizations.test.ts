@@ -24,9 +24,9 @@ describe("Admin Organizations API", () => {
 
   const app = createTestApp();
 
-  describe("POST /api/v1/admin/organizations", () => {
+  describe("POST /api/v1/admin/organization", () => {
     test("creates a new organization", async () => {
-      const res = await app.request("/api/v1/admin/organizations", {
+      const res = await app.request("/api/v1/admin/organization", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -46,7 +46,7 @@ describe("Admin Organizations API", () => {
     });
 
     test("creates organization with default timezone", async () => {
-      const res = await app.request("/api/v1/admin/organizations", {
+      const res = await app.request("/api/v1/admin/organization", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -63,7 +63,7 @@ describe("Admin Organizations API", () => {
     test("creates organization with logged-in user as owner", async () => {
       const { token } = await signUpTestUser("owner@example.com");
 
-      const res = await app.request("/api/v1/admin/organizations", {
+      const res = await app.request("/api/v1/admin/organization", {
         method: "POST",
         headers: jsonSessionHeaders(token),
         body: JSON.stringify({
@@ -78,7 +78,7 @@ describe("Admin Organizations API", () => {
     });
 
     test("returns 400 for invalid slug format", async () => {
-      const res = await app.request("/api/v1/admin/organizations", {
+      const res = await app.request("/api/v1/admin/organization", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -91,7 +91,7 @@ describe("Admin Organizations API", () => {
     });
 
     test("returns 400 for missing required fields", async () => {
-      const res = await app.request("/api/v1/admin/organizations", {
+      const res = await app.request("/api/v1/admin/organization", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -103,7 +103,7 @@ describe("Admin Organizations API", () => {
     });
 
     test("returns 400 for slug too short", async () => {
-      const res = await app.request("/api/v1/admin/organizations", {
+      const res = await app.request("/api/v1/admin/organization", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -114,9 +114,35 @@ describe("Admin Organizations API", () => {
 
       expect(res.status).toBe(400);
     });
+
+    test("returns 409 when organization already exists (single-tenant)", async () => {
+      // Create first organization
+      const res1 = await app.request("/api/v1/admin/organization", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "First Org",
+          slug: "first-org",
+        }),
+      });
+      expect(res1.status).toBe(201);
+
+      // Try to create a second organization
+      const res2 = await app.request("/api/v1/admin/organization", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Second Org",
+          slug: "second-org",
+        }),
+      });
+      expect(res2.status).toBe(409);
+      const data = await res2.json();
+      expect(data.error.message).toContain("already exists");
+    });
   });
 
-  describe("GET /api/v1/admin/organizations", () => {
+  describe("GET /api/v1/admin/organization", () => {
     test("returns current organization", async () => {
       const org = await createTestOrganization({
         name: "My Company",
@@ -125,7 +151,7 @@ describe("Admin Organizations API", () => {
       });
       const { rawKey } = await createTestApiKey();
 
-      const res = await app.request("/api/v1/admin/organizations", {
+      const res = await app.request("/api/v1/admin/organization", {
         headers: authHeader(rawKey),
       });
 
@@ -138,18 +164,18 @@ describe("Admin Organizations API", () => {
     });
 
     test("returns 403 without authentication", async () => {
-      const res = await app.request("/api/v1/admin/organizations");
+      const res = await app.request("/api/v1/admin/organization");
 
       expect(res.status).toBe(403);
     });
   });
 
-  describe("PUT /api/v1/admin/organizations", () => {
+  describe("PUT /api/v1/admin/organization", () => {
     test("updates organization name", async () => {
       await createTestOrganization({ name: "Original Name" });
       const { rawKey } = await createTestApiKey();
 
-      const res = await app.request("/api/v1/admin/organizations", {
+      const res = await app.request("/api/v1/admin/organization", {
         method: "PUT",
         headers: jsonAuthHeaders(rawKey),
         body: JSON.stringify({
@@ -166,7 +192,7 @@ describe("Admin Organizations API", () => {
       await createTestOrganization();
       const { rawKey } = await createTestApiKey();
 
-      const res = await app.request("/api/v1/admin/organizations", {
+      const res = await app.request("/api/v1/admin/organization", {
         method: "PUT",
         headers: jsonAuthHeaders(rawKey),
         body: JSON.stringify({
@@ -187,7 +213,7 @@ describe("Admin Organizations API", () => {
       await createTestOrganization();
       const { rawKey } = await createTestApiKey();
 
-      const res = await app.request("/api/v1/admin/organizations", {
+      const res = await app.request("/api/v1/admin/organization", {
         method: "PUT",
         headers: jsonAuthHeaders(rawKey),
         body: JSON.stringify({
@@ -206,7 +232,7 @@ describe("Admin Organizations API", () => {
       await createTestOrganization();
       const { rawKey } = await createTestApiKey();
 
-      const res = await app.request("/api/v1/admin/organizations", {
+      const res = await app.request("/api/v1/admin/organization", {
         method: "PUT",
         headers: jsonAuthHeaders(rawKey),
         body: JSON.stringify({
@@ -224,7 +250,7 @@ describe("Admin Organizations API", () => {
       await createTestOrganization();
       const { rawKey } = await createTestApiKey();
 
-      const res = await app.request("/api/v1/admin/organizations", {
+      const res = await app.request("/api/v1/admin/organization", {
         method: "PUT",
         headers: jsonAuthHeaders(rawKey),
         body: JSON.stringify({
@@ -246,7 +272,7 @@ describe("Admin Organizations API", () => {
       });
       const { rawKey } = await createTestApiKey();
 
-      const res = await app.request("/api/v1/admin/organizations", {
+      const res = await app.request("/api/v1/admin/organization", {
         method: "PUT",
         headers: jsonAuthHeaders(rawKey),
         body: JSON.stringify({
@@ -265,7 +291,7 @@ describe("Admin Organizations API", () => {
       await createTestOrganization();
       const { rawKey } = await createTestApiKey();
 
-      const res = await app.request("/api/v1/admin/organizations", {
+      const res = await app.request("/api/v1/admin/organization", {
         method: "PUT",
         headers: jsonAuthHeaders(rawKey),
         body: JSON.stringify({
@@ -277,12 +303,12 @@ describe("Admin Organizations API", () => {
     });
   });
 
-  describe("POST /api/v1/admin/organizations/test-email", () => {
+  describe("POST /api/v1/admin/organization/test-email", () => {
     test("sends test email to current user", async () => {
       await createTestOrganization();
       const { token } = await signUpTestUser("test@example.com", undefined, undefined, "owner");
 
-      const res = await app.request("/api/v1/admin/organizations/test-email", {
+      const res = await app.request("/api/v1/admin/organization/test-email", {
         method: "POST",
         headers: sessionCookieHeader(token),
       });
@@ -294,7 +320,7 @@ describe("Admin Organizations API", () => {
     });
 
     test("returns 403 without authentication", async () => {
-      const res = await app.request("/api/v1/admin/organizations/test-email", {
+      const res = await app.request("/api/v1/admin/organization/test-email", {
         method: "POST",
       });
 

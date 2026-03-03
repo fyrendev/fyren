@@ -23,7 +23,6 @@ export {
   createTestSystemSettings,
   createTestIncidentTemplate,
   createTestInvite,
-  createTestSession,
   signUpTestUser,
   authHeader,
   jsonAuthHeaders,

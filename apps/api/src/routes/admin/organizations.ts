@@ -6,10 +6,10 @@ import type { AuthUser } from "../../lib/auth";
 import { db } from "../../lib/db";
 import { clearProviderCache, getEmailProvider } from "../../lib/email";
 import { encryptJson, isEncryptionAvailable } from "../../lib/encryption";
-import { BadRequestError, errorResponse, NotFoundError } from "../../lib/errors";
+import { BadRequestError, ConflictError, errorResponse, NotFoundError } from "../../lib/errors";
 import { sanitizeCustomCss, sanitizeTwitterHandle } from "../../lib/sanitize";
 import { createAuditLogger } from "../../lib/logging/audit";
-import { getOrganization } from "../../lib/organization";
+import { clearOrganizationCache, getOrganization } from "../../lib/organization";
 import { requireRole } from "../../middleware/session";
 
 const adminOrganizations = new Hono();
@@ -148,10 +148,16 @@ const updateOrganizationSchema = z.object({
     .optional(),
 });
 
-// POST /organizations - Create organization
+// POST /organization - Create organization
 // If user is logged in, they become the owner. Otherwise, creates an org without owner (for bootstrap).
 adminOrganizations.post("/", async (c) => {
   try {
+    // Single-tenant mode: only one organization allowed
+    const existing = await db.select({ id: organizations.id }).from(organizations).limit(1);
+    if (existing.length > 0) {
+      throw new ConflictError("Organization already exists. This is a single-tenant instance.");
+    }
+
     const body = await c.req.json();
     const data = createOrganizationSchema.parse(body);
     const user = c.get("user");
@@ -203,7 +209,7 @@ adminOrganizations.post("/", async (c) => {
   }
 });
 
-// GET /organizations - Get current organization (auth required)
+// GET /organization - Get current organization (auth required)
 adminOrganizations.get("/", requireRole("owner", "admin", "member"), async (c) => {
   try {
     const org = await getOrganization();
@@ -216,7 +222,7 @@ adminOrganizations.get("/", requireRole("owner", "admin", "member"), async (c) =
   }
 });
 
-// PUT /organizations - Update current organization (auth required)
+// PUT /organization - Update current organization (auth required)
 adminOrganizations.put("/", requireRole("owner", "admin"), async (c) => {
   try {
     const org = await getOrganization();
@@ -274,6 +280,9 @@ adminOrganizations.put("/", requireRole("owner", "admin"), async (c) => {
       throw new NotFoundError("Organization not found");
     }
 
+    // Clear cached organization data
+    clearOrganizationCache();
+
     // Clear cached email provider if email settings changed
     if (
       data.emailProvider !== undefined ||
@@ -300,7 +309,7 @@ adminOrganizations.put("/", requireRole("owner", "admin"), async (c) => {
   }
 });
 
-// POST /organizations/test-email - Send test email (auth required)
+// POST /organization/test-email - Send test email (auth required)
 adminOrganizations.post("/test-email", requireRole("owner", "admin"), async (c) => {
   try {
     // Get the current user's email

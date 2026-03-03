@@ -17,7 +17,7 @@ const updateMemberSchema = z.object({
   role: z.enum(["admin", "member"]), // Can't promote to owner via this endpoint
 });
 
-// GET /api/v1/admin/organizations/members - List org members
+// GET /api/v1/admin/members - List org members
 adminMembers.get("/members", authMiddleware, requireRole("owner", "admin", "member"), async (c) => {
   try {
     const members = await db.select().from(users).where(isNotNull(users.role));
@@ -40,7 +40,7 @@ adminMembers.get("/members", authMiddleware, requireRole("owner", "admin", "memb
   }
 });
 
-// PUT /api/v1/admin/organizations/members/:id - Update member role
+// PUT /api/v1/admin/members/:id - Update member role
 adminMembers.put("/members/:id", authMiddleware, requireRole("owner", "admin"), async (c) => {
   try {
     const userId = c.req.param("id");
@@ -96,7 +96,7 @@ adminMembers.put("/members/:id", authMiddleware, requireRole("owner", "admin"), 
   }
 });
 
-// DELETE /api/v1/admin/organizations/members/:id - Remove member
+// DELETE /api/v1/admin/members/:id - Remove member
 adminMembers.delete("/members/:id", authMiddleware, requireRole("owner", "admin"), async (c) => {
   try {
     const userId = c.req.param("id");
@@ -124,8 +124,8 @@ adminMembers.delete("/members/:id", authMiddleware, requireRole("owner", "admin"
       throw new ForbiddenError("Admins cannot remove other admins");
     }
 
-    // Delete the user entirely (BetterAuth cascade handles sessions/accounts)
-    await db.delete(users).where(eq(users.id, userId));
+    // Remove user from organization by nulling their role (preserves BetterAuth account)
+    await db.update(users).set({ role: null, updatedAt: new Date() }).where(eq(users.id, userId));
 
     return c.json({ success: true });
   } catch (error) {
@@ -133,7 +133,7 @@ adminMembers.delete("/members/:id", authMiddleware, requireRole("owner", "admin"
   }
 });
 
-// POST /api/v1/admin/organizations/leave - Leave organization (deletes own account)
+// POST /api/v1/admin/leave - Leave organization (deletes own account)
 adminMembers.post("/leave", authMiddleware, requireRole("owner", "admin", "member"), async (c) => {
   try {
     const user = c.get("user");
@@ -153,8 +153,8 @@ adminMembers.post("/leave", authMiddleware, requireRole("owner", "admin", "membe
       throw new ForbiddenError("Owner cannot leave organization. Transfer ownership first.");
     }
 
-    // Delete the user's account entirely
-    await db.delete(users).where(eq(users.id, user.id));
+    // Remove user from organization by nulling their role (preserves BetterAuth account)
+    await db.update(users).set({ role: null, updatedAt: new Date() }).where(eq(users.id, user.id));
 
     return c.json({ success: true });
   } catch (error) {

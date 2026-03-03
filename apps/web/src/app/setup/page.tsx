@@ -119,7 +119,7 @@ export default function SetupPage() {
     setError("");
 
     try {
-      const res = await fetch(`/api/v1/admin/organizations`, {
+      const res = await fetch(`/api/v1/admin/organization`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

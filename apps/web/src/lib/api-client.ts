@@ -501,17 +501,17 @@ export const api = {
 
   // Organization
   getOrganization: () => {
-    return apiClient<{ organization: Organization }>("/api/v1/admin/organizations");
+    return apiClient<{ organization: Organization }>("/api/v1/admin/organization");
   },
   updateOrganization: (data: Partial<Organization> & { emailConfig?: EmailConfig | null }) => {
-    return apiClient<{ organization: Organization }>("/api/v1/admin/organizations", {
+    return apiClient<{ organization: Organization }>("/api/v1/admin/organization", {
       method: "PUT",
       body: JSON.stringify(data),
     });
   },
   testEmail: () => {
     return apiClient<{ success: boolean; message: string }>(
-      "/api/v1/admin/organizations/test-email",
+      "/api/v1/admin/organization/test-email",
       {
         method: "POST",
       }

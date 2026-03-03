@@ -90,12 +90,12 @@ test.describe("Monitors Page", () => {
 test.describe("Organization Creation", () => {
   test("shows organization creation page", async ({ page }) => {
     // This test checks that the org creation page loads
-    await page.goto("/admin/organizations/new");
+    await page.goto("/admin/organization/new");
     await expect(page.getByRole("heading", { name: /create.*organization/i })).toBeVisible();
   });
 
   test("can create organization from new page", async ({ page }) => {
-    await page.goto("/admin/organizations/new");
+    await page.goto("/admin/organization/new");
     await page.waitForLoadState("networkidle");
 
     // Check form elements are visible

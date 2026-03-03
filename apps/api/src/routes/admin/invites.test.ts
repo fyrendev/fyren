@@ -25,7 +25,7 @@ describe("Admin Invites API", () => {
 
   const app = createTestApp();
 
-  describe("GET /api/v1/admin/organizations/invites", () => {
+  describe("GET /api/v1/admin/invites", () => {
     test("lists pending invites for organization", async () => {
       await createTestOrganization();
       const { user: owner, token } = await signUpTestUser(
@@ -37,7 +37,7 @@ describe("Admin Invites API", () => {
       await createTestInvite(owner.id, { email: "invite1@example.com" });
       await createTestInvite(owner.id, { email: "invite2@example.com" });
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         headers: sessionCookieHeader(token),
       });
 
@@ -61,7 +61,7 @@ describe("Admin Invites API", () => {
         role: "admin",
       });
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         headers: sessionCookieHeader(token),
       });
 
@@ -75,6 +75,27 @@ describe("Admin Invites API", () => {
       expect(invite.createdAt).toBeDefined();
     });
 
+    test("does not include expired invites", async () => {
+      await createTestOrganization();
+      const { user: owner, token } = await signUpTestUser(undefined, undefined, undefined, "owner");
+      await createTestInvite(owner.id, {
+        email: "valid@example.com",
+      });
+      await createTestInvite(owner.id, {
+        email: "expired@example.com",
+        expiresAt: new Date(Date.now() - 86400000), // Yesterday
+      });
+
+      const res = await app.request("/api/v1/admin/invites", {
+        headers: sessionCookieHeader(token),
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.invites).toHaveLength(1);
+      expect(data.invites[0].email).toBe("valid@example.com");
+    });
+
     test("does not include accepted invites", async () => {
       await createTestOrganization();
       const { user: owner, token } = await signUpTestUser(undefined, undefined, undefined, "owner");
@@ -86,7 +107,7 @@ describe("Admin Invites API", () => {
         acceptedAt: new Date(),
       });
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         headers: sessionCookieHeader(token),
       });
 
@@ -102,7 +123,7 @@ describe("Admin Invites API", () => {
       const { token } = await signUpTestUser("admin@example.com", undefined, undefined, "admin");
       await createTestInvite(owner.id, { email: "test@example.com" });
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         headers: sessionCookieHeader(token),
       });
 
@@ -113,7 +134,7 @@ describe("Admin Invites API", () => {
       await createTestOrganization();
       const { token } = await signUpTestUser("member@example.com", undefined, undefined, "member");
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         headers: sessionCookieHeader(token),
       });
 
@@ -121,18 +142,18 @@ describe("Admin Invites API", () => {
     });
 
     test("returns 401 without authentication", async () => {
-      const res = await app.request("/api/v1/admin/organizations/invites");
+      const res = await app.request("/api/v1/admin/invites");
 
       expect(res.status).toBe(401);
     });
   });
 
-  describe("POST /api/v1/admin/organizations/invites", () => {
+  describe("POST /api/v1/admin/invites", () => {
     test("owner can create invite for member role", async () => {
       await createTestOrganization();
       const { token } = await signUpTestUser("owner@example.com", undefined, undefined, "owner");
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
         headers: jsonSessionHeaders(token),
         body: JSON.stringify({
@@ -154,7 +175,7 @@ describe("Admin Invites API", () => {
       const { token } = await signUpTestUser("owner@example.com", undefined, "Alice", "owner");
       mockSend.mockClear();
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
         headers: jsonSessionHeaders(token),
         body: JSON.stringify({
@@ -178,7 +199,7 @@ describe("Admin Invites API", () => {
       await createTestOrganization();
       const { token } = await signUpTestUser(undefined, undefined, undefined, "owner");
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
         headers: jsonSessionHeaders(token),
         body: JSON.stringify({
@@ -196,7 +217,7 @@ describe("Admin Invites API", () => {
       await createTestOrganization();
       const { token } = await signUpTestUser("admin@example.com", undefined, undefined, "admin");
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
         headers: jsonSessionHeaders(token),
         body: JSON.stringify({
@@ -214,7 +235,7 @@ describe("Admin Invites API", () => {
       await createTestOrganization();
       const { token } = await signUpTestUser("admin@example.com", undefined, undefined, "admin");
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
         headers: jsonSessionHeaders(token),
         body: JSON.stringify({
@@ -231,7 +252,7 @@ describe("Admin Invites API", () => {
       const { token } = await signUpTestUser("owner@example.com", undefined, undefined, "owner");
       await createTestUser({ email: "existing@example.com" }, "member");
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
         headers: jsonSessionHeaders(token),
         body: JSON.stringify({
@@ -249,7 +270,7 @@ describe("Admin Invites API", () => {
       const { user: owner, token } = await signUpTestUser(undefined, undefined, undefined, "owner");
       await createTestInvite(owner.id, { email: "pending@example.com" });
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
         headers: jsonSessionHeaders(token),
         body: JSON.stringify({
@@ -270,7 +291,7 @@ describe("Admin Invites API", () => {
         expiresAt: new Date(Date.now() - 86400000), // Yesterday
       });
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
         headers: jsonSessionHeaders(token),
         body: JSON.stringify({
@@ -285,7 +306,7 @@ describe("Admin Invites API", () => {
       await createTestOrganization();
       const { rawKey } = await createTestApiKey();
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -303,7 +324,7 @@ describe("Admin Invites API", () => {
       await createTestOrganization();
       const { token } = await signUpTestUser(undefined, undefined, undefined, "owner");
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
         headers: jsonSessionHeaders(token),
         body: JSON.stringify({
@@ -318,7 +339,7 @@ describe("Admin Invites API", () => {
       await createTestOrganization();
       const { token } = await signUpTestUser("member@example.com", undefined, undefined, "member");
 
-      const res = await app.request("/api/v1/admin/organizations/invites", {
+      const res = await app.request("/api/v1/admin/invites", {
         method: "POST",
         headers: jsonSessionHeaders(token),
         body: JSON.stringify({
@@ -330,13 +351,13 @@ describe("Admin Invites API", () => {
     });
   });
 
-  describe("DELETE /api/v1/admin/organizations/invites/:id", () => {
+  describe("DELETE /api/v1/admin/invites/:id", () => {
     test("owner can revoke invite", async () => {
       await createTestOrganization();
       const { user: owner, token } = await signUpTestUser(undefined, undefined, undefined, "owner");
       const invite = await createTestInvite(owner.id, { email: "revoke@example.com" });
 
-      const res = await app.request(`/api/v1/admin/organizations/invites/${invite.id}`, {
+      const res = await app.request(`/api/v1/admin/invites/${invite.id}`, {
         method: "DELETE",
         headers: sessionCookieHeader(token),
       });
@@ -352,7 +373,7 @@ describe("Admin Invites API", () => {
       const { token } = await signUpTestUser("admin@example.com", undefined, undefined, "admin");
       const invite = await createTestInvite(owner.id, { email: "revoke@example.com" });
 
-      const res = await app.request(`/api/v1/admin/organizations/invites/${invite.id}`, {
+      const res = await app.request(`/api/v1/admin/invites/${invite.id}`, {
         method: "DELETE",
         headers: sessionCookieHeader(token),
       });
@@ -366,7 +387,7 @@ describe("Admin Invites API", () => {
       const { token } = await signUpTestUser("member@example.com", undefined, undefined, "member");
       const invite = await createTestInvite(owner.id, { email: "test@example.com" });
 
-      const res = await app.request(`/api/v1/admin/organizations/invites/${invite.id}`, {
+      const res = await app.request(`/api/v1/admin/invites/${invite.id}`, {
         method: "DELETE",
         headers: sessionCookieHeader(token),
       });
@@ -378,13 +399,10 @@ describe("Admin Invites API", () => {
       await createTestOrganization();
       const { token } = await signUpTestUser(undefined, undefined, undefined, "owner");
 
-      const res = await app.request(
-        "/api/v1/admin/organizations/invites/00000000-0000-0000-0000-000000000000",
-        {
-          method: "DELETE",
-          headers: sessionCookieHeader(token),
-        }
-      );
+      const res = await app.request("/api/v1/admin/invites/00000000-0000-0000-0000-000000000000", {
+        method: "DELETE",
+        headers: sessionCookieHeader(token),
+      });
 
       expect(res.status).toBe(404);
     });

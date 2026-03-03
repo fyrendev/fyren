@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { db, organizationInvites, users, eq, and, isNull, isNotNull } from "@fyrendev/db";
+import { db, organizationInvites, users, eq, and, isNull, isNotNull, gt } from "@fyrendev/db";
 import { authMiddleware } from "../../middleware/auth";
 import { requireRole } from "../../middleware/session";
 import { errorResponse, NotFoundError, ForbiddenError, ConflictError } from "../../lib/errors";
@@ -32,7 +32,7 @@ const createInviteSchema = z.object({
   role: z.enum(["admin", "member"]).default("member"),
 });
 
-// GET /api/v1/admin/organizations/invites - List pending invites
+// GET /api/v1/admin/invites - List pending invites
 adminInvites.get("/invites", authMiddleware, requireRole("owner", "admin"), async (c) => {
   try {
     const invites = await db
@@ -42,7 +42,9 @@ adminInvites.get("/invites", authMiddleware, requireRole("owner", "admin"), asyn
       })
       .from(organizationInvites)
       .leftJoin(users, eq(organizationInvites.invitedBy, users.id))
-      .where(isNull(organizationInvites.acceptedAt));
+      .where(
+        and(isNull(organizationInvites.acceptedAt), gt(organizationInvites.expiresAt, new Date()))
+      );
 
     return c.json({
       invites: invites.map((i) => ({
@@ -65,7 +67,7 @@ adminInvites.get("/invites", authMiddleware, requireRole("owner", "admin"), asyn
   }
 });
 
-// POST /api/v1/admin/organizations/invites - Create invite
+// POST /api/v1/admin/invites - Create invite
 adminInvites.post("/invites", authMiddleware, requireRole("owner", "admin"), async (c) => {
   try {
     const user = c.get("user");
@@ -182,7 +184,7 @@ adminInvites.post("/invites", authMiddleware, requireRole("owner", "admin"), asy
   }
 });
 
-// DELETE /api/v1/admin/organizations/invites/:id - Revoke invite
+// DELETE /api/v1/admin/invites/:id - Revoke invite
 adminInvites.delete("/invites/:id", authMiddleware, requireRole("owner", "admin"), async (c) => {
   try {
     const inviteId = c.req.param("id");

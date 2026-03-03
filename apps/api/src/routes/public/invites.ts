@@ -87,14 +87,14 @@ publicInvites.post("/:token/accept", requireSession, async (c) => {
       throw new ConflictError("You are already a member of this organization");
     }
 
-    // Set user role
-    await db.update(users).set({ role: invite.role }).where(eq(users.id, user.id));
-
-    // Mark invite as accepted
-    await db
-      .update(organizationInvites)
-      .set({ acceptedAt: new Date() })
-      .where(eq(organizationInvites.id, invite.id));
+    // Set user role and mark invite as accepted atomically
+    await db.transaction(async (tx) => {
+      await tx.update(users).set({ role: invite.role }).where(eq(users.id, user.id));
+      await tx
+        .update(organizationInvites)
+        .set({ acceptedAt: new Date() })
+        .where(eq(organizationInvites.id, invite.id));
+    });
 
     const org = await getOrganization();
 

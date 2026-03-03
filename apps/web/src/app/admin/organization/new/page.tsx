@@ -29,7 +29,7 @@ export default function NewOrganizationPage() {
     setError(null);
 
     try {
-      const res = await fetch(`/api/v1/admin/organizations`, {
+      const res = await fetch(`/api/v1/admin/organization`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

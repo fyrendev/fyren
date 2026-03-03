@@ -1,5 +1,6 @@
 import { beforeEach } from "bun:test";
 import { db, sql } from "@fyrendev/db";
+import { clearOrganizationCache } from "../lib/organization";
 import { redis } from "../lib/redis";
 
 /**
@@ -57,6 +58,7 @@ export function setupTestHooks() {
   beforeEach(async () => {
     await cleanDatabase();
     await cleanRedis();
+    clearOrganizationCache();
   });
 
   // Note: We don't close Redis here because tests run in parallel

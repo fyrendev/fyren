@@ -1,5 +1,5 @@
-import { db } from "../lib/db";
 import {
+  db,
   incidents,
   incidentUpdates,
   incidentComponents,

@@ -11,6 +11,7 @@ interface Organization {
 interface OrganizationContextValue {
   organization: Organization | null;
   loading: boolean;
+  error: string | null;
   refreshOrganization: () => Promise<void>;
 }
 
@@ -19,6 +20,7 @@ const OrganizationContext = createContext<OrganizationContextValue | null>(null)
 export function OrganizationProvider({ children }: { children: React.ReactNode }) {
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchOrganization = useCallback(async () => {
     try {
@@ -33,8 +35,10 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
       const data = await res.json();
       const org = data.organization || null;
       setOrganization(org);
-    } catch (error) {
-      console.error("Failed to fetch organization:", error);
+      setError(null);
+    } catch (err) {
+      console.error("Failed to fetch organization:", err);
+      setError(err instanceof Error ? err.message : "Failed to fetch organization");
     } finally {
       setLoading(false);
     }
@@ -49,6 +53,7 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
       value={{
         organization,
         loading,
+        error,
         refreshOrganization: fetchOrganization,
       }}
     >
