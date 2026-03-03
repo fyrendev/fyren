@@ -8,6 +8,8 @@
 
 An open source, self-hosted status page and incident management platform.
 
+[Documentation](https://fyren.dev/docs) | [Getting Started](https://fyren.dev/docs/getting-started) | [Self-Hosting](https://fyren.dev/docs/self-hosting) | [Website](https://fyren.dev)
+
 ## Features
 
 - **Real-time Monitoring** - HTTP, TCP, and SSL checks with configurable intervals
@@ -23,7 +25,7 @@ An open source, self-hosted status page and incident management platform.
 
 ### Prerequisites
 
-- [Bun](https://bun.sh/) v1.1+
+- [Bun](https://bun.sh/) v1.3+
 - [Docker](https://www.docker.com/) and Docker Compose
 
 ### Development Setup
