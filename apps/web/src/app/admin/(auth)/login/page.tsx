@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { signIn } from "@/lib/auth-client";
@@ -8,7 +8,7 @@ import { Card } from "@/components/admin/ui/Card";
 import { Button } from "@/components/admin/ui/Button";
 import { Input } from "@/components/admin/ui/Input";
 
-export default function LoginPage() {
+function LoginForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,6 +38,51 @@ export default function LoginPage() {
   }
 
   return (
+    <Card>
+      <h1 className="text-xl font-semibold text-white text-center mb-6">Sign in to your account</h1>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+            {error}
+          </div>
+        )}
+
+        <Input
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          required
+        />
+
+        <Input
+          label="Password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          required
+        />
+
+        <Button type="submit" className="w-full" loading={loading}>
+          Sign In
+        </Button>
+      </form>
+
+      <p className="mt-6 text-center text-sm text-navy-400">
+        Don&apos;t have an account?{" "}
+        <Link href="/admin/register" className="text-blue-400 hover:text-blue-300">
+          Sign up
+        </Link>
+      </p>
+    </Card>
+  );
+}
+
+export default function LoginPage() {
+  return (
     <div className="min-h-screen bg-navy-950 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
@@ -50,48 +95,9 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <Card>
-          <h1 className="text-xl font-semibold text-white text-center mb-6">
-            Sign in to your account
-          </h1>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
-                {error}
-              </div>
-            )}
-
-            <Input
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-            />
-
-            <Input
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
-
-            <Button type="submit" className="w-full" loading={loading}>
-              Sign In
-            </Button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-navy-400">
-            Don&apos;t have an account?{" "}
-            <Link href="/admin/register" className="text-blue-400 hover:text-blue-300">
-              Sign up
-            </Link>
-          </p>
-        </Card>
+        <Suspense>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   );
