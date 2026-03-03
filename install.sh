@@ -21,32 +21,32 @@ NC='\033[0m' # No Color
 # ─── Banner ───
 
 banner() {
-  echo ""
-  echo -e "${CYAN}${BOLD}"
-  echo "    ╔═╗┬ ┬┬─┐┌─┐┌┐┌"
-  echo "    ╠╣ └┬┘├┬┘├┤ │││"
-  echo "    ╚   ┴ ┴└─└─┘┘└┘"
-  echo -e "${NC}"
-  echo -e "  ${DIM}The open source lighthouse for your services${NC}"
-  echo ""
+  printf '\n'
+  printf '%b' "${CYAN}${BOLD}"
+  printf '    ╔═╗┬ ┬┬─┐┌─┐┌┐┌\n'
+  printf '    ╠╣ └┬┘├┬┘├┤ │││\n'
+  printf '    ╚   ┴ ┴└─└─┘┘└┘\n'
+  printf '%b' "${NC}"
+  printf '  %bThe open source lighthouse for your services%b\n' "${DIM}" "${NC}"
+  printf '\n'
 }
 
 # ─── Helpers ───
 
 info() {
-  echo -e "  ${CYAN}>${NC} $1"
+  printf '  %b>%b %s\n' "${CYAN}" "${NC}" "$1"
 }
 
 success() {
-  echo -e "  ${GREEN}✓${NC} $1"
+  printf '  %b✓%b %s\n' "${GREEN}" "${NC}" "$1"
 }
 
 warn() {
-  echo -e "  ${YELLOW}!${NC} $1"
+  printf '  %b!%b %s\n' "${YELLOW}" "${NC}" "$1"
 }
 
 error() {
-  echo -e "  ${RED}✗${NC} $1"
+  printf '  %b✗%b %s\n' "${RED}" "${NC}" "$1"
 }
 
 # ─── Prerequisites ───
@@ -81,11 +81,11 @@ check_prerequisites() {
 
 prompt_domain() {
   while true; do
-    echo ""
-    echo -e "  ${BOLD}Domain${NC}"
-    echo -e "  ${DIM}Where will Fyren be hosted? (e.g. status.example.com)${NC}"
+    printf '\n'
+    printf '  %bDomain%b\n' "${BOLD}" "${NC}"
+    printf '  %bWhere will Fyren be hosted? (e.g. status.example.com)%b\n' "${DIM}" "${NC}"
     printf "  > "
-    read -r APP_DOMAIN
+    read -r APP_DOMAIN </dev/tty
 
     # Strip protocol prefix if provided
     APP_DOMAIN="${APP_DOMAIN#http://}"
@@ -114,11 +114,11 @@ prompt_domain() {
 
 prompt_email() {
   while true; do
-    echo ""
-    echo -e "  ${BOLD}ACME Email${NC}"
-    echo -e "  ${DIM}Email for Let's Encrypt SSL certificates${NC}"
+    printf '\n'
+    printf '  %bACME Email%b\n' "${BOLD}" "${NC}"
+    printf '  %bEmail for Let'\''s Encrypt SSL certificates%b\n' "${DIM}" "${NC}"
     printf "  > "
-    read -r ACME_EMAIL
+    read -r ACME_EMAIL </dev/tty
 
     if [ -z "$ACME_EMAIL" ]; then
       warn "Email cannot be empty"
@@ -192,15 +192,15 @@ EOF
 
 check_existing() {
   if [ -f ".env" ]; then
-    echo ""
+    printf '\n'
     warn "An existing .env file was found in this directory."
     printf "  Overwrite? [y/N] "
-    read -r answer
+    read -r answer </dev/tty
     if [[ ! "$answer" =~ ^[Yy]$ ]]; then
       info "Installation cancelled. Your existing .env was not modified."
       exit 0
     fi
-    echo ""
+    printf '\n'
   fi
 }
 
@@ -221,24 +221,24 @@ main() {
   generate_secrets
   success "Secrets generated"
 
-  echo ""
+  printf '\n'
   download_compose
   write_env
 
-  echo ""
+  printf '\n'
   info "Starting Fyren..."
-  echo ""
+  printf '\n'
   docker compose up -d
 
-  echo ""
-  echo -e "  ${GREEN}${BOLD}Fyren is starting up!${NC}"
-  echo ""
-  echo -e "  ${BOLD}Status page:${NC}  https://$APP_DOMAIN"
-  echo -e "  ${BOLD}Config:${NC}       $(pwd)/.env"
-  echo ""
-  echo -e "  ${DIM}It may take a minute for SSL certificates to be issued.${NC}"
-  echo -e "  ${DIM}View logs with: docker compose logs -f${NC}"
-  echo ""
+  printf '\n'
+  printf '  %b%bFyren is starting up!%b\n' "${GREEN}" "${BOLD}" "${NC}"
+  printf '\n'
+  printf '  %bStatus page:%b  https://%s\n' "${BOLD}" "${NC}" "$APP_DOMAIN"
+  printf '  %bConfig:%b       %s/.env\n' "${BOLD}" "${NC}" "$(pwd)"
+  printf '\n'
+  printf '  %bIt may take a minute for SSL certificates to be issued.%b\n' "${DIM}" "${NC}"
+  printf '  %bView logs with: docker compose logs -f%b\n' "${DIM}" "${NC}"
+  printf '\n'
 }
 
 main
