@@ -1,0 +1,288 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  BUN_VERSION: "1.3"
+  NODE_VERSION: "20"
+
+jobs:
+  # ===================================
+  # Lint and Type Check
+  # ===================================
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run ESLint
+        run: bun run lint:fix --no-error-on-unmatched-pattern || true
+
+      - name: Type check
+        run: bun run lint
+
+  # ===================================
+  # Migration Check
+  # ===================================
+  migrations:
+    name: Check Migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Check migrations are up to date
+        working-directory: packages/db
+        run: |
+          # Generate migrations (won't prompt in CI since there's no TTY)
+          bunx drizzle-kit generate 2>&1 || true
+
+          # Check if any new migration files were created
+          if git status --porcelain | grep -q "drizzle/"; then
+            echo "❌ Schema changes detected without migrations!"
+            echo ""
+            echo "The following migration files would be generated:"
+            git status --porcelain | grep "drizzle/"
+            echo ""
+            echo "Please run 'bun run db:generate' locally and commit the migration files."
+            exit 1
+          fi
+
+          echo "✅ Migrations are up to date with schema"
+
+  # ===================================
+  # Unit & Integration Tests
+  # ===================================
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fyren
+          POSTGRES_PASSWORD: fyren
+          POSTGRES_DB: fyren_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Push database schema
+        run: bun run db:push
+        env:
+          DATABASE_URL: postgres://fyren:fyren@localhost:5432/fyren_test
+
+      - name: Run tests
+        working-directory: apps/api
+        run: bun test
+        env:
+          DATABASE_URL: postgres://fyren:fyren@localhost:5432/fyren_test
+          REDIS_URL: redis://localhost:6379
+          NODE_ENV: test
+          BETTER_AUTH_SECRET: test-secret-for-ci-minimum-32-chars
+          APP_URL: http://localhost:3000
+
+  # ===================================
+  # Build
+  # ===================================
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build packages
+        run: bun run build --filter=@fyrendev/db
+
+      - name: Build API
+        run: echo "API uses Bun runtime, no build step needed"
+
+      - name: Build Web
+        working-directory: apps/web
+        run: bun run build
+        env:
+          NEXT_PUBLIC_INTERNAL_API_URL: http://localhost:3001
+
+  # ===================================
+  # E2E Tests (on PR only)
+  # ===================================
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event_name == 'pull_request'
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fyren
+          POSTGRES_PASSWORD: fyren
+          POSTGRES_DB: fyren_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('apps/web/package.json') }}
+
+      - name: Install Playwright browsers
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+
+      - name: Push database schema
+        run: bun run db:push
+        env:
+          DATABASE_URL: postgres://fyren:fyren@localhost:5432/fyren_test
+
+      - name: Run E2E tests
+        run: bun run test:e2e
+        env:
+          DATABASE_URL: postgres://fyren:fyren@localhost:5432/fyren_test
+          REDIS_URL: redis://localhost:6379
+          NODE_ENV: test
+          BETTER_AUTH_SECRET: test-secret-for-ci-minimum-32-chars
+          APP_URL: http://localhost:3000
+          NEXT_PUBLIC_INTERNAL_API_URL: http://localhost:3001
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 7
+
+  # ===================================
+  # Docker Build (on main only)
+  # ===================================
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.ref == 'refs/heads/main'
+    needs: [lint, test, build, migrations]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build API image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: false
+          tags: fyren/api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Web image
+        uses: docker/build-push-action@v5
+        env:
+          NEXT_PUBLIC_INTERNAL_API_URL: http://localhost:3001
+        with:
+          build-args: |
+            NEXT_PUBLIC_INTERNAL_API_URL=http://localhost:3001
+          context: .
+          file: apps/web/Dockerfile
+          push: false
+          tags: fyren/web:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

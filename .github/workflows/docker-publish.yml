@@ -1,0 +1,124 @@
+name: Docker Publish
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag (leave empty for branch-based tag)"
+        required: false
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  # ===================================
+  # Build and Push Docker Images
+  # ===================================
+  build-and-push:
+    name: Build & Push
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: api
+            dockerfile: apps/api/Dockerfile
+            image_name: fyren-api
+          - image: worker
+            dockerfile: apps/api/Dockerfile.worker
+            image_name: fyren-worker
+          - image: web
+            dockerfile: apps/web/Dockerfile
+            image_name: fyren-web
+            extra_build_args: |
+              NEXT_PUBLIC_INTERNAL_API_URL=http://localhost:3001
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/fyrendev/${{ matrix.image_name }}
+          tags: |
+            # Set latest tag for version tags
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            # Tag with version for version tags (v1.0.0 -> 1.0.0)
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}},enable=${{ !startsWith(github.ref, 'refs/tags/v0.') }}
+            # Tag with short SHA for traceability
+            type=sha,prefix=sha-
+            # Tag with branch name for non-main branches (manual dispatch)
+            type=ref,event=branch,enable=${{ github.ref != 'refs/heads/main' }}
+            # Custom tag from workflow dispatch
+            type=raw,value=${{ inputs.tag }},enable=${{ inputs.tag != '' }}
+
+      - name: Build and push ${{ matrix.image }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+          build-args: |
+            BUILDTIME=${{ github.event.head_commit.timestamp }}
+            VERSION=${{ steps.meta.outputs.version }}
+            REVISION=${{ github.sha }}
+            ${{ matrix.extra_build_args }}
+
+  # ===================================
+  # Create Release Summary
+  # ===================================
+  summary:
+    name: Summary
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## Docker Images Published 🐳" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.build-and-push.result }}" == "success" ]; then
+            echo "✅ All images published successfully!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Some images failed to publish" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Images" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | Pull Command |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| API | \`docker pull ghcr.io/fyrendev/fyren-api:latest\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Worker | \`docker pull ghcr.io/fyrendev/fyren-worker:latest\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Web | \`docker pull ghcr.io/fyrendev/fyren-web:latest\` |" >> $GITHUB_STEP_SUMMARY

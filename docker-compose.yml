@@ -1,0 +1,81 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fyren-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fyren
+      POSTGRES_PASSWORD: fyren
+      POSTGRES_DB: fyren
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fyren -d fyren"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: fyren-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes
+
+  # API service (for local Docker testing)
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: fyren-api
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - DATABASE_URL=postgresql://fyren:fyren@postgres:5432/fyren
+      - REDIS_URL=redis://redis:6379
+      - PORT=3001
+      - NODE_ENV=production
+      - BETTER_AUTH_SECRET=dev-secret-change-in-production
+      - BETTER_AUTH_URL=http://localhost:3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    profiles:
+      - full
+
+  # Web service (for local Docker testing)
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_INTERNAL_API_URL: http://api:3001
+    container_name: fyren-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_INTERNAL_API_URL=http://api:3001
+    depends_on:
+      - api
+    profiles:
+      - full
+
+volumes:
+  postgres_data:
+  redis_data:

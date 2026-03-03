@@ -1,0 +1,199 @@
+version: "3.8"
+
+# Fyren Production Docker Compose
+# Usage: docker compose -f docker-compose.prod.yml up -d
+#
+# NOTE: When using external databases, ensure:
+# 1. DATABASE_URL and REDIS_URL point to the correct hostnames
+# 2. For Redis: use "default" username if ACL is not configured
+# 3. Ensure MIGRATIONS_PATH=./drizzle is set on the API
+
+services:
+  # ===================================
+  # Reverse Proxy (Traefik)
+  # ===================================
+  traefik:
+    image: traefik:v3.0
+    container_name: fyren-traefik
+    restart: unless-stopped
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:?ACME_EMAIL is required}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      # Redirect HTTP to HTTPS
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt:/letsencrypt
+    networks:
+      - fyren-network
+
+  # ===================================
+  # PostgreSQL Database
+  # ===================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: fyren-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fyren}
+      POSTGRES_USER: ${POSTGRES_USER:-fyren}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fyren} -d ${POSTGRES_DB:-fyren}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fyren-network
+
+  # ===================================
+  # Redis Cache & Queue
+  # ===================================
+  redis:
+    image: redis:7-alpine
+    container_name: fyren-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fyren-network
+
+  # ===================================
+  # Fyren API (runs migrations on startup)
+  # ===================================
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: fyren-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgres://${POSTGRES_USER:-fyren}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-fyren}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
+      BETTER_AUTH_URL: ${APP_URL:?APP_URL is required}
+      APP_URL: ${APP_URL}
+      # Migrations path (relative to /app in container)
+      # API runs migrations automatically on startup
+      MIGRATIONS_PATH: ./drizzle
+      # Email configuration
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@fyren.dev}
+      # AWS SES (if using)
+      AWS_REGION: ${AWS_REGION:-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      # SendGrid (if using)
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`${APP_DOMAIN:?APP_DOMAIN is required}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.api.loadbalancer.server.port=3001"
+      # Health endpoint router (no auth)
+      - "traefik.http.routers.api-health.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/health`)"
+      - "traefik.http.routers.api-health.entrypoints=websecure"
+      - "traefik.http.routers.api-health.tls.certresolver=letsencrypt"
+    networks:
+      - fyren-network
+
+  # ===================================
+  # Fyren Worker (Monitor checks, notifications)
+  # ===================================
+  worker:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.worker
+    container_name: fyren-worker
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://${POSTGRES_USER:-fyren}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-fyren}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      # Don't run migrations (API handles this)
+      RUN_MIGRATIONS: "false"
+      # Email configuration (same as API)
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@fyren.dev}
+      AWS_REGION: ${AWS_REGION:-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+    networks:
+      - fyren-network
+
+  # ===================================
+  # Fyren Web (Next.js)
+  # ===================================
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_INTERNAL_API_URL: http://api:3001
+    container_name: fyren-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_INTERNAL_API_URL: http://api:3001
+      NEXT_PUBLIC_APP_URL: ${APP_URL}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`${APP_DOMAIN}`)"
+      - "traefik.http.routers.web.entrypoints=websecure"
+      - "traefik.http.routers.web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.web.loadbalancer.server.port=3000"
+    networks:
+      - fyren-network
+
+# ===================================
+# Volumes
+# ===================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  letsencrypt:
+    driver: local
+
+# ===================================
+# Networks
+# ===================================
+networks:
+  fyren-network:
+    driver: bridge

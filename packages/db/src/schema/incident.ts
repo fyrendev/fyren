@@ -1,0 +1,33 @@
+import { pgTable, uuid, varchar, timestamp, index } from "drizzle-orm/pg-core";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { monitors } from "./monitor";
+import { incidentStatusEnum, incidentSeverityEnum } from "./enums";
+
+export const incidents = pgTable(
+  "incidents",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    title: varchar("title", { length: 255 }).notNull(),
+    status: incidentStatusEnum("status").notNull().default("investigating"),
+    severity: incidentSeverityEnum("severity").notNull().default("minor"),
+    // Optional: link to monitor that triggered this incident (for auto-incidents)
+    triggeredByMonitorId: uuid("triggered_by_monitor_id").references(() => monitors.id, {
+      onDelete: "set null",
+    }),
+    startedAt: timestamp("started_at").notNull().defaultNow(),
+    resolvedAt: timestamp("resolved_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("incidents_status_idx").on(table.status),
+    index("incidents_started_at_idx").on(table.startedAt),
+    index("incidents_triggered_by_monitor_id_idx").on(table.triggeredByMonitorId),
+  ]
+);
+
+export const insertIncidentSchema = createInsertSchema(incidents);
+export const selectIncidentSchema = createSelectSchema(incidents);
+
+export type Incident = typeof incidents.$inferSelect;
+export type NewIncident = typeof incidents.$inferInsert;

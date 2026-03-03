@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+.bun/
+
+# Build outputs
+dist/
+*.tsbuildinfo
+apps/web/.next/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+bun-debug.log*
+
+# Testing
+coverage/
+playwright-report/
+test-results/
+
+# Turbo
+.turbo/
+
+# Database
+*.db
+*.sqlite
+
+# Docker volumes (local)
+docker/data/
+.playwright-mcp/
