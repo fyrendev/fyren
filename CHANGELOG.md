@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/fyrendev/fyren/compare/v0.1.2...v0.1.3) (2026-03-04)
+
+
+### Bug Fixes
+
+* release flow fix ([#23](https://github.com/fyrendev/fyren/issues/23)) ([c8cde38](https://github.com/fyrendev/fyren/commit/c8cde389b56c2c250aff4165cb76d6f10c945ce8))
+
 ## [0.1.2](https://github.com/fyrendev/fyren/compare/v0.1.1...v0.1.2) (2026-03-03)
 
 
