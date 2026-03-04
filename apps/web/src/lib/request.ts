@@ -1,12 +1,12 @@
 /**
  * Request helper that automatically handles server vs client URL resolution.
- * - Server-side (SSR): Uses NEXT_PUBLIC_INTERNAL_API_URL for direct backend access
+ * - Server-side (SSR): Uses INTERNAL_API_URL (runtime) for direct backend access
  * - Client-side: Uses relative URLs that get proxied via Next.js rewrites
  */
 
 function getBaseUrl(): string {
   if (typeof window === "undefined") {
-    return process.env.NEXT_PUBLIC_INTERNAL_API_URL || "";
+    return process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_INTERNAL_API_URL || "";
   }
   return "";
 }
