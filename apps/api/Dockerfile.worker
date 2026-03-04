@@ -38,7 +38,7 @@ COPY packages/db ./packages/db
 COPY packages/shared ./packages/shared
 COPY apps/api ./apps/api
 COPY turbo.json ./
-COPY package.json ./
+COPY package.json bun.lock ./
 
 # Build the packages
 RUN bun run build --filter=@fyrendev/db
