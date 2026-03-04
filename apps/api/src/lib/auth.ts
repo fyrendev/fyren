@@ -3,6 +3,10 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db, users, sessions, accounts, verifications } from "@fyrendev/db";
 import { env } from "../env";
 
+if (!env.BETTER_AUTH_SECRET) {
+  throw new Error("BETTER_AUTH_SECRET is required for auth initialization");
+}
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",

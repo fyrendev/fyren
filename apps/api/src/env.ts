@@ -6,7 +6,7 @@ const envSchema = z.object({
   REDIS_URL: z.string().url(),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   // Auth (BetterAuth)
-  BETTER_AUTH_SECRET: z.string().min(32),
+  BETTER_AUTH_SECRET: z.string().min(32).optional(),
   BETTER_AUTH_URL: z.string().url().default("http://localhost:3001"),
   APP_URL: z.string().default("http://localhost:3000"), // Can be comma-separated for multiple origins
   // Cookie domain for cross-subdomain auth (e.g., ".example.com")
