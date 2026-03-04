@@ -5,7 +5,7 @@ import { errorResponse } from "../../lib/errors";
 import { getOrganization } from "../../lib/organization";
 import { widgetCorsHeaders, cacheHeaders } from "../../middleware/security";
 import { badgeRateLimit } from "../../middleware/rateLimit";
-import { env } from "../../env";
+import { env } from "../../env/api";
 
 export const badgeRoutes = new Hono();
 

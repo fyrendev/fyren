@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { env } from "./env";
+import { env } from "./env/api";
 import { setupRoutes } from "./routes";
 import { redis, bullmqRedis } from "./lib/redis";
 import { errorResponse } from "./lib/errors";

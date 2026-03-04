@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { getOrganization } from "../../lib/organization";
-import { env } from "../../env";
+import { env } from "../../env/api";
 import { widgetCorsHeaders, cacheHeaders } from "../../middleware/security";
 import { badgeRateLimit } from "../../middleware/rateLimit";
 

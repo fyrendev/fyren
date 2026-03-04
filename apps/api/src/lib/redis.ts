@@ -1,5 +1,5 @@
 import Redis from "ioredis";
-import { env } from "../env";
+import { env } from "../env/base";
 import { logger } from "./logging";
 
 // Standard Redis client for caching and general use

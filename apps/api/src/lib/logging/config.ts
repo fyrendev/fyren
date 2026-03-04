@@ -8,7 +8,7 @@
 import type { LoggerConfig, LogLevel, LogProvider } from "./types";
 import { db } from "@fyrendev/db";
 import { decryptJson, isEncryptionAvailable } from "../encryption";
-import { env } from "../../env";
+import { env } from "../../env/base";
 
 interface LokiConfig {
   username?: string;

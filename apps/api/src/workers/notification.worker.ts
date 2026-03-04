@@ -14,7 +14,7 @@ import {
   maintenanceStartedTemplate,
   maintenanceCompletedTemplate,
 } from "../lib/email/templates/maintenance";
-import { env } from "../env";
+import { env } from "../env/worker";
 import type { NotificationJobData } from "../services/notification.service";
 import { logger } from "../lib/logging";
 

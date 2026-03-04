@@ -8,7 +8,7 @@ import type { AuthUser } from "../../lib/auth";
 import { logger } from "../../lib/logging";
 import { getEmailProvider } from "../../lib/email";
 import { inviteTemplate } from "../../lib/email/templates/invite";
-import { env } from "../../env";
+import { env } from "../../env/api";
 import { getOrganization } from "../../lib/organization";
 
 type Variables = {
