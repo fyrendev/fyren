@@ -1,19 +1,16 @@
 import { z } from "zod";
 
-const envSchema = z.object({
+/**
+ * Base environment schema — shared infrastructure env vars
+ * used by both the API server and worker processes.
+ */
+export const baseEnvSchema = z.object({
   PORT: z.coerce.number().default(3001),
   DATABASE_URL: z.string().url(),
   REDIS_URL: z.string().url(),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  // Auth (BetterAuth)
-  BETTER_AUTH_SECRET: z.string().min(32).optional(),
-  BETTER_AUTH_URL: z.string().url().default("http://localhost:3001"),
-  APP_URL: z.string().default("http://localhost:3000"), // Can be comma-separated for multiple origins
-  // Cookie domain for cross-subdomain auth (e.g., ".example.com")
-  // Required when API and web are on different subdomains
-  COOKIE_DOMAIN: z.string().optional(),
+
   // Encryption key for sensitive data (64 hex chars = 32 bytes)
-  // Required for storing email provider credentials
   ENCRYPTION_KEY: z
     .string()
     .length(64)
@@ -36,10 +33,10 @@ const envSchema = z.object({
   OTLP_HEADERS: z.string().optional(), // JSON string of headers
 });
 
-export type Env = z.infer<typeof envSchema>;
+export type BaseEnv = z.infer<typeof baseEnvSchema>;
 
-function parseEnv(): Env {
-  const result = envSchema.safeParse(process.env);
+function parseBaseEnv(): BaseEnv {
+  const result = baseEnvSchema.safeParse(process.env);
 
   if (!result.success) {
     console.error("Invalid environment variables:");
@@ -50,4 +47,4 @@ function parseEnv(): Env {
   return result.data;
 }
 
-export const env = parseEnv();
+export const env = parseBaseEnv();

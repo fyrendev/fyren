@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { db, eq, desc } from "@fyrendev/db";
 import { incidents, incidentUpdates } from "@fyrendev/db";
 import { getOrganization } from "../../lib/organization";
-import { env } from "../../env";
+import { env } from "../../env/api";
 
 export const rssRoutes = new Hono();
 

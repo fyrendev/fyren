@@ -1,11 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db, users, sessions, accounts, verifications } from "@fyrendev/db";
-import { env } from "../env";
-
-if (!env.BETTER_AUTH_SECRET) {
-  throw new Error("BETTER_AUTH_SECRET is required for auth initialization");
-}
+import { env } from "../env/api";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {

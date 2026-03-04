@@ -7,7 +7,7 @@ import { getEmailProvider } from "../../lib/email";
 import { verificationTemplate } from "../../lib/email/templates/verification";
 import { errorResponse } from "../../lib/errors";
 import { getOrganization } from "../../lib/organization";
-import { env } from "../../env";
+import { env } from "../../env/api";
 
 export const subscribeRoutes = new Hono();
 

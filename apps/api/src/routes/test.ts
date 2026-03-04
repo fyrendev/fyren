@@ -12,7 +12,7 @@ import {
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { z } from "zod";
-import { env } from "../env";
+import { env } from "../env/api";
 import { logger } from "../lib/logging";
 
 const testRoutes = new Hono();
