@@ -21,13 +21,11 @@ export default function AcceptInvitePage() {
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-
   // Fetch invite details
   useEffect(() => {
     async function fetchInvite() {
       try {
-        const res = await fetch(`${apiBase}/api/v1/invites/${params.token}`);
+        const res = await fetch(`/api/v1/invites/${params.token}`);
         const data = await res.json();
 
         if (!res.ok) {
@@ -44,14 +42,14 @@ export default function AcceptInvitePage() {
     }
 
     fetchInvite();
-  }, [params.token, apiBase]);
+  }, [params.token]);
 
   async function handleAccept() {
     setAccepting(true);
     setError(null);
 
     try {
-      const res = await fetch(`${apiBase}/api/v1/invites/${params.token}/accept`, {
+      const res = await fetch(`/api/v1/invites/${params.token}/accept`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
