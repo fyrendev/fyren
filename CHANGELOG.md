@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.5](https://github.com/fyrendev/fyren/compare/v0.1.4...v0.1.5) (2026-03-05)
+
+
+### Bug Fixes
+
+* copy bun.lock into Docker builder stage ([#28](https://github.com/fyrendev/fyren/issues/28)) ([56068e9](https://github.com/fyrendev/fyren/commit/56068e9c66e189e6bc5761b7b2a2bfc9bdf85cdb))
+* use runtime env var for SSR API requests in Docker ([#30](https://github.com/fyrendev/fyren/issues/30)) ([19c2e11](https://github.com/fyrendev/fyren/commit/19c2e111ff21752594163d5d884c333a9044dfdd))
+
 ## [0.1.4](https://github.com/fyrendev/fyren/compare/v0.1.3...v0.1.4) (2026-03-04)
 
 
