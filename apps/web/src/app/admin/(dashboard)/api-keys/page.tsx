@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { api, type ApiKey } from "@/lib/api-client";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { ConfirmDialog } from "@/components/admin/ui/ConfirmDialog";
 import { Button } from "@/components/admin/ui/Button";
 import { Card } from "@/components/admin/ui/Card";
 import { Badge } from "@/components/admin/ui/Badge";
@@ -20,6 +23,7 @@ import { Key, Plus, Trash2, Copy, Check } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 
 export default function ApiKeysPage() {
+  const { confirm, dialogProps } = useConfirmDialog();
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -42,6 +46,7 @@ export default function ApiKeysPage() {
       setApiKeys(data.apiKeys);
     } catch (err) {
       console.error("Failed to load API keys:", err);
+      toast.error("Failed to load API keys");
     } finally {
       setLoading(false);
     }
@@ -74,15 +79,22 @@ export default function ApiKeysPage() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to revoke this API key?")) return;
-
-    try {
-      await api.deleteApiKey(id);
-      loadApiKeys();
-    } catch (err) {
-      console.error("Failed to delete API key:", err);
-    }
+  function handleDelete(id: string) {
+    confirm({
+      title: "Revoke API Key",
+      message: "Are you sure you want to revoke this API key? This cannot be undone.",
+      confirmLabel: "Revoke",
+      onConfirm: async () => {
+        try {
+          await api.deleteApiKey(id);
+          toast.success("API key revoked");
+          loadApiKeys();
+        } catch (err) {
+          console.error("Failed to delete API key:", err);
+          toast.error("Failed to revoke API key");
+        }
+      },
+    });
   }
 
   function copyToClipboard(text: string, id: string) {
@@ -236,6 +248,8 @@ export default function ApiKeysPage() {
           </form>
         )}
       </Modal>
+
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

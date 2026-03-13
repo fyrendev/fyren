@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { api, type Subscriber, type SubscriberGroup, type Component } from "@/lib/api-client";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { ConfirmDialog } from "@/components/admin/ui/ConfirmDialog";
 import { Button } from "@/components/admin/ui/Button";
 import { Card } from "@/components/admin/ui/Card";
 import { Badge } from "@/components/admin/ui/Badge";
@@ -21,6 +24,7 @@ import { Users, Plus, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 
 export default function SubscribersPage() {
+  const { confirm, dialogProps } = useConfirmDialog();
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [groups, setGroups] = useState<SubscriberGroup[]>([]);
   const [components, setComponents] = useState<Component[]>([]);
@@ -61,6 +65,7 @@ export default function SubscribersPage() {
       setComponents(componentsData.components);
     } catch (err) {
       console.error("Failed to load data:", err);
+      toast.error("Failed to load subscribers");
     } finally {
       setLoading(false);
     }
@@ -121,15 +126,22 @@ export default function SubscribersPage() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to remove this subscriber?")) return;
-
-    try {
-      await api.deleteSubscriber(id);
-      loadData();
-    } catch (err) {
-      console.error("Failed to delete subscriber:", err);
-    }
+  function handleDelete(id: string) {
+    confirm({
+      title: "Remove Subscriber",
+      message: "Are you sure you want to remove this subscriber?",
+      confirmLabel: "Remove",
+      onConfirm: async () => {
+        try {
+          await api.deleteSubscriber(id);
+          toast.success("Subscriber removed");
+          loadData();
+        } catch (err) {
+          console.error("Failed to delete subscriber:", err);
+          toast.error("Failed to remove subscriber");
+        }
+      },
+    });
   }
 
   function toggleComponent(componentId: string) {
@@ -359,6 +371,8 @@ export default function SubscribersPage() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

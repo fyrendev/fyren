@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import type { WebhookType } from "@fyrendev/shared";
 import { api, type WebhookEndpoint } from "@/lib/api-client";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { ConfirmDialog } from "@/components/admin/ui/ConfirmDialog";
 import { Button } from "@/components/admin/ui/Button";
 import { Card } from "@/components/admin/ui/Card";
 import { Badge } from "@/components/admin/ui/Badge";
@@ -28,6 +31,7 @@ const typeOptions = [
 ];
 
 export default function WebhooksPage() {
+  const { confirm, dialogProps } = useConfirmDialog();
   const [webhooks, setWebhooks] = useState<WebhookEndpoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -59,6 +63,7 @@ export default function WebhooksPage() {
       setWebhooks(data.webhooks);
     } catch (err) {
       console.error("Failed to load webhooks:", err);
+      toast.error("Failed to load webhooks");
     } finally {
       setLoading(false);
     }
@@ -109,6 +114,7 @@ export default function WebhooksPage() {
       loadWebhooks();
     } catch (err) {
       console.error("Failed to toggle webhook:", err);
+      toast.error("Failed to toggle webhook");
     }
   }
 
@@ -125,15 +131,22 @@ export default function WebhooksPage() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to delete this webhook?")) return;
-
-    try {
-      await api.deleteWebhook(id);
-      loadWebhooks();
-    } catch (err) {
-      console.error("Failed to delete webhook:", err);
-    }
+  function handleDelete(id: string) {
+    confirm({
+      title: "Delete Webhook",
+      message: "Are you sure you want to delete this webhook?",
+      confirmLabel: "Delete",
+      onConfirm: async () => {
+        try {
+          await api.deleteWebhook(id);
+          toast.success("Webhook deleted");
+          loadWebhooks();
+        } catch (err) {
+          console.error("Failed to delete webhook:", err);
+          toast.error("Failed to delete webhook");
+        }
+      },
+    });
   }
 
   if (loading) {
@@ -276,6 +289,8 @@ export default function WebhooksPage() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

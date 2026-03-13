@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
   api,
   type Organization,
@@ -19,8 +20,6 @@ export default function SettingsPage() {
   const [_organization, setOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
   const [testEmailResult, setTestEmailResult] = useState<{
     success: boolean;
@@ -91,7 +90,7 @@ export default function SettingsPage() {
       }));
     } catch (err) {
       console.error("Failed to load organization:", err);
-      setError("Failed to load organization settings");
+      toast.error("Failed to load organization settings");
     } finally {
       setLoading(false);
     }
@@ -100,16 +99,13 @@ export default function SettingsPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    setError(null);
-    setSuccess(false);
 
     try {
       await api.updateOrganization(formData);
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      toast.success("Settings saved");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to update settings";
-      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -118,8 +114,6 @@ export default function SettingsPage() {
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    setError(null);
-    setSuccess(false);
     setTestEmailResult(null);
 
     try {
@@ -139,11 +133,10 @@ export default function SettingsPage() {
         emailFromAddress: emailFormData.emailFromAddress || null,
         emailConfig,
       });
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      toast.success("Email settings saved");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to update email settings";
-      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -177,17 +170,6 @@ export default function SettingsPage() {
       <h1 className="text-2xl font-semibold text-white">Settings</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {error && (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400 text-sm">
-            Settings saved successfully!
-          </div>
-        )}
-
         {/* General Settings */}
         <Card>
           <CardHeader>
@@ -587,7 +569,7 @@ export default function SettingsPage() {
           </p>
           <Button
             variant="danger"
-            onClick={() => alert("This feature is not implemented in this demo.")}
+            onClick={() => toast.info("Organization deletion is not yet available")}
           >
             Delete Organization
           </Button>

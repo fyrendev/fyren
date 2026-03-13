@@ -16,9 +16,12 @@ import {
   TableRow,
 } from "@/components/admin/ui/Table";
 import { api, type Invite, type Member } from "@/lib/api-client";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { ConfirmDialog } from "@/components/admin/ui/ConfirmDialog";
 import { format } from "date-fns";
 import { Mail, Plus, Trash2, UserCog } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 const roleOptions = [
   { value: "admin", label: "Admin" },
@@ -32,6 +35,7 @@ const roleVariants: Record<string, "warning" | "info" | "default"> = {
 };
 
 export default function TeamPage() {
+  const { confirm, dialogProps } = useConfirmDialog();
   const [members, setMembers] = useState<Member[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,6 +58,7 @@ export default function TeamPage() {
       setInvites(invitesRes.invites);
     } catch (err) {
       console.error("Failed to load team data:", err);
+      toast.error("Failed to load team data");
     } finally {
       setLoading(false);
     }
@@ -83,29 +88,44 @@ export default function TeamPage() {
       loadData();
     } catch (err) {
       console.error("Failed to update member role:", err);
+      toast.error("Failed to update member role");
     }
   }
 
-  async function handleRemoveMember(userId: string) {
-    if (!confirm("Are you sure you want to remove this team member?")) return;
-
-    try {
-      await api.removeMember(userId);
-      loadData();
-    } catch (err) {
-      console.error("Failed to remove member:", err);
-    }
+  function handleRemoveMember(userId: string) {
+    confirm({
+      title: "Remove Member",
+      message: "Are you sure you want to remove this team member?",
+      confirmLabel: "Remove",
+      onConfirm: async () => {
+        try {
+          await api.removeMember(userId);
+          toast.success("Member removed");
+          loadData();
+        } catch (err) {
+          console.error("Failed to remove member:", err);
+          toast.error("Failed to remove member");
+        }
+      },
+    });
   }
 
-  async function handleRevokeInvite(id: string) {
-    if (!confirm("Are you sure you want to revoke this invite?")) return;
-
-    try {
-      await api.deleteInvite(id);
-      loadData();
-    } catch (err) {
-      console.error("Failed to revoke invite:", err);
-    }
+  function handleRevokeInvite(id: string) {
+    confirm({
+      title: "Revoke Invite",
+      message: "Are you sure you want to revoke this invite?",
+      confirmLabel: "Revoke",
+      onConfirm: async () => {
+        try {
+          await api.deleteInvite(id);
+          toast.success("Invite revoked");
+          loadData();
+        } catch (err) {
+          console.error("Failed to revoke invite:", err);
+          toast.error("Failed to revoke invite");
+        }
+      },
+    });
   }
 
   if (loading) {
@@ -275,6 +295,8 @@ export default function TeamPage() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }
