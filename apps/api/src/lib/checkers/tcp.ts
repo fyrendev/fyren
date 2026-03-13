@@ -1,4 +1,5 @@
 import { connect, type Socket } from "net";
+import { logger } from "../logging";
 
 export interface TcpCheckOptions {
   host: string;
@@ -37,6 +38,12 @@ export async function checkTcp(options: TcpCheckOptions): Promise<CheckResult> {
 
     const timeoutId = setTimeout(() => {
       const responseTimeMs = Math.round(performance.now() - startTime);
+      logger.error(`TCP check timed out for ${host}:${port} after ${timeoutMs}ms`, {
+        host,
+        port,
+        timeoutMs,
+        responseTimeMs,
+      });
       resolveOnce({
         status: "down",
         responseTimeMs,
@@ -57,6 +64,12 @@ export async function checkTcp(options: TcpCheckOptions): Promise<CheckResult> {
       socket.on("error", (err) => {
         const responseTimeMs = Math.round(performance.now() - startTime);
         clearTimeout(timeoutId);
+        logger.error(`TCP check error for ${host}:${port}: ${err.message}`, {
+          host,
+          port,
+          errorName: err.name,
+          responseTimeMs,
+        });
         resolveOnce({
           status: "down",
           responseTimeMs,

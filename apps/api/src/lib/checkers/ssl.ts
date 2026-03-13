@@ -1,4 +1,5 @@
 import { connect, type TLSSocket, type PeerCertificate } from "tls";
+import { logger } from "../logging";
 
 export interface SslCheckOptions {
   host: string;
@@ -86,6 +87,15 @@ export async function checkSsl(options: SslCheckOptions): Promise<SslCheckResult
 
             // Check if certificate is expired or about to expire
             if (daysUntilExpiry < 0) {
+              logger.error(
+                `SSL certificate expired for ${host}: ${Math.abs(daysUntilExpiry)} days ago`,
+                {
+                  host,
+                  port,
+                  daysUntilExpiry,
+                  expiresAt: expiresAt.toISOString(),
+                }
+              );
               resolveOnce({
                 status: "down",
                 responseTimeMs,
@@ -98,6 +108,13 @@ export async function checkSsl(options: SslCheckOptions): Promise<SslCheckResult
             }
 
             if (daysUntilExpiry < warningDays) {
+              logger.error(`SSL certificate expiring soon for ${host}: ${daysUntilExpiry} days`, {
+                host,
+                port,
+                daysUntilExpiry,
+                warningDays,
+                expiresAt: expiresAt.toISOString(),
+              });
               resolveOnce({
                 status: "down",
                 responseTimeMs,
@@ -129,6 +146,12 @@ export async function checkSsl(options: SslCheckOptions): Promise<SslCheckResult
       socket.on("error", (err) => {
         const responseTimeMs = Math.round(performance.now() - startTime);
         clearTimeout(timeoutId);
+        logger.error(`SSL check error for ${host}: ${err.message}`, {
+          host,
+          port,
+          errorName: err.name,
+          responseTimeMs,
+        });
         resolveOnce({
           status: "down",
           responseTimeMs,
