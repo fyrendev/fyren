@@ -2,7 +2,10 @@
 
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { api, type Incident, type IncidentUpdate } from "@/lib/api-client";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { ConfirmDialog } from "@/components/admin/ui/ConfirmDialog";
 import { Card, CardHeader, CardTitle } from "@/components/admin/ui/Card";
 import { Button } from "@/components/admin/ui/Button";
 import { Badge } from "@/components/admin/ui/Badge";
@@ -32,6 +35,7 @@ interface PageProps {
 
 export default function IncidentDetailPage({ params }: PageProps) {
   const { id } = use(params);
+  const { confirm, dialogProps } = useConfirmDialog();
   const [incident, setIncident] = useState<Incident | null>(null);
   const [loading, setLoading] = useState(true);
   const [updateModalOpen, setUpdateModalOpen] = useState(false);
@@ -63,26 +67,36 @@ export default function IncidentDetailPage({ params }: PageProps) {
       await api.addIncidentUpdate(id, updateData);
       setUpdateModalOpen(false);
       setUpdateData({ status: "monitoring", message: "" });
+      toast.success("Update posted");
       loadIncident();
     } catch (err) {
       console.error("Failed to add update:", err);
+      toast.error("Failed to add update");
     } finally {
       setSaving(false);
     }
   }
 
-  async function handleResolve() {
-    if (!confirm("Are you sure you want to resolve this incident?")) return;
-
-    setSaving(true);
-    try {
-      await api.resolveIncident(id);
-      loadIncident();
-    } catch (err) {
-      console.error("Failed to resolve incident:", err);
-    } finally {
-      setSaving(false);
-    }
+  function handleResolve() {
+    confirm({
+      title: "Resolve Incident",
+      message: "Are you sure you want to resolve this incident?",
+      confirmLabel: "Resolve",
+      variant: "primary",
+      onConfirm: async () => {
+        setSaving(true);
+        try {
+          await api.resolveIncident(id);
+          toast.success("Incident resolved");
+          loadIncident();
+        } catch (err) {
+          console.error("Failed to resolve incident:", err);
+          toast.error("Failed to resolve incident");
+        } finally {
+          setSaving(false);
+        }
+      },
+    });
   }
 
   if (loading) {
@@ -220,6 +234,8 @@ export default function IncidentDetailPage({ params }: PageProps) {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

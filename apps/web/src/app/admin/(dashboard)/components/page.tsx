@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { api, type Component } from "@/lib/api-client";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { ConfirmDialog } from "@/components/admin/ui/ConfirmDialog";
 import { Button } from "@/components/admin/ui/Button";
 import { Card } from "@/components/admin/ui/Card";
 import { Badge } from "@/components/admin/ui/Badge";
@@ -39,6 +42,7 @@ const statusVariants: Record<string, "success" | "warning" | "danger" | "info"> 
 };
 
 export default function ComponentsPage() {
+  const { confirm, dialogProps } = useConfirmDialog();
   const [components, setComponents] = useState<Component[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -62,7 +66,7 @@ export default function ComponentsPage() {
       setComponents(data.components);
     } catch (err) {
       console.error("Failed to load components:", err);
-      setError("Failed to load components");
+      toast.error("Failed to load components");
     } finally {
       setLoading(false);
     }
@@ -106,15 +110,23 @@ export default function ComponentsPage() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to delete this component?")) return;
-
-    try {
-      await api.deleteComponent(id);
-      loadComponents();
-    } catch (err) {
-      console.error("Failed to delete component:", err);
-    }
+  function handleDelete(id: string) {
+    confirm({
+      title: "Delete Component",
+      message:
+        "Are you sure you want to delete this component? Associated monitors will also be removed.",
+      confirmLabel: "Delete",
+      onConfirm: async () => {
+        try {
+          await api.deleteComponent(id);
+          toast.success("Component deleted");
+          loadComponents();
+        } catch (err) {
+          console.error("Failed to delete component:", err);
+          toast.error("Failed to delete component");
+        }
+      },
+    });
   }
 
   if (loading) {
@@ -241,6 +253,8 @@ export default function ComponentsPage() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }
