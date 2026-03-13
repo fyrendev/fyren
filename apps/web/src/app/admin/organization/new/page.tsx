@@ -7,21 +7,8 @@ import { Button } from "@/components/admin/ui/Button";
 
 export default function NewOrganizationPage() {
   const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setName(value);
-    // Auto-generate slug from name
-    setSlug(
-      value
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "")
-    );
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +20,7 @@ export default function NewOrganizationPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name, slug }),
+        body: JSON.stringify({ name }),
       });
 
       if (!res.ok) {
@@ -77,24 +64,13 @@ export default function NewOrganizationPage() {
             <Input
               label="Organization Name"
               value={name}
-              onChange={handleNameChange}
+              onChange={(e) => setName(e.target.value)}
               placeholder="My Company"
               required
             />
 
-            <Input
-              label="URL Slug"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              placeholder="my-company"
-              required
-            />
-            <p className="text-xs text-navy-400 -mt-2">
-              Your public status page will be at: /{slug || "my-company"}
-            </p>
-
             <div className="pt-4">
-              <Button type="submit" disabled={loading || !name || !slug}>
+              <Button type="submit" disabled={loading || !name}>
                 {loading ? "Creating..." : "Create Organization"}
               </Button>
             </div>

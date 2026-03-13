@@ -54,16 +54,7 @@ export const notificationWorker = new Worker<NotificationJobData>(
 );
 
 async function processEmailJob(job: Job<NotificationJobData>): Promise<void> {
-  const {
-    email,
-    unsubscribeToken,
-    organizationName,
-    organizationSlug,
-    event,
-    entityType,
-    entityId,
-    data,
-  } = job.data;
+  const { email, unsubscribeToken, organizationName, event, entityType, entityId, data } = job.data;
 
   if (!email || !unsubscribeToken) {
     logger.workerError("NotificationWorker", "Missing email or unsubscribe token", undefined, {
@@ -74,9 +65,9 @@ async function processEmailJob(job: Job<NotificationJobData>): Promise<void> {
     throw new Error("Missing email or unsubscribe token");
   }
 
-  const statusPageUrl = `${env.APP_URL}/${organizationSlug}`;
+  const statusPageUrl = `${env.APP_URL}`;
   const unsubscribeUrl = `${env.APP_URL}/api/v1/status/unsubscribe/${unsubscribeToken}`;
-  const incidentUrl = `${env.APP_URL}/${organizationSlug}/incidents/${entityId}`;
+  const incidentUrl = `${env.APP_URL}/incidents/${entityId}`;
 
   let emailContent: { subject: string; html: string; text: string };
 
@@ -206,7 +197,6 @@ async function processWebhookJob(job: Job<NotificationJobData>): Promise<void> {
     webhookUrl,
     webhookSecret,
     organizationName,
-    organizationSlug,
     event,
     entityType,
     entityId,
@@ -228,7 +218,7 @@ async function processWebhookJob(job: Job<NotificationJobData>): Promise<void> {
     {
       event,
       timestamp: new Date().toISOString(),
-      organization: { name: organizationName, slug: organizationSlug },
+      organization: { name: organizationName },
       data,
     },
     webhookSecret

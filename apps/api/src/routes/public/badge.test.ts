@@ -13,7 +13,7 @@ describe("Badge API", () => {
 
   describe("GET /api/v1/status/badge.svg", () => {
     test("returns SVG badge for operational status", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       await createTestComponent({ status: "operational", isPublic: true });
 
       const res = await app.request("/api/v1/status/badge.svg");
@@ -26,7 +26,7 @@ describe("Badge API", () => {
     });
 
     test("returns SVG badge showing degraded status", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       await createTestComponent({ status: "degraded", isPublic: true });
 
       const res = await app.request("/api/v1/status/badge.svg");
@@ -37,7 +37,7 @@ describe("Badge API", () => {
     });
 
     test("returns SVG badge showing major outage status", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       await createTestComponent({ status: "operational", isPublic: true });
       await createTestComponent({ status: "major_outage", isPublic: true });
 
@@ -49,7 +49,7 @@ describe("Badge API", () => {
     });
 
     test("returns operational badge when no components exist", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
 
       const res = await app.request("/api/v1/status/badge.svg");
 
@@ -67,7 +67,7 @@ describe("Badge API", () => {
     });
 
     test("supports custom label via query param", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       await createTestComponent({ status: "operational", isPublic: true });
 
       const res = await app.request("/api/v1/status/badge.svg?label=uptime");
@@ -78,7 +78,7 @@ describe("Badge API", () => {
     });
 
     test("supports flat-square style", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       await createTestComponent({ status: "operational", isPublic: true });
 
       const res = await app.request("/api/v1/status/badge.svg?style=flat-square");
@@ -90,7 +90,7 @@ describe("Badge API", () => {
     });
 
     test("sets cache headers", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       await createTestComponent({ status: "operational", isPublic: true });
 
       const res = await app.request("/api/v1/status/badge.svg");
@@ -100,7 +100,7 @@ describe("Badge API", () => {
     });
 
     test("only considers public components", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       await createTestComponent({ status: "operational", isPublic: true });
       await createTestComponent({ status: "major_outage", isPublic: false });
 
@@ -116,7 +116,6 @@ describe("Badge API", () => {
   describe("GET /api/v1/status/badge.json", () => {
     test("returns JSON badge data", async () => {
       await createTestOrganization({
-        slug: "test-org",
         name: "Test Organization",
       });
       await createTestComponent({ status: "operational", isPublic: true });
@@ -134,7 +133,7 @@ describe("Badge API", () => {
     });
 
     test("returns degraded indicator for degraded status", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       await createTestComponent({ status: "degraded", isPublic: true });
 
       const res = await app.request("/api/v1/status/badge.json");
@@ -153,7 +152,7 @@ describe("Badge API", () => {
 
   describe("GET /api/v1/status/badge", () => {
     test("redirects to SVG endpoint", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       await createTestComponent({ status: "operational", isPublic: true });
 
       const res = await app.request("/api/v1/status/badge", {
@@ -165,7 +164,7 @@ describe("Badge API", () => {
     });
 
     test("preserves query params in redirect", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       await createTestComponent({ status: "operational", isPublic: true });
 
       const res = await app.request("/api/v1/status/badge?style=flat-square&label=uptime", {

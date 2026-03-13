@@ -251,23 +251,6 @@ export function sanitizeUrl(input: string): string | null {
 }
 
 /**
- * Generate a URL-safe slug from text
- */
-export function generateSlug(input: string): string {
-  if (!input || typeof input !== "string") {
-    return "";
-  }
-
-  return input
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, "") // Remove non-word chars (except spaces and hyphens)
-    .replace(/\s+/g, "-") // Replace spaces with hyphens
-    .replace(/-+/g, "-") // Replace multiple hyphens with single
-    .replace(/^-|-$/g, ""); // Remove leading/trailing hyphens
-}
-
-/**
  * Validate a hex color code
  */
 export function isValidHexColor(input: string): boolean {

@@ -9,11 +9,9 @@ describe("Public Organizations API", () => {
   describe("GET /api/v1/org/default", () => {
     test("returns the first organization when one exists", async () => {
       await createTestOrganization({
-        slug: "first-org",
         name: "First Organization",
       });
       await createTestOrganization({
-        slug: "second-org",
         name: "Second Organization",
       });
 
@@ -21,13 +19,11 @@ describe("Public Organizations API", () => {
 
       expect(res.status).toBe(200);
       const data = await res.json();
-      expect(data.organization.slug).toBe("first-org");
       expect(data.organization.name).toBe("First Organization");
     });
 
     test("returns faviconUrl when set", async () => {
       await createTestOrganization({
-        slug: "favicon-org",
         name: "Favicon Org",
         faviconUrl: "https://example.com/favicon.png",
       });
@@ -41,7 +37,6 @@ describe("Public Organizations API", () => {
 
     test("returns null faviconUrl when not set", async () => {
       await createTestOrganization({
-        slug: "no-favicon-org",
         name: "No Favicon Org",
       });
 

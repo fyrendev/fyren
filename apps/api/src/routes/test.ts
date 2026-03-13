@@ -67,7 +67,6 @@ testRoutes.post("/reset", async (c) => {
 const setupSchema = z.object({
   organization: z.object({
     name: z.string(),
-    slug: z.string(),
   }),
   user: z.object({
     email: z.string().email(),
@@ -117,7 +116,6 @@ testRoutes.post("/setup", zValidator("json", setupSchema), async (c) => {
       .insert(organizations)
       .values({
         name: data.organization.name,
-        slug: data.organization.slug,
         timezone: "UTC",
       })
       .returning();
@@ -209,7 +207,7 @@ testRoutes.post("/setup", zValidator("json", setupSchema), async (c) => {
 
     return c.json({
       success: true,
-      organization: { id: org.id, slug: org.slug },
+      organization: { id: org.id },
       user: { id: user.id, email: user.email },
       components: createdComponents,
     });

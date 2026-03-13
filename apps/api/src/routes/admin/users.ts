@@ -28,7 +28,6 @@ adminUsers.get("/me", requireSession, async (c) => {
       organization = {
         id: org.id,
         name: org.name,
-        slug: org.slug,
         role: user.role,
       };
     } catch {

@@ -164,11 +164,11 @@ publicStatus.get("/", async (c) => {
     const org = await getOrganization();
 
     // Try cache first for components
-    let componentList = await getCachedComponentStatus(org.slug);
+    let componentList = await getCachedComponentStatus(org.id);
 
     if (!componentList) {
       componentList = await getPublicComponents();
-      await cacheComponentStatus(org.slug, componentList);
+      await cacheComponentStatus(org.id, componentList);
     }
 
     // Calculate overall status
@@ -184,7 +184,6 @@ publicStatus.get("/", async (c) => {
     return c.json({
       organization: {
         name: org.name,
-        slug: org.slug,
         logoUrl: org.logoUrl,
         faviconUrl: org.faviconUrl,
         brandColor: org.brandColor,
@@ -220,11 +219,11 @@ publicStatus.get("/components", async (c) => {
     const org = await getOrganization();
 
     // Try cache first
-    let componentList = await getCachedComponentStatus(org.slug);
+    let componentList = await getCachedComponentStatus(org.id);
 
     if (!componentList) {
       componentList = await getPublicComponents();
-      await cacheComponentStatus(org.slug, componentList);
+      await cacheComponentStatus(org.id, componentList);
     }
 
     return c.json({

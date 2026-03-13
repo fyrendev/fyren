@@ -10,7 +10,6 @@ interface TestUser {
 
 interface TestOrganization {
   name: string;
-  slug: string;
 }
 
 interface TestData {
@@ -29,7 +28,6 @@ export const testData: TestData = {
   },
   organization: {
     name: "E2E Test Org",
-    slug: "e2e-test",
   },
 };
 

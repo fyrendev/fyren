@@ -14,15 +14,11 @@ import { requireRole } from "../../middleware/session";
 
 const adminOrganizations = new Hono();
 
-// Slug validation: lowercase alphanumeric with hyphens, 3-50 chars
-const slugRegex = /^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$/;
-
 // Helper function to serialize organization for API response
 function serializeOrganization(org: typeof organizations.$inferSelect) {
   return {
     id: org.id,
     name: org.name,
-    slug: org.slug,
     // Branding - Logos
     logoUrl: org.logoUrl,
     logoLightUrl: org.logoLightUrl,
@@ -57,11 +53,6 @@ function serializeOrganization(org: typeof organizations.$inferSelect) {
 
 const createOrganizationSchema = z.object({
   name: z.string().min(1).max(255),
-  slug: z
-    .string()
-    .min(3)
-    .max(50)
-    .regex(slugRegex, "Slug must be lowercase alphanumeric with hyphens, 3-50 chars"),
   timezone: z.string().max(50).default("UTC"),
 });
 
@@ -160,7 +151,6 @@ adminOrganizations.post("/", async (c) => {
       .insert(organizations)
       .values({
         name: data.name,
-        slug: data.slug.toLowerCase(),
         timezone: data.timezone,
       })
       .returning();
@@ -191,7 +181,7 @@ adminOrganizations.post("/", async (c) => {
       organizationId: org.id,
       requestId: c.get("requestId"),
     });
-    auditLogger.orgCreated(org.id, { name: org.name, slug: org.slug });
+    auditLogger.orgCreated(org.id, { name: org.name });
 
     return c.json(
       {

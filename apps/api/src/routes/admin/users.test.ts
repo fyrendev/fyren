@@ -15,7 +15,7 @@ describe("Admin Users API", () => {
 
   describe("GET /api/v1/admin/me", () => {
     test("returns current user with organization", async () => {
-      await createTestOrganization({ name: "My Org", slug: "my-org" });
+      await createTestOrganization({ name: "My Org" });
 
       // Sign up creates both the user and a valid session
       const { user, token } = await signUpTestUser(
@@ -40,7 +40,7 @@ describe("Admin Users API", () => {
     });
 
     test("includes role in organization", async () => {
-      await createTestOrganization({ name: "My Org", slug: "my-org" });
+      await createTestOrganization({ name: "My Org" });
       const { token } = await signUpTestUser("owner@example.com", undefined, undefined, "owner");
 
       const res = await app.request("/api/v1/admin/me", {
@@ -49,7 +49,6 @@ describe("Admin Users API", () => {
 
       expect(res.status).toBe(200);
       const data = await res.json();
-      expect(data.organization.slug).toBe("my-org");
       expect(data.organization.role).toBe("owner");
     });
 

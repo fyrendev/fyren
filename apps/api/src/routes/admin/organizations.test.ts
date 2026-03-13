@@ -31,7 +31,6 @@ describe("Admin Organizations API", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: "New Company",
-          slug: "new-company",
           timezone: "America/New_York",
         }),
       });
@@ -39,7 +38,6 @@ describe("Admin Organizations API", () => {
       expect(res.status).toBe(201);
       const data = await res.json();
       expect(data.organization.name).toBe("New Company");
-      expect(data.organization.slug).toBe("new-company");
       expect(data.organization.timezone).toBe("America/New_York");
       expect(data.organization.id).toBeDefined();
       expect(data.apiKey).toBeDefined(); // API key returned on creation
@@ -51,7 +49,6 @@ describe("Admin Organizations API", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: "Default TZ Company",
-          slug: "default-tz-company",
         }),
       });
 
@@ -68,7 +65,6 @@ describe("Admin Organizations API", () => {
         headers: jsonSessionHeaders(token),
         body: JSON.stringify({
           name: "User's Company",
-          slug: "users-company",
         }),
       });
 
@@ -77,38 +73,12 @@ describe("Admin Organizations API", () => {
       expect(data.organization.name).toBe("User's Company");
     });
 
-    test("returns 400 for invalid slug format", async () => {
-      const res = await app.request("/api/v1/admin/organization", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Bad Slug Company",
-          slug: "Bad Slug!", // Invalid characters
-        }),
-      });
-
-      expect(res.status).toBe(400);
-    });
-
     test("returns 400 for missing required fields", async () => {
       const res = await app.request("/api/v1/admin/organization", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          // Missing name and slug
-        }),
-      });
-
-      expect(res.status).toBe(400);
-    });
-
-    test("returns 400 for slug too short", async () => {
-      const res = await app.request("/api/v1/admin/organization", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Short Slug",
-          slug: "ab", // Too short (min 3)
+          // Missing name
         }),
       });
 
@@ -122,7 +92,6 @@ describe("Admin Organizations API", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: "First Org",
-          slug: "first-org",
         }),
       });
       expect(res1.status).toBe(201);
@@ -133,7 +102,6 @@ describe("Admin Organizations API", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: "Second Org",
-          slug: "second-org",
         }),
       });
       expect(res2.status).toBe(409);
@@ -146,7 +114,6 @@ describe("Admin Organizations API", () => {
     test("returns current organization", async () => {
       const org = await createTestOrganization({
         name: "My Company",
-        slug: "my-company",
         brandColor: "#FF5733",
       });
       const { rawKey } = await createTestApiKey();
@@ -159,7 +126,6 @@ describe("Admin Organizations API", () => {
       const data = await res.json();
       expect(data.organization.id).toBe(org.id);
       expect(data.organization.name).toBe("My Company");
-      expect(data.organization.slug).toBe("my-company");
       expect(data.organization.brandColor).toBe("#FF5733");
     });
 

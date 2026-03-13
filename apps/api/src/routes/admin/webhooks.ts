@@ -193,7 +193,7 @@ adminWebhooks.post("/:id/test", async (c) => {
       {
         event: "test",
         timestamp: new Date().toISOString(),
-        organization: { name: org.name, slug: org.slug },
+        organization: { name: org.name },
         data: { message: "This is a test webhook from Fyren" },
       },
       webhook.secret || undefined

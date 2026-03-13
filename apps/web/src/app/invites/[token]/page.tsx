@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 
 interface InviteDetails {
-  organization: { name: string; slug: string };
+  organization: { name: string };
   email: string;
   role: string;
   expiresAt: string;

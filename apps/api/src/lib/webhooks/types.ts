@@ -3,7 +3,6 @@ export interface WebhookPayload {
   timestamp: string;
   organization: {
     name: string;
-    slug: string;
   };
   data: Record<string, unknown>;
 }

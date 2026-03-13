@@ -36,7 +36,6 @@ setup("seed test data", async ({ request }) => {
     data: {
       organization: {
         name: "E2E Test Org",
-        slug: "e2e-test",
       },
       user: {
         email: "e2e@test.com",

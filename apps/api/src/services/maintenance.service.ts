@@ -21,7 +21,7 @@ import { getOrganization } from "../lib/organization";
 async function invalidateCache(): Promise<void> {
   try {
     const org = await getOrganization();
-    await invalidateStatusCache(org.slug);
+    await invalidateStatusCache(org.id);
   } catch {
     // No org configured yet, nothing to invalidate
   }

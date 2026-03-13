@@ -16,7 +16,7 @@ describe("Public Invites API", () => {
 
   describe("GET /api/v1/invites/:token", () => {
     test("returns invite details for valid token", async () => {
-      await createTestOrganization({ name: "Acme Corp", slug: "acme-corp" });
+      await createTestOrganization({ name: "Acme Corp" });
       const owner = await createTestUser({}, "owner");
       await createTestInvite(owner.id, {
         email: "invitee@example.com",
@@ -29,7 +29,6 @@ describe("Public Invites API", () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.invite.organization.name).toBe("Acme Corp");
-      expect(data.invite.organization.slug).toBe("acme-corp");
       expect(data.invite.email).toBe("invitee@example.com");
       expect(data.invite.role).toBe("member");
       expect(data.invite.expiresAt).toBeDefined();
@@ -80,7 +79,7 @@ describe("Public Invites API", () => {
 
   describe("POST /api/v1/invites/:token/accept", () => {
     test("accepts invite and sets user role", async () => {
-      await createTestOrganization({ name: "Acme Corp", slug: "acme-corp" });
+      await createTestOrganization({ name: "Acme Corp" });
       const owner = await createTestUser({}, "owner");
 
       // Sign up the invitee first
@@ -101,7 +100,6 @@ describe("Public Invites API", () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.organization.name).toBe("Acme Corp");
-      expect(data.organization.slug).toBe("acme-corp");
       expect(data.role).toBe("member");
     });
 

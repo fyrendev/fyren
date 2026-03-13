@@ -175,7 +175,6 @@ export type EmailConfig = SMTPConfig | SendGridConfig | SESConfig;
 export interface Organization {
   id: string;
   name: string;
-  slug: string;
   logoUrl: string | null;
   logoLightUrl: string | null;
   faviconUrl: string | null;

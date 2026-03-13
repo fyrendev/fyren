@@ -75,7 +75,6 @@ export interface SetupStatusResponse {
 export interface DefaultOrgResponse {
   organization: {
     name: string;
-    slug: string;
     logoUrl: string | null;
     faviconUrl: string | null;
     brandColor: string | null;

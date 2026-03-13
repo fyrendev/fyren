@@ -12,7 +12,6 @@ export interface NotificationJobData {
   type: "email" | "webhook";
   // Common fields
   organizationName: string;
-  organizationSlug: string;
   event: NotificationEvent;
   entityType: "incident" | "maintenance" | "component";
   entityId: string;
@@ -77,7 +76,7 @@ export const NotificationService = {
 
   async queueEmailNotifications(
     notification: NotificationData,
-    org: { id: string; name: string; slug: string }
+    org: { id: string; name: string }
   ): Promise<void> {
     const { event, componentIds } = notification;
 
@@ -108,7 +107,6 @@ export const NotificationService = {
         email: sub.email,
         unsubscribeToken: sub.unsubscribeToken,
         organizationName: org.name,
-        organizationSlug: org.slug,
         event: notification.event,
         entityType: notification.entityType,
         entityId: notification.entityId,
@@ -119,7 +117,7 @@ export const NotificationService = {
 
   async queueWebhookNotifications(
     notification: NotificationData,
-    org: { id: string; name: string; slug: string }
+    org: { id: string; name: string }
   ): Promise<void> {
     const { event, componentIds } = notification;
 
@@ -161,7 +159,6 @@ export const NotificationService = {
         webhookUrl: webhook.url,
         webhookSecret: webhook.secret || undefined,
         organizationName: org.name,
-        organizationSlug: org.slug,
         event: notification.event,
         entityType: notification.entityType,
         entityId: notification.entityId,
