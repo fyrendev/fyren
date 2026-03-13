@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.0](https://github.com/fyrendev/fyren/compare/v0.1.5...v0.2.0) (2026-03-13)
+
+
+### Features
+
+* add structured logging for worker failures and DB logger config ([#33](https://github.com/fyrendev/fyren/issues/33)) ([33b4ee2](https://github.com/fyrendev/fyren/commit/33b4ee29b6d01fd98467b3966a8f5bc7406347e2))
+* add structured logging to health check checkers ([#34](https://github.com/fyrendev/fyren/issues/34)) ([d95c7f2](https://github.com/fyrendev/fyren/commit/d95c7f27d409129d99997ec4b77e4dd4c3b402e0))
+* display app version in sidebar and footer ([#31](https://github.com/fyrendev/fyren/issues/31)) ([1efd00b](https://github.com/fyrendev/fyren/commit/1efd00bd7ae021b6591b01c00cd45e7eb386e965))
+* expose faviconUrl in public API and use as dynamic favicon ([#36](https://github.com/fyrendev/fyren/issues/36)) ([b02491f](https://github.com/fyrendev/fyren/commit/b02491fb772f855b58d5068e880c30b3477e4ae3))
+* replace timezone text input with searchable select ([#38](https://github.com/fyrendev/fyren/issues/38)) ([ffbed0d](https://github.com/fyrendev/fyren/commit/ffbed0d16d3ace7ece813c50b52fd1b682065cd4))
+
+
+### Bug Fixes
+
+* allow componentId to be updated when editing a monitor ([#35](https://github.com/fyrendev/fyren/issues/35)) ([62c0c88](https://github.com/fyrendev/fyren/commit/62c0c88310e6e47250575b463fcadbeabfd08a0f))
+
+
+### Code Refactoring
+
+* remove slug field from Organization ([#37](https://github.com/fyrendev/fyren/issues/37)) ([147c5ad](https://github.com/fyrendev/fyren/commit/147c5ad3ccabfb229f32f63b5f0ac6f5a8bd00b7))
+
 ## [0.1.5](https://github.com/fyrendev/fyren/compare/v0.1.4...v0.1.5) (2026-03-05)
 
 
