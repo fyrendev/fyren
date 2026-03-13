@@ -1,3 +1,5 @@
+import { logger } from "../logging";
+
 export interface HttpCheckOptions {
   url: string;
   timeoutMs: number;
@@ -44,6 +46,13 @@ export async function checkHttp(options: HttpCheckOptions): Promise<CheckResult>
       };
     }
 
+    logger.error(`HTTP check status mismatch for ${url}`, {
+      url,
+      expectedStatusCode,
+      actualStatusCode: response.status,
+      responseTimeMs,
+    });
+
     return {
       status: "down",
       responseTimeMs,
@@ -56,12 +65,24 @@ export async function checkHttp(options: HttpCheckOptions): Promise<CheckResult>
 
     if (error instanceof Error) {
       if (error.name === "AbortError") {
+        logger.error(`HTTP check timed out for ${url} after ${timeoutMs}ms`, {
+          url,
+          timeoutMs,
+          responseTimeMs,
+        });
+
         return {
           status: "down",
           responseTimeMs,
           errorMessage: `Request timed out after ${timeoutMs}ms`,
         };
       }
+
+      logger.error(`HTTP check error for ${url}: ${error.message}`, {
+        url,
+        errorName: error.name,
+        responseTimeMs,
+      });
 
       return {
         status: "down",

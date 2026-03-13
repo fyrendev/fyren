@@ -5,6 +5,7 @@ import {
   type ConnectionOptions,
   type NatsConnection,
 } from "nats";
+import { logger } from "../logging";
 
 export type NatsAuthType = "none" | "token" | "userpass" | "jwt" | "creds";
 
@@ -101,6 +102,11 @@ export async function checkNats(options: NatsCheckOptions): Promise<CheckResult>
     if (error instanceof Error) {
       // Check for timeout
       if (error.message.includes("timeout") || error.message.includes("TIMEOUT")) {
+        logger.error(`NATS check timed out for ${url} after ${timeoutMs}ms`, {
+          url,
+          timeoutMs,
+          responseTimeMs,
+        });
         return {
           status: "down",
           responseTimeMs,
@@ -115,12 +121,23 @@ export async function checkNats(options: NatsCheckOptions): Promise<CheckResult>
         error.message.includes("authentication") ||
         error.message.includes("AUTHENTICATION")
       ) {
+        logger.error(`NATS authentication failed for ${url}: ${error.message}`, {
+          url,
+          authType: auth?.authType,
+          responseTimeMs,
+        });
         return {
           status: "down",
           responseTimeMs,
           errorMessage: `Authentication failed: ${error.message}`,
         };
       }
+
+      logger.error(`NATS check error for ${url}: ${error.message}`, {
+        url,
+        errorName: error.name,
+        responseTimeMs,
+      });
 
       return {
         status: "down",
