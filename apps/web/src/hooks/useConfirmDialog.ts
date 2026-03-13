@@ -12,8 +12,6 @@ interface ConfirmOptions {
   onConfirm: () => Promise<void> | void;
 }
 
-type DialogProps = Omit<ConfirmDialogProps, "children">;
-
 export function useConfirmDialog() {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -35,14 +33,14 @@ export function useConfirmDialog() {
     setLoading(true);
     try {
       await options.onConfirm();
-    } finally {
-      setLoading(false);
       setIsOpen(false);
       setOptions(null);
+    } finally {
+      setLoading(false);
     }
   }, [options]);
 
-  const dialogProps: DialogProps = {
+  const dialogProps: ConfirmDialogProps = {
     isOpen,
     onClose: handleClose,
     onConfirm: handleConfirm,

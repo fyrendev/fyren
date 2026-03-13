@@ -27,48 +27,43 @@ test.describe("Toast Notifications and Confirm Dialog", () => {
     await page.goto("/admin/components");
     await page.waitForLoadState("networkidle");
 
-    // Find a delete button (trash icon)
-    const deleteButton = page
-      .locator('button[title="Delete component"], button:has(svg.lucide-trash-2)')
-      .first();
-    if (await deleteButton.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await deleteButton.click();
+    // Test data should include components — assert the precondition
+    const deleteButton = page.locator("button:has(svg.lucide-trash-2)").first();
+    await expect(deleteButton).toBeVisible({ timeout: 5000 });
 
-      // Confirm dialog should appear
-      await expect(page.getByText("Delete Component")).toBeVisible({ timeout: 5000 });
-      await expect(page.getByRole("button", { name: /cancel/i })).toBeVisible();
-      await expect(page.getByRole("button", { name: /delete/i })).toBeVisible();
+    await deleteButton.click();
 
-      // Cancel should close the dialog
-      await page.getByRole("button", { name: /cancel/i }).click();
-      await expect(page.getByText("Delete Component")).not.toBeVisible();
-    }
+    // Confirm dialog should appear
+    await expect(page.getByText("Delete Component")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("button", { name: /cancel/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /delete/i })).toBeVisible();
+
+    // Cancel should close the dialog
+    await page.getByRole("button", { name: /cancel/i }).click();
+    await expect(page.getByText("Delete Component")).not.toBeVisible();
   });
 
   test("confirm dialog executes action and shows success toast", async ({ page }) => {
     await page.goto("/admin/components");
     await page.waitForLoadState("networkidle");
 
-    // Count initial components
-    const initialRows = await page.locator("tbody tr").count();
+    // Test data should include components — assert the precondition
+    const deleteButton = page.locator("button:has(svg.lucide-trash-2)").last();
+    await expect(deleteButton).toBeVisible({ timeout: 5000 });
 
-    if (initialRows > 0) {
-      // Click delete on last component
-      const deleteButton = page.locator("button:has(svg.lucide-trash-2)").last();
-      await deleteButton.click();
+    await deleteButton.click();
 
-      // Confirm dialog should appear
-      await expect(page.getByText("Delete Component")).toBeVisible({ timeout: 5000 });
+    // Confirm dialog should appear
+    await expect(page.getByText("Delete Component")).toBeVisible({ timeout: 5000 });
 
-      // Click confirm
-      await page
-        .getByRole("button", { name: /delete/i })
-        .last()
-        .click();
+    // Click confirm
+    await page
+      .getByRole("button", { name: /delete/i })
+      .last()
+      .click();
 
-      // Success toast should appear
-      await expect(page.getByText("Component deleted")).toBeVisible({ timeout: 5000 });
-    }
+    // Success toast should appear
+    await expect(page.getByText("Component deleted")).toBeVisible({ timeout: 5000 });
   });
 
   test("system page shows toast on save", async ({ page }) => {
@@ -77,12 +72,12 @@ test.describe("Toast Notifications and Confirm Dialog", () => {
 
     // Click Save Only button
     const saveButton = page.getByRole("button", { name: /save only/i });
-    if (await saveButton.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await saveButton.click();
+    await expect(saveButton).toBeVisible({ timeout: 5000 });
 
-      // Should show a toast (success or error depending on config)
-      const toast = page.locator("[data-sonner-toast]");
-      await expect(toast.first()).toBeVisible({ timeout: 5000 });
-    }
+    await saveButton.click();
+
+    // Should show a toast (success or error depending on config)
+    const toastElement = page.locator("[data-sonner-toast]");
+    await expect(toastElement.first()).toBeVisible({ timeout: 5000 });
   });
 });
