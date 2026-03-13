@@ -86,6 +86,11 @@ export function Sidebar() {
             <ExternalLink className="w-4 h-4" />
             View Status Page
           </Link>
+          {process.env.NEXT_PUBLIC_APP_VERSION && (
+            <span className="block px-3 pt-1 text-xs text-navy-500">
+              v{process.env.NEXT_PUBLIC_APP_VERSION}
+            </span>
+          )}
         </div>
       </div>
     </div>
