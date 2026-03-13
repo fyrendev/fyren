@@ -53,6 +53,19 @@ export const monitorWorker = new Worker<MonitorJobData>(
         }
       );
 
+      if (result.status === "down") {
+        logger.workerError("MonitorWorker", `Check failed for monitor ${monitorId}`, undefined, {
+          jobId: job.id,
+          monitorId,
+          componentId: monitor.componentId,
+          monitorUrl: monitor.url,
+          monitorType: monitor.type,
+          errorMessage: result.errorMessage,
+          statusCode: result.statusCode,
+          responseTimeMs: result.responseTimeMs,
+        });
+      }
+
       // 3. Store result in monitor_results table and update lastCheckedAt
       await storeCheckResult(monitorId, result);
 

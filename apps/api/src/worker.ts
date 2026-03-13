@@ -2,7 +2,7 @@ import { db, eq, monitors } from "@fyrendev/db";
 import { initializeMonitorSchedules, monitorQueue } from "./lib/queue";
 import { bullmqRedis } from "./lib/redis";
 import { closeWorker } from "./workers/monitor.worker";
-import { initializeLogger, logger, loadConfigFromEnv } from "./lib/logging";
+import { initializeLogger, logger, loadConfig, loadConfigFromEnv } from "./lib/logging";
 
 // Initialize logger for the worker process
 initializeLogger(loadConfigFromEnv(), "env");
@@ -13,6 +13,17 @@ async function main() {
   // Wait for Redis connection
   await bullmqRedis.ping();
   logger.info("Connected to Redis");
+
+  // Re-initialize logger with database config (if available)
+  try {
+    const { config, source } = await loadConfig();
+    initializeLogger(config, source);
+    logger.info(`Logger initialized from ${source}`, { provider: config.provider });
+  } catch (err) {
+    logger.warn("Failed to load logging config from database, using environment config", {
+      errorName: err instanceof Error ? err.name : "Unknown",
+    });
+  }
 
   // Fetch all active monitors
   const activeMonitors = await db.select().from(monitors).where(eq(monitors.isActive, true));

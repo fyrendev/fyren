@@ -66,6 +66,11 @@ async function processEmailJob(job: Job<NotificationJobData>): Promise<void> {
   } = job.data;
 
   if (!email || !unsubscribeToken) {
+    logger.workerError("NotificationWorker", "Missing email or unsubscribe token", undefined, {
+      jobId: job.id,
+      event,
+      entityId,
+    });
     throw new Error("Missing email or unsubscribe token");
   }
 
@@ -182,6 +187,14 @@ async function processEmailJob(job: Job<NotificationJobData>): Promise<void> {
   });
 
   if (!result.success) {
+    logger.workerError("NotificationWorker", "Email send failed", undefined, {
+      jobId: job.id,
+      recipient: email,
+      event,
+      entityType,
+      entityId,
+      error: result.error,
+    });
     throw new Error(result.error);
   }
 }
@@ -201,6 +214,11 @@ async function processWebhookJob(job: Job<NotificationJobData>): Promise<void> {
   } = job.data;
 
   if (!webhookId || !webhookType || !webhookUrl) {
+    logger.workerError("NotificationWorker", "Missing webhook details", undefined, {
+      jobId: job.id,
+      event,
+      entityId,
+    });
     throw new Error("Missing webhook details");
   }
 
@@ -232,11 +250,28 @@ async function processWebhookJob(job: Job<NotificationJobData>): Promise<void> {
 
     if (!response.ok) {
       error = `HTTP ${response.status}: ${await response.text()}`;
+      logger.workerError("NotificationWorker", "Webhook HTTP error", undefined, {
+        jobId: job.id,
+        webhookId,
+        webhookUrl,
+        webhookType,
+        event,
+        httpStatus: response.status,
+        error,
+      });
     } else {
       success = true;
     }
   } catch (err) {
     error = (err as Error).message;
+    logger.workerError("NotificationWorker", "Webhook network error", undefined, {
+      jobId: job.id,
+      webhookId,
+      webhookUrl,
+      webhookType,
+      event,
+      error,
+    });
   }
 
   // Update webhook endpoint status
