@@ -530,6 +530,41 @@ SUAM4K3P7ZQXKZGBPVJ6J7UQKL3PQXWC5N4UABT7J5M2XL3ZQXKZGBPVJ
       });
     });
 
+    test("updates monitor componentId", async () => {
+      const { rawKey } = await createTestApiKey();
+      const component1 = await createTestComponent({ name: "API" });
+      const component2 = await createTestComponent({ name: "NATS" });
+      const monitor = await createTestMonitor(component1.id);
+
+      const res = await app.request(`/api/v1/admin/monitors/${monitor.id}`, {
+        method: "PUT",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({
+          componentId: component2.id,
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.monitor.componentId).toBe(component2.id);
+    });
+
+    test("returns 404 when updating componentId to non-existent component", async () => {
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
+      const monitor = await createTestMonitor(component.id);
+
+      const res = await app.request(`/api/v1/admin/monitors/${monitor.id}`, {
+        method: "PUT",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({
+          componentId: "00000000-0000-0000-0000-000000000000",
+        }),
+      });
+
+      expect(res.status).toBe(404);
+    });
+
     test("returns 404 for non-existent monitor", async () => {
       const { rawKey } = await createTestApiKey();
 

@@ -28,6 +28,7 @@ const createMonitorSchema = z.object({
 });
 
 const updateMonitorSchema = z.object({
+  componentId: z.string().uuid().optional(),
   type: z.enum(["http", "tcp", "ssl_expiry", "nats"]).optional(),
   url: z.string().min(1).max(2000).optional(),
   intervalSeconds: z.number().int().min(30).max(3600).optional(),
@@ -351,6 +352,19 @@ adminMonitors.put("/:id", async (c) => {
       throw new NotFoundError("Monitor not found");
     }
 
+    // Verify new component exists if changing
+    if (validatedData.componentId !== undefined) {
+      const [component] = await db
+        .select()
+        .from(components)
+        .where(eq(components.id, validatedData.componentId))
+        .limit(1);
+
+      if (!component) {
+        throw new NotFoundError("Component not found");
+      }
+    }
+
     // Type-specific validation
     if (validatedData.type === "http" && validatedData.url) {
       try {
@@ -377,6 +391,7 @@ adminMonitors.put("/:id", async (c) => {
       updatedAt: new Date(),
     };
 
+    if (validatedData.componentId !== undefined) updateData.componentId = validatedData.componentId;
     if (validatedData.type !== undefined) updateData.type = validatedData.type;
     if (validatedData.url !== undefined) updateData.url = validatedData.url;
     if (validatedData.intervalSeconds !== undefined)
