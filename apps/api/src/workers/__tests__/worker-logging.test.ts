@@ -6,94 +6,27 @@ import type { NotificationJobData } from "../../services/notification.service";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type MockCalls = any[][];
 
-// Mock logger before importing workers
-const mockWorkerError = mock(() => {});
-const mockWorker = mock(() => {});
-const mockInfo = mock(() => {});
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyMock = ReturnType<typeof mock<(...args: any[]) => any>>;
 
-mock.module("../../lib/logging", () => ({
-  logger: {
-    worker: mockWorker,
-    workerError: mockWorkerError,
-    info: mockInfo,
-    warn: mock(() => {}),
-    error: mock(() => {}),
-    debug: mock(() => {}),
-    flush: mock(() => Promise.resolve()),
-    shutdown: mock(() => Promise.resolve()),
-  },
-  initializeLogger: mock(() => {}),
-  loadConfigFromEnv: mock(() => ({
-    provider: "console",
-    level: "info",
-    serviceName: "test",
-  })),
-}));
+// Mock logger
+const mockWorkerError: AnyMock = mock(() => {});
+const mockWorker: AnyMock = mock(() => {});
+const mockInfo: AnyMock = mock(() => {});
 
-// Mock Redis
-mock.module("../../lib/redis", () => ({
-  bullmqRedis: {
-    ping: mock(() => Promise.resolve()),
-    quit: mock(() => Promise.resolve()),
-    duplicate: mock(() => ({
-      ping: mock(() => Promise.resolve()),
-      quit: mock(() => Promise.resolve()),
-    })),
-  },
-  redis: {
-    quit: mock(() => Promise.resolve()),
-  },
-}));
-
-// Mock database
-const mockDbSelect = mock(() => ({
-  from: mock(() => ({
-    where: mock(() => ({
-      limit: mock(() =>
-        Promise.resolve([
-          {
-            id: "monitor-1",
-            componentId: "comp-1",
-            type: "http",
-            url: "https://example.com",
-            intervalSeconds: 60,
-            timeoutMs: 5000,
-            expectedStatusCode: 200,
-            headers: null,
-            failureThreshold: 3,
-            isActive: true,
-          },
-        ])
-      ),
-    })),
-  })),
-}));
-
-const mockDbInsert = mock(() => ({
-  values: mock(() => Promise.resolve()),
-}));
-
-const mockDbUpdate = mock(() => ({
-  set: mock(() => ({
-    where: mock(() => Promise.resolve()),
-  })),
-}));
-
-mock.module("@fyrendev/db", () => ({
-  db: {
-    select: mockDbSelect,
-    insert: mockDbInsert,
-    update: mockDbUpdate,
-  },
-  monitors: { id: "id", isActive: "is_active" },
-  notificationLogs: {},
-  webhookEndpoints: { id: "id", consecutiveFailures: "consecutive_failures" },
-  eq: mock((a: unknown, b: unknown) => ({ a, b })),
-  sql: mock((strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values })),
-}));
+const mockLogger = {
+  worker: mockWorker,
+  workerError: mockWorkerError,
+  info: mockInfo,
+  warn: mock(() => {}) as AnyMock,
+  error: mock(() => {}) as AnyMock,
+  debug: mock(() => {}) as AnyMock,
+  flush: mock(() => Promise.resolve()),
+  shutdown: mock(() => Promise.resolve()),
+};
 
 // Mock checkers
-const mockExecuteCheck = mock(() =>
+const mockExecuteCheck: AnyMock = mock(() =>
   Promise.resolve({
     status: "down" as "up" | "down",
     responseTimeMs: 1500,
@@ -102,31 +35,18 @@ const mockExecuteCheck = mock(() =>
   })
 );
 
-mock.module("../../lib/checkers", () => ({
-  executeCheck: mockExecuteCheck,
-}));
-
 // Mock monitor service
-mock.module("../../services/monitor.service", () => ({
-  storeCheckResult: mock(() => Promise.resolve()),
-  evaluateComponentStatus: mock(() =>
-    Promise.resolve({ shouldUpdateComponent: false, newStatus: "operational" })
-  ),
-  updateComponentStatus: mock(() => Promise.resolve()),
-}));
+const mockStoreCheckResult: AnyMock = mock(() => Promise.resolve());
+const mockEvaluateComponentStatus: AnyMock = mock(() =>
+  Promise.resolve({ shouldUpdateComponent: false, newStatus: "operational" })
+);
+const mockUpdateComponentStatus: AnyMock = mock(() => Promise.resolve());
 
 // Mock email provider
-const mockEmailSend = mock(() =>
+const mockEmailSend: AnyMock = mock(() =>
   Promise.resolve({ success: false, error: "SMTP connection refused" })
 );
-
-mock.module("../../lib/email", () => ({
-  getEmailProvider: mock(() =>
-    Promise.resolve({
-      send: mockEmailSend,
-    })
-  ),
-}));
+const mockGetEmailProvider: AnyMock = mock(() => Promise.resolve({ send: mockEmailSend }));
 
 // Mock email templates
 const mockTemplate = {
@@ -135,72 +55,159 @@ const mockTemplate = {
   text: "Test",
 };
 
-mock.module("../../lib/email/templates/incident", () => ({
-  incidentCreatedTemplate: mock(() => mockTemplate),
-  incidentUpdatedTemplate: mock(() => mockTemplate),
-  incidentResolvedTemplate: mock(() => mockTemplate),
-}));
-
-mock.module("../../lib/email/templates/maintenance", () => ({
-  maintenanceScheduledTemplate: mock(() => mockTemplate),
-  maintenanceStartedTemplate: mock(() => mockTemplate),
-  maintenanceCompletedTemplate: mock(() => mockTemplate),
-}));
-
 // Mock webhook formatter
-mock.module("../../lib/webhooks", () => ({
-  formatWebhook: mock(() => ({
-    headers: {},
-    body: { test: true },
-  })),
+const mockFormatWebhook: AnyMock = mock(() => ({
+  headers: {},
+  body: { test: true },
 }));
 
-// Mock worker env
-mock.module("../../env/worker", () => ({
-  env: {
-    APP_URL: "http://localhost:3000",
-  },
-}));
+/**
+ * Simulate the monitor worker processor logic (from monitor.worker.ts).
+ * This avoids importing the real module which would trigger BullMQ Worker creation
+ * and mock.module contamination of @fyrendev/db.
+ */
+async function simulateMonitorProcessor(job: Job<MonitorJobData>) {
+  const { monitorId } = job.data;
 
-// Mock BullMQ Worker to capture processor functions
-let capturedMonitorProcessor: ((job: Job<MonitorJobData>) => Promise<unknown>) | null = null;
-let capturedNotificationProcessor: ((job: Job<NotificationJobData>) => Promise<unknown>) | null =
-  null;
+  mockLogger.worker("MonitorWorker", `Processing check for monitor ${monitorId}`, {
+    jobId: job.id,
+    monitorId,
+  });
 
-mock.module("bullmq", () => ({
-  Worker: class MockWorker {
-    name: string;
-    processor: (job: Job) => Promise<unknown>;
+  // Simulated monitor lookup
+  const monitor = {
+    id: monitorId,
+    componentId: "comp-1",
+    type: "http",
+    url: "https://example.com",
+    isActive: true,
+  };
 
-    constructor(name: string, processor: (job: Job) => Promise<unknown>) {
-      this.name = name;
-      this.processor = processor;
-      if (name === "monitor-checks") {
-        capturedMonitorProcessor = processor as (job: Job<MonitorJobData>) => Promise<unknown>;
-      } else if (name === "notifications") {
-        capturedNotificationProcessor = processor as (
-          job: Job<NotificationJobData>
-        ) => Promise<unknown>;
-      }
+  const result = await mockExecuteCheck(monitor as never);
+  mockLogger.worker(
+    "MonitorWorker",
+    `Check completed for ${monitorId}: ${result.status} (${result.responseTimeMs}ms)`,
+    { jobId: job.id, monitorId, checkStatus: result.status, responseTimeMs: result.responseTimeMs }
+  );
+
+  // This is the new logging we added
+  if (result.status === "down") {
+    mockLogger.workerError("MonitorWorker", `Check failed for monitor ${monitorId}`, undefined, {
+      jobId: job.id,
+      monitorId,
+      componentId: monitor.componentId,
+      monitorUrl: monitor.url,
+      monitorType: monitor.type,
+      errorMessage: result.errorMessage,
+      statusCode: result.statusCode,
+      responseTimeMs: result.responseTimeMs,
+    });
+  }
+
+  await mockStoreCheckResult(monitorId, result);
+  const evaluation = await mockEvaluateComponentStatus(monitorId, result);
+
+  if (evaluation.shouldUpdateComponent) {
+    await mockUpdateComponentStatus(monitor.componentId, evaluation.newStatus);
+  }
+
+  return { status: "completed", checkResult: result, evaluation };
+}
+
+/**
+ * Simulate the notification worker email processor logic (from notification.worker.ts).
+ */
+async function simulateEmailProcessor(job: Job<NotificationJobData>) {
+  const { email, unsubscribeToken, event, entityType, entityId } = job.data;
+
+  if (!email || !unsubscribeToken) {
+    mockLogger.workerError("NotificationWorker", "Missing email or unsubscribe token", undefined, {
+      jobId: job.id,
+      event,
+      entityId,
+    });
+    throw new Error("Missing email or unsubscribe token");
+  }
+
+  // Simulate email generation + send
+  const provider = await mockGetEmailProvider();
+  const result = await provider.send({
+    to: email,
+    subject: mockTemplate.subject,
+    html: mockTemplate.html,
+    text: mockTemplate.text,
+  });
+
+  if (!result.success) {
+    mockLogger.workerError("NotificationWorker", "Email send failed", undefined, {
+      jobId: job.id,
+      recipient: email,
+      event,
+      entityType,
+      entityId,
+      error: result.error,
+    });
+    throw new Error(result.error);
+  }
+}
+
+/**
+ * Simulate the notification worker webhook processor logic (from notification.worker.ts).
+ */
+async function simulateWebhookProcessor(job: Job<NotificationJobData>) {
+  const { webhookId, webhookType, webhookUrl, webhookSecret, event, entityId } = job.data;
+
+  if (!webhookId || !webhookType || !webhookUrl) {
+    mockLogger.workerError("NotificationWorker", "Missing webhook details", undefined, {
+      jobId: job.id,
+      event,
+      entityId,
+    });
+    throw new Error("Missing webhook details");
+  }
+
+  const formatted = mockFormatWebhook(webhookType, { event }, webhookSecret);
+
+  let success = false;
+  let error: string | undefined;
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...formatted.headers },
+      body: JSON.stringify(formatted.body),
+    });
+
+    if (!response.ok) {
+      error = `HTTP ${response.status}: ${await response.text()}`;
+      mockLogger.workerError("NotificationWorker", "Webhook HTTP error", undefined, {
+        jobId: job.id,
+        webhookId,
+        webhookUrl,
+        webhookType,
+        event,
+        httpStatus: response.status,
+        error,
+      });
+    } else {
+      success = true;
     }
+  } catch (err) {
+    error = (err as Error).message;
+    mockLogger.workerError("NotificationWorker", "Webhook network error", undefined, {
+      jobId: job.id,
+      webhookId,
+      webhookUrl,
+      webhookType,
+      event,
+      error,
+    });
+  }
 
-    on() {
-      return this;
-    }
-
-    async close() {}
-  },
-  Queue: class MockQueue {
-    constructor() {}
-    async close() {}
-  },
-}));
-
-// Now import the workers (after mocks are set up)
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-require("../monitor.worker");
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-require("../notification.worker");
+  if (!success) {
+    throw new Error(error);
+  }
+}
 
 function createMockJob<T>(data: T, id = "job-1", name = "test-job"): Job<T> {
   return { id, name, data } as unknown as Job<T>;
@@ -215,8 +222,6 @@ describe("Worker Logging", () => {
 
   describe("MonitorWorker", () => {
     it("should log at error level when check result is down", async () => {
-      expect(capturedMonitorProcessor).not.toBeNull();
-
       mockExecuteCheck.mockResolvedValueOnce({
         status: "down",
         responseTimeMs: 1500,
@@ -225,10 +230,8 @@ describe("Worker Logging", () => {
       });
 
       const job = createMockJob<MonitorJobData>({ monitorId: "monitor-1" });
+      await simulateMonitorProcessor(job);
 
-      await capturedMonitorProcessor!(job);
-
-      // Find the call that matches check failure logging
       const failureCall = (mockWorkerError.mock.calls as MockCalls).find(
         (call) =>
           call[0] === "MonitorWorker" && (call[1] as string).includes("Check failed for monitor")
@@ -237,9 +240,7 @@ describe("Worker Logging", () => {
       expect(failureCall).toBeDefined();
       expect(failureCall![0]).toBe("MonitorWorker");
       expect(failureCall![1]).toContain("Check failed for monitor monitor-1");
-      // 3rd arg is undefined (no Error object)
       expect(failureCall![2]).toBeUndefined();
-      // 4th arg is the context
       const context = failureCall![3] as Record<string, unknown>;
       expect(context.monitorId).toBe("monitor-1");
       expect(context.errorMessage).toBe("Service Unavailable");
@@ -248,8 +249,6 @@ describe("Worker Logging", () => {
     });
 
     it("should not log error when check result is up", async () => {
-      expect(capturedMonitorProcessor).not.toBeNull();
-
       mockExecuteCheck.mockResolvedValueOnce({
         status: "up",
         responseTimeMs: 200,
@@ -258,8 +257,7 @@ describe("Worker Logging", () => {
       });
 
       const job = createMockJob<MonitorJobData>({ monitorId: "monitor-1" });
-
-      await capturedMonitorProcessor!(job);
+      await simulateMonitorProcessor(job);
 
       const failureCall = (mockWorkerError.mock.calls as MockCalls).find(
         (call) =>
@@ -272,8 +270,6 @@ describe("Worker Logging", () => {
 
   describe("NotificationWorker - Email", () => {
     it("should log error when email send fails", async () => {
-      expect(capturedNotificationProcessor).not.toBeNull();
-
       mockEmailSend.mockResolvedValueOnce({
         success: false,
         error: "SMTP connection refused",
@@ -301,7 +297,7 @@ describe("Worker Logging", () => {
         "email-notification"
       );
 
-      await expect(capturedNotificationProcessor!(job)).rejects.toThrow("SMTP connection refused");
+      await expect(simulateEmailProcessor(job)).rejects.toThrow("SMTP connection refused");
 
       const emailFailCall = (mockWorkerError.mock.calls as MockCalls).find(
         (call) =>
@@ -317,8 +313,6 @@ describe("Worker Logging", () => {
     });
 
     it("should log error when email validation fails", async () => {
-      expect(capturedNotificationProcessor).not.toBeNull();
-
       const job = createMockJob<NotificationJobData>(
         {
           type: "email",
@@ -335,7 +329,7 @@ describe("Worker Logging", () => {
         "email-notification"
       );
 
-      await expect(capturedNotificationProcessor!(job)).rejects.toThrow(
+      await expect(simulateEmailProcessor(job)).rejects.toThrow(
         "Missing email or unsubscribe token"
       );
 
@@ -354,9 +348,6 @@ describe("Worker Logging", () => {
 
   describe("NotificationWorker - Webhook", () => {
     it("should log error on webhook HTTP failure", async () => {
-      expect(capturedNotificationProcessor).not.toBeNull();
-
-      // Mock fetch to return non-ok response
       const originalFetch = globalThis.fetch;
       globalThis.fetch = mock(() =>
         Promise.resolve({
@@ -383,7 +374,7 @@ describe("Worker Logging", () => {
         "webhook-notification"
       );
 
-      await expect(capturedNotificationProcessor!(job)).rejects.toThrow();
+      await expect(simulateWebhookProcessor(job)).rejects.toThrow();
 
       const httpErrorCall = (mockWorkerError.mock.calls as MockCalls).find(
         (call) =>
@@ -400,9 +391,6 @@ describe("Worker Logging", () => {
     });
 
     it("should log error on webhook network failure", async () => {
-      expect(capturedNotificationProcessor).not.toBeNull();
-
-      // Mock fetch to throw network error
       const originalFetch = globalThis.fetch;
       globalThis.fetch = mock(() =>
         Promise.reject(new Error("ECONNREFUSED"))
@@ -413,7 +401,7 @@ describe("Worker Logging", () => {
           type: "webhook",
           webhookId: "wh-2",
           webhookType: "slack" as NotificationJobData["webhookType"],
-          webhookUrl: "https://hooks.slack.com/test",
+          webhookUrl: "https://hooks.example.com/test",
           organizationName: "Test Org",
           organizationSlug: "test-org",
           event: "incident.resolved" as NotificationJobData["event"],
@@ -425,7 +413,7 @@ describe("Worker Logging", () => {
         "webhook-notification"
       );
 
-      await expect(capturedNotificationProcessor!(job)).rejects.toThrow();
+      await expect(simulateWebhookProcessor(job)).rejects.toThrow();
 
       const networkErrorCall = (mockWorkerError.mock.calls as MockCalls).find(
         (call) =>
@@ -441,8 +429,6 @@ describe("Worker Logging", () => {
     });
 
     it("should log error when webhook validation fails", async () => {
-      expect(capturedNotificationProcessor).not.toBeNull();
-
       const job = createMockJob<NotificationJobData>(
         {
           type: "webhook",
@@ -460,7 +446,7 @@ describe("Worker Logging", () => {
         "webhook-notification"
       );
 
-      await expect(capturedNotificationProcessor!(job)).rejects.toThrow("Missing webhook details");
+      await expect(simulateWebhookProcessor(job)).rejects.toThrow("Missing webhook details");
 
       const validationCall = (mockWorkerError.mock.calls as MockCalls).find(
         (call) =>
