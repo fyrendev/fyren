@@ -118,7 +118,7 @@ describe("errorResponse", () => {
   describe("Postgres error logging", () => {
     it("should log unique constraint violation at warn level", () => {
       const c = createContext("/api/components", "POST");
-      const error = { code: "23505", detail: "Key (slug)=(test) already exists" };
+      const error = { code: "23505", detail: "Key (name)=(test) already exists" };
 
       errorResponse(c, error);
 
@@ -129,7 +129,7 @@ describe("errorResponse", () => {
           statusCode: 409,
           errorCode: "CONFLICT",
           pgCode: "23505",
-          detail: "Key (slug)=(test) already exists",
+          detail: "Key (name)=(test) already exists",
         })
       );
     });

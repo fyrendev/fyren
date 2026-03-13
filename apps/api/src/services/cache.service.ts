@@ -2,7 +2,7 @@ import type { ComponentStatus } from "@fyrendev/db";
 import { redis } from "../lib/redis";
 
 // Cache key generators
-const COMPONENT_STATUS_KEY = (orgSlug: string) => `status:${orgSlug}:components`;
+const COMPONENT_STATUS_KEY = (orgId: string) => `status:${orgId}:components`;
 const MONITOR_STATUS_KEY = (monitorId: string) => `monitor:${monitorId}:status`;
 const UPTIME_KEY = (componentId: string, period: string) => `uptime:${componentId}:${period}`;
 
@@ -35,18 +35,18 @@ export interface UptimeCache {
 
 // Cache current component statuses for an organization
 export async function cacheComponentStatus(
-  orgSlug: string,
+  orgId: string,
   components: ComponentWithStatus[]
 ): Promise<void> {
-  const key = COMPONENT_STATUS_KEY(orgSlug);
+  const key = COMPONENT_STATUS_KEY(orgId);
   await redis.setex(key, STATUS_TTL, JSON.stringify(components));
 }
 
 // Get cached component status
 export async function getCachedComponentStatus(
-  orgSlug: string
+  orgId: string
 ): Promise<ComponentWithStatus[] | null> {
-  const key = COMPONENT_STATUS_KEY(orgSlug);
+  const key = COMPONENT_STATUS_KEY(orgId);
   const data = await redis.get(key);
   if (!data) return null;
 
@@ -114,8 +114,8 @@ export async function getCachedUptime(
 }
 
 // Invalidate status cache for an organization
-export async function invalidateStatusCache(orgSlug: string): Promise<void> {
-  const key = COMPONENT_STATUS_KEY(orgSlug);
+export async function invalidateStatusCache(orgId: string): Promise<void> {
+  const key = COMPONENT_STATUS_KEY(orgId);
   await redis.del(key);
 }
 
@@ -129,8 +129,8 @@ export async function invalidateUptimeCache(componentId: string): Promise<void> 
 }
 
 // Invalidate all caches for an organization (used when status changes)
-export async function invalidateOrgCaches(orgSlug: string, componentIds: string[]): Promise<void> {
-  await invalidateStatusCache(orgSlug);
+export async function invalidateOrgCaches(orgId: string, componentIds: string[]): Promise<void> {
+  await invalidateStatusCache(orgId);
   for (const componentId of componentIds) {
     await invalidateUptimeCache(componentId);
   }

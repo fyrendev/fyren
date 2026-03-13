@@ -28,7 +28,6 @@ export default function SettingsPage() {
 
   const [formData, setFormData] = useState({
     name: "",
-    slug: "",
     logoUrl: "",
     faviconUrl: "",
     brandColor: "",
@@ -75,7 +74,6 @@ export default function SettingsPage() {
       setOrganization(data.organization);
       setFormData({
         name: data.organization.name || "",
-        slug: data.organization.slug || "",
         logoUrl: data.organization.logoUrl || "",
         faviconUrl: data.organization.faviconUrl || "",
         brandColor: data.organization.brandColor || "",
@@ -202,14 +200,6 @@ export default function SettingsPage() {
               placeholder="Acme Inc"
               required
             />
-            <Input
-              label="Slug"
-              value={formData.slug}
-              onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-              placeholder="acme"
-              required
-            />
-            <p className="text-xs text-navy-400">Your status page URL: {formData.slug}.fyren.dev</p>
             <Input
               label="Timezone"
               value={formData.timezone}

@@ -21,7 +21,6 @@ describe("Public Status API", () => {
   describe("GET /api/v1/status", () => {
     test("returns organization status summary", async () => {
       await createTestOrganization({
-        slug: "acme",
         name: "Acme Corp",
       });
       await createTestComponent({ name: "API", status: "operational" });
@@ -35,13 +34,11 @@ describe("Public Status API", () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.organization.name).toBe("Acme Corp");
-      expect(data.organization.slug).toBe("acme");
       expect(data.components).toHaveLength(2);
     });
 
     test("includes faviconUrl in organization response", async () => {
       await createTestOrganization({
-        slug: "favicon-test",
         name: "Favicon Test",
         faviconUrl: "https://example.com/favicon.ico",
       });
@@ -61,7 +58,7 @@ describe("Public Status API", () => {
     });
 
     test("only returns public components", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       await createTestComponent({ name: "Public", isPublic: true });
       await createTestComponent({ name: "Private", isPublic: false });
 
@@ -76,7 +73,7 @@ describe("Public Status API", () => {
 
   describe("GET /api/v1/status/components", () => {
     test("returns component list with status", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       await createTestComponent({
         name: "API",
         status: "operational",
@@ -98,7 +95,7 @@ describe("Public Status API", () => {
     });
 
     test("returns components in display order", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       await createTestComponent({ name: "Third", displayOrder: 3 });
       await createTestComponent({ name: "First", displayOrder: 1 });
       await createTestComponent({ name: "Second", displayOrder: 2 });
@@ -115,7 +112,7 @@ describe("Public Status API", () => {
 
   describe("GET /api/v1/status/incidents", () => {
     test("returns recent incidents", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       const component = await createTestComponent();
       const incident = await createTestIncident({
         title: "API Outage",
@@ -139,7 +136,7 @@ describe("Public Status API", () => {
     });
 
     test("returns empty array when no incidents", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
 
       const res = await app.request("/api/v1/status/incidents");
 
@@ -151,7 +148,7 @@ describe("Public Status API", () => {
 
   describe("GET /api/v1/status/incidents/:id", () => {
     test("returns incident details with updates", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       const incident = await createTestIncident({
         title: "Database Issues",
       });
@@ -173,7 +170,7 @@ describe("Public Status API", () => {
     });
 
     test("returns 404 for non-existent incident", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
 
       const res = await app.request(
         "/api/v1/status/incidents/00000000-0000-0000-0000-000000000000"
@@ -185,7 +182,7 @@ describe("Public Status API", () => {
 
   describe("GET /api/v1/status/maintenance", () => {
     test("returns upcoming maintenance windows", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       const component = await createTestComponent();
       const maint = await createTestMaintenance({
         title: "Scheduled Upgrade",
@@ -202,7 +199,7 @@ describe("Public Status API", () => {
     });
 
     test("returns empty array when no maintenance scheduled", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
 
       const res = await app.request("/api/v1/status/maintenance");
 
@@ -214,7 +211,7 @@ describe("Public Status API", () => {
 
   describe("GET /api/v1/status/uptime", () => {
     test("returns uptime percentages for components", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       await createTestComponent({ name: "API" });
       await createTestComponent({ name: "Database" });
 
@@ -231,7 +228,7 @@ describe("Public Status API", () => {
     });
 
     test("returns 100% uptime when no monitor results exist", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       await createTestComponent({ name: "API" });
 
       const res = await app.request("/api/v1/status/uptime");
@@ -245,7 +242,7 @@ describe("Public Status API", () => {
 
   describe("GET /api/v1/status/uptime/:componentId/history", () => {
     test("returns daily uptime history for component", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       const component = await createTestComponent({ name: "API" });
       const monitor = await createTestMonitor(component.id);
 
@@ -271,7 +268,7 @@ describe("Public Status API", () => {
     });
 
     test("calculates uptime correctly with mixed results", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       const component = await createTestComponent({ name: "API" });
       const monitor = await createTestMonitor(component.id);
 
@@ -300,7 +297,7 @@ describe("Public Status API", () => {
     });
 
     test("returns 404 for non-existent component", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
 
       const res = await app.request(
         "/api/v1/status/uptime/00000000-0000-0000-0000-000000000000/history"
@@ -310,7 +307,7 @@ describe("Public Status API", () => {
     });
 
     test("respects days query parameter", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       const component = await createTestComponent({ name: "API" });
 
       const res = await app.request(`/api/v1/status/uptime/${component.id}/history?days=30`);
@@ -321,7 +318,7 @@ describe("Public Status API", () => {
     });
 
     test("caps days at 90", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       const component = await createTestComponent({ name: "API" });
 
       const res = await app.request(`/api/v1/status/uptime/${component.id}/history?days=365`);
@@ -332,7 +329,7 @@ describe("Public Status API", () => {
     });
 
     test("returns incident count for each day", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       const component = await createTestComponent({ name: "API" });
 
       // Create an incident for today
@@ -354,7 +351,7 @@ describe("Public Status API", () => {
     test("correctly filters results by day boundaries", async () => {
       // This test verifies that the SQL date comparisons work correctly
       // by creating results across multiple days and checking isolation
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       const component = await createTestComponent({ name: "API" });
       const monitor = await createTestMonitor(component.id);
 
@@ -402,7 +399,7 @@ describe("Public Status API", () => {
 
     test("handles results at day boundaries correctly", async () => {
       // Test edge case: results right at midnight boundaries
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
       const component = await createTestComponent({ name: "API" });
       const monitor = await createTestMonitor(component.id);
 

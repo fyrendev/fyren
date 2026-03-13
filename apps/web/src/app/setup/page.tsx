@@ -31,7 +31,6 @@ export default function SetupPage() {
   // Step 2: Organization creation
   const [orgData, setOrgData] = useState({
     name: "",
-    slug: "",
   });
 
   useEffect(() => {
@@ -63,14 +62,7 @@ export default function SetupPage() {
   }, [router]);
 
   const handleOrgNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setOrgData({
-      name: value,
-      slug: value
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, ""),
-    });
+    setOrgData({ name: e.target.value });
   };
 
   const handleStep1Submit = async (e: React.FormEvent) => {
@@ -123,7 +115,7 @@ export default function SetupPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name: orgData.name, slug: orgData.slug }),
+        body: JSON.stringify({ name: orgData.name }),
       });
 
       if (!res.ok) {
@@ -267,25 +259,11 @@ export default function SetupPage() {
                   required
                 />
 
-                <div>
-                  <Input
-                    label="URL Slug"
-                    type="text"
-                    value={orgData.slug}
-                    onChange={(e) => setOrgData({ ...orgData, slug: e.target.value })}
-                    placeholder="my-company"
-                    required
-                  />
-                  <p className="text-xs text-navy-400 mt-1">
-                    Used for API routes. Your status page will be at the root.
-                  </p>
-                </div>
-
                 <Button
                   type="submit"
                   className="w-full"
                   loading={submitting}
-                  disabled={!orgData.name || !orgData.slug}
+                  disabled={!orgData.name}
                 >
                   Complete Setup
                 </Button>

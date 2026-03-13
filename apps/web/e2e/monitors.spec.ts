@@ -100,6 +100,5 @@ test.describe("Organization Creation", () => {
 
     // Check form elements are visible
     await expect(page.getByLabel(/organization name/i)).toBeVisible();
-    await expect(page.getByLabel(/url slug/i)).toBeVisible();
   });
 });

@@ -52,7 +52,6 @@ async function seed() {
     .insert(schema.organizations)
     .values({
       name: "Acme Corp",
-      slug: "acme",
       timezone: "UTC",
     })
     .returning();
@@ -61,7 +60,7 @@ async function seed() {
     throw new Error("Failed to create organization");
   }
 
-  console.log(`Created organization: ${org.name} (${org.slug})`);
+  console.log(`Created organization: ${org.name} (${org.id})`);
 
   // Create sample components
   const componentData = [

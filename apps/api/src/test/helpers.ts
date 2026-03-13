@@ -39,13 +39,10 @@ function randomString(length = 8): string {
 export async function createTestOrganization(
   overrides: Partial<typeof organizations.$inferInsert> = {}
 ) {
-  const slug = overrides.slug || `test-org-${randomString()}`;
-
   const [org] = await db
     .insert(organizations)
     .values({
       name: overrides.name || "Test Organization",
-      slug,
       timezone: overrides.timezone || "UTC",
       ...overrides,
     })

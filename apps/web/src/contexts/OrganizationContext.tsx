@@ -5,7 +5,6 @@ import { createContext, useContext, useEffect, useState, useCallback } from "rea
 interface Organization {
   id: string;
   name: string;
-  slug: string;
 }
 
 interface OrganizationContextValue {

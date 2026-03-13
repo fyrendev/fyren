@@ -12,7 +12,6 @@ publicOrganizations.get("/default", async (c) => {
     return c.json({
       organization: {
         name: org.name,
-        slug: org.slug,
         logoUrl: org.logoUrl,
         faviconUrl: org.faviconUrl,
         brandColor: org.brandColor,

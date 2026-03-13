@@ -30,7 +30,7 @@ describe("Setup API", () => {
     });
 
     test("returns needsSetup: false when organization exists", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
 
       const res = await app.request("/api/v1/setup/status");
 

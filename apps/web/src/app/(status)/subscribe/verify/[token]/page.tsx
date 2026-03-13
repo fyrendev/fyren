@@ -15,16 +15,8 @@ export default function VerifySubscriptionPage() {
   useEffect(() => {
     async function verify() {
       try {
-        // Get the default org slug
-        const orgRes = await fetch(`/api/v1/org/default`);
-        if (!orgRes.ok) {
-          throw new Error("Organization not found");
-        }
-        const orgData = await orgRes.json();
-        const slug = orgData.organization.slug;
-
         // Verify the subscription
-        const res = await fetch(`/api/v1/status/${slug}/subscribe/verify/${token}`);
+        const res = await fetch(`/api/v1/status/subscribe/verify/${token}`);
         const data = await res.json();
 
         if (!res.ok) {

@@ -20,7 +20,6 @@ export type MaintenanceStatus = "scheduled" | "in_progress" | "completed";
 
 export interface Organization {
   name: string;
-  slug: string;
   logoUrl: string | null;
   faviconUrl: string | null;
   brandColor: string | null;

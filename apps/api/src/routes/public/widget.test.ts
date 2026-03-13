@@ -9,7 +9,6 @@ describe("Widget API", () => {
   describe("GET /api/v1/status/widget.js", () => {
     test("returns JavaScript widget loader", async () => {
       await createTestOrganization({
-        slug: "test-org",
         name: "Test Organization",
       });
 
@@ -25,7 +24,7 @@ describe("Widget API", () => {
     });
 
     test("includes widget container selector", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
 
       const res = await app.request("/api/v1/status/widget.js");
 
@@ -35,7 +34,7 @@ describe("Widget API", () => {
     });
 
     test("includes iframe creation code", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
 
       const res = await app.request("/api/v1/status/widget.js");
 
@@ -45,7 +44,7 @@ describe("Widget API", () => {
     });
 
     test("includes resize message handler", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
 
       const res = await app.request("/api/v1/status/widget.js");
 
@@ -65,7 +64,7 @@ describe("Widget API", () => {
     });
 
     test("sets cache headers", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
 
       const res = await app.request("/api/v1/status/widget.js");
 
@@ -75,7 +74,7 @@ describe("Widget API", () => {
     });
 
     test("includes MutationObserver for dynamic elements", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
 
       const res = await app.request("/api/v1/status/widget.js");
 
@@ -88,7 +87,6 @@ describe("Widget API", () => {
   describe("GET /api/v1/status/embed.html", () => {
     test("returns embed code snippet page", async () => {
       await createTestOrganization({
-        slug: "test-org",
         name: "Test Organization",
       });
 
@@ -101,7 +99,7 @@ describe("Widget API", () => {
     });
 
     test("includes widget script tag", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
 
       const res = await app.request("/api/v1/status/embed.html");
 
@@ -111,7 +109,7 @@ describe("Widget API", () => {
     });
 
     test("includes badge markdown example", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
 
       const res = await app.request("/api/v1/status/embed.html");
 
@@ -122,7 +120,7 @@ describe("Widget API", () => {
     });
 
     test("includes badge HTML example", async () => {
-      await createTestOrganization({ slug: "test-org" });
+      await createTestOrganization();
 
       const res = await app.request("/api/v1/status/embed.html");
 

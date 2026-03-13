@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, index, text, boolean } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, text, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 export const organizations = pgTable(
@@ -6,7 +6,6 @@ export const organizations = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     name: varchar("name", { length: 255 }).notNull(),
-    slug: varchar("slug", { length: 50 }).notNull().unique(),
 
     // Branding - Logos
     logoUrl: varchar("logo_url", { length: 500 }),
@@ -46,7 +45,7 @@ export const organizations = pgTable(
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
-  (table) => [index("organizations_slug_idx").on(table.slug)]
+  () => []
 );
 
 export const insertOrganizationSchema = createInsertSchema(organizations);

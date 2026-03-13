@@ -13,7 +13,6 @@ interface Props {
   };
   organization: {
     name: string;
-    slug: string;
   };
 }
 

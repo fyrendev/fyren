@@ -40,7 +40,6 @@ publicInvites.get("/:token", async (c) => {
       invite: {
         organization: {
           name: org.name,
-          slug: org.slug,
         },
         email: invite.email,
         role: invite.role,
@@ -102,7 +101,6 @@ publicInvites.post("/:token/accept", requireSession, async (c) => {
       organization: {
         id: org.id,
         name: org.name,
-        slug: org.slug,
       },
       role: invite.role,
     });
