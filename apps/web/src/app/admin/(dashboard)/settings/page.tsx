@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/admin/ui/Button";
 import { Card, CardHeader, CardTitle } from "@/components/admin/ui/Card";
 import { Input } from "@/components/admin/ui/Input";
+import { TimezoneSelect } from "@/components/admin/ui/TimezoneSelect";
 
 export default function SettingsPage() {
   const [_organization, setOrganization] = useState<Organization | null>(null);
@@ -200,11 +201,10 @@ export default function SettingsPage() {
               placeholder="Acme Inc"
               required
             />
-            <Input
+            <TimezoneSelect
               label="Timezone"
               value={formData.timezone}
-              onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
-              placeholder="UTC"
+              onChange={(value) => setFormData({ ...formData, timezone: value })}
             />
           </div>
         </Card>
