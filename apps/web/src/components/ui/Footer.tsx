@@ -31,14 +31,19 @@ export function Footer({ organization, rssUrl }: Props) {
           </a>
           <EmbedButton />
         </div>
-        <a
-          href="https://fyren.dev"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="brand-link"
-        >
-          Powered by Fyren
-        </a>
+        <div className="flex items-center gap-2">
+          <a
+            href="https://fyren.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="brand-link"
+          >
+            Powered by Fyren
+          </a>
+          {process.env.NEXT_PUBLIC_APP_VERSION && (
+            <span className="opacity-50">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
+          )}
+        </div>
       </div>
     </footer>
   );
