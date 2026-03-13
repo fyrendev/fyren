@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
   api,
   type LogProvider,
@@ -18,8 +19,6 @@ export default function SystemPage() {
   const [savingAndApplying, setSavingAndApplying] = useState(false);
   const [testing, setTesting] = useState(false);
   const [reloading, setReloading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const [currentSource, setCurrentSource] = useState<"env" | "database">("env");
@@ -79,7 +78,7 @@ export default function SystemPage() {
       });
     } catch (err) {
       console.error("Failed to load logging config:", err);
-      setError("Failed to load logging configuration");
+      toast.error("Failed to load logging configuration");
     } finally {
       setLoading(false);
     }
@@ -136,18 +135,15 @@ export default function SystemPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    setError(null);
-    setSuccess(null);
     setTestResult(null);
 
     try {
       const input = buildLoggingInput();
       const result = await api.updateLoggingConfig(input);
-      setSuccess(result.message);
-      setTimeout(() => setSuccess(null), 5000);
+      toast.success(result.message);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to update logging configuration";
-      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -156,8 +152,6 @@ export default function SystemPage() {
   async function handleSaveAndApply(e: React.FormEvent) {
     e.preventDefault();
     setSavingAndApplying(true);
-    setError(null);
-    setSuccess(null);
     setTestResult(null);
 
     try {
@@ -168,11 +162,12 @@ export default function SystemPage() {
       const reloadResult = await api.reloadLoggingConfig();
       setCurrentSource(reloadResult.source as "env" | "database");
       setCurrentProvider(reloadResult.provider);
-      setSuccess(`Configuration saved and applied. Now using ${reloadResult.provider} provider.`);
-      setTimeout(() => setSuccess(null), 5000);
+      toast.success(
+        `Configuration saved and applied. Now using ${reloadResult.provider} provider.`
+      );
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to save and apply configuration";
-      setError(message);
+      toast.error(message);
     } finally {
       setSavingAndApplying(false);
     }
@@ -195,18 +190,15 @@ export default function SystemPage() {
 
   async function handleReload() {
     setReloading(true);
-    setError(null);
-    setSuccess(null);
 
     try {
       const result = await api.reloadLoggingConfig();
-      setSuccess(result.message);
+      toast.success(result.message);
       setCurrentSource(result.source as "env" | "database");
       setCurrentProvider(result.provider);
-      setTimeout(() => setSuccess(null), 5000);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to reload logging configuration";
-      setError(message);
+      toast.error(message);
     } finally {
       setReloading(false);
     }
@@ -214,18 +206,15 @@ export default function SystemPage() {
 
   async function handleReset() {
     setReloading(true);
-    setError(null);
-    setSuccess(null);
 
     try {
       const result = await api.resetLoggingConfig();
-      setSuccess(result.message);
+      toast.success(result.message);
       setCurrentSource("env");
       setCurrentProvider(result.provider);
-      setTimeout(() => setSuccess(null), 5000);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to reset logging configuration";
-      setError(message);
+      toast.error(message);
     } finally {
       setReloading(false);
     }
@@ -271,17 +260,6 @@ export default function SystemPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold text-white">System Settings</h1>
-
-      {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400 text-sm">
-          {success}
-        </div>
-      )}
 
       {/* Current Status */}
       <Card>
