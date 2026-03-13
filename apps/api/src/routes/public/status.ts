@@ -186,6 +186,7 @@ publicStatus.get("/", async (c) => {
         name: org.name,
         slug: org.slug,
         logoUrl: org.logoUrl,
+        faviconUrl: org.faviconUrl,
         brandColor: org.brandColor,
         accentColor: org.accentColor,
         backgroundColor: org.backgroundColor,

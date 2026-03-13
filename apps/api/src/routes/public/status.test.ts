@@ -39,6 +39,21 @@ describe("Public Status API", () => {
       expect(data.components).toHaveLength(2);
     });
 
+    test("includes faviconUrl in organization response", async () => {
+      await createTestOrganization({
+        slug: "favicon-test",
+        name: "Favicon Test",
+        faviconUrl: "https://example.com/favicon.ico",
+      });
+      await createTestComponent({ name: "API", status: "operational" });
+
+      const res = await app.request("/api/v1/status");
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.organization.faviconUrl).toBe("https://example.com/favicon.ico");
+    });
+
     test("returns 404 when no organization configured", async () => {
       const res = await app.request("/api/v1/status");
 
