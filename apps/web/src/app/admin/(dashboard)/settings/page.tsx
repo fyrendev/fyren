@@ -30,6 +30,7 @@ export default function SettingsPage() {
     name: "",
     slug: "",
     logoUrl: "",
+    faviconUrl: "",
     brandColor: "",
     accentColor: "",
     backgroundColor: "",
@@ -76,6 +77,7 @@ export default function SettingsPage() {
         name: data.organization.name || "",
         slug: data.organization.slug || "",
         logoUrl: data.organization.logoUrl || "",
+        faviconUrl: data.organization.faviconUrl || "",
         brandColor: data.organization.brandColor || "",
         accentColor: data.organization.accentColor || "",
         backgroundColor: data.organization.backgroundColor || "",
@@ -230,6 +232,16 @@ export default function SettingsPage() {
               onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
               placeholder="https://example.com/logo.png"
             />
+            <Input
+              label="Favicon URL"
+              type="url"
+              value={formData.faviconUrl}
+              onChange={(e) => setFormData({ ...formData, faviconUrl: e.target.value })}
+              placeholder="https://example.com/favicon.ico"
+            />
+            <p className="text-xs text-navy-400">
+              If not set, the logo URL will be used as the favicon.
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-navy-300 mb-1">Brand Color</label>
