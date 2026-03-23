@@ -25,7 +25,7 @@ export function inviteTemplate(data: InviteEmailData) {
     <p>Click the button below to accept the invitation:</p>
 
     <p>
-      <a href="${data.inviteUrl}" class="button">Accept Invitation</a>
+      <a href="${data.inviteUrl}" class="button" style="display: inline-block; padding: 12px 24px; background: #0066ff; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500;">Accept Invitation</a>
     </p>
 
     <p style="color: #666; font-size: 14px;">This invitation expires on ${expiresFormatted}. If you didn't expect this, you can safely ignore this email.</p>

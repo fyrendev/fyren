@@ -43,7 +43,7 @@ export function maintenanceScheduledTemplate(data: MaintenanceEmailData) {
     </div>
 
     <p>
-      <a href="${data.statusPageUrl}" class="button">View Status Page</a>
+      <a href="${data.statusPageUrl}" class="button" style="display: inline-block; padding: 12px 24px; background: #0066ff; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500;">View Status Page</a>
     </p>
   `;
 
@@ -81,7 +81,7 @@ export function maintenanceStartedTemplate(data: MaintenanceEmailData) {
     }
 
     <p>
-      <a href="${data.statusPageUrl}" class="button">View Status Page</a>
+      <a href="${data.statusPageUrl}" class="button" style="display: inline-block; padding: 12px 24px; background: #0066ff; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500;">View Status Page</a>
     </p>
   `;
 
@@ -107,7 +107,7 @@ export function maintenanceCompletedTemplate(data: MaintenanceEmailData) {
     <p>Scheduled maintenance has been completed. All systems are operational.</p>
 
     <p>
-      <a href="${data.statusPageUrl}" class="button">View Status Page</a>
+      <a href="${data.statusPageUrl}" class="button" style="display: inline-block; padding: 12px 24px; background: #0066ff; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500;">View Status Page</a>
     </p>
   `;
 
