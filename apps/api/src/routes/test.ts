@@ -6,6 +6,7 @@ import {
   incidents,
   incidentUpdates,
   organizations,
+  organizationInvites,
   users,
   sql,
 } from "@fyrendev/db";
@@ -124,6 +125,14 @@ testRoutes.post("/setup", zValidator("json", setupSchema), async (c) => {
       throw new Error("Failed to create organization");
     }
 
+    // Create a pending invite so the signup hook allows this email
+    await db.insert(organizationInvites).values({
+      email: data.user.email,
+      role: "admin",
+      token: crypto.randomUUID(),
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+
     // Create user using BetterAuth's API via HTTP to ensure proper password hashing
     // We need to call the auth endpoint directly since the internal API has issues with undefined values
     const signUpResponse = await fetch(`${env.BETTER_AUTH_URL}/api/auth/sign-up/email`, {
@@ -148,8 +157,12 @@ testRoutes.post("/setup", zValidator("json", setupSchema), async (c) => {
       throw new Error("Sign up did not return user ID");
     }
 
-    // Set user role to owner
+    // Set user role to owner and mark the invite as accepted
     await db.update(users).set({ role: "owner" }).where(eq(users.id, user.id));
+    await db
+      .update(organizationInvites)
+      .set({ acceptedAt: new Date() })
+      .where(eq(organizationInvites.email, data.user.email));
 
     // Create components
     const createdComponents: Array<{ id: string; name: string }> = [];

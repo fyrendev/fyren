@@ -75,7 +75,10 @@ function LoginForm() {
 
       <p className="mt-6 text-center text-sm text-navy-400">
         Don&apos;t have an account?{" "}
-        <Link href="/admin/register" className="text-blue-400 hover:text-blue-300">
+        <Link
+          href={`/admin/register${searchParams.get("redirect") ? `?redirect=${searchParams.get("redirect")}` : ""}`}
+          className="text-blue-400 hover:text-blue-300"
+        >
           Sign up
         </Link>
       </p>

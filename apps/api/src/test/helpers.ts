@@ -434,6 +434,16 @@ export async function signUpTestUser(
   const { createTestApp } = await import("./app");
   const app = createTestApp();
 
+  // Create a pending invite so the signup hook allows this email,
+  // then mark it as accepted after signup so it doesn't pollute test data
+  const signupInviteToken = randomString(32);
+  await db.insert(organizationInvites).values({
+    email: testEmail,
+    role: "member",
+    token: signupInviteToken,
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  });
+
   // Sign up creates an account entry with a password and returns a session
   const signUpRes = await app.request("/api/auth/sign-up/email", {
     method: "POST",
@@ -468,6 +478,12 @@ export async function signUpTestUser(
   const [user] = await db.select().from(users).where(eq(users.email, testEmail)).limit(1);
 
   if (!user) throw new Error("User not created during sign-up");
+
+  // Mark the auto-created invite as accepted so it doesn't appear in pending lists
+  await db
+    .update(organizationInvites)
+    .set({ acceptedAt: new Date() })
+    .where(eq(organizationInvites.token, signupInviteToken));
 
   // Set role if provided
   if (role) {
