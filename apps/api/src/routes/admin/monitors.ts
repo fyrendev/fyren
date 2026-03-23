@@ -6,6 +6,7 @@ import { scheduleMonitor, unscheduleMonitor, rescheduleMonitor } from "../../lib
 import { executeCheck } from "../../lib/checkers";
 import { parseNatsUrl } from "../../lib/checkers/nats";
 import { storeCheckResult } from "../../services/monitor.service";
+import { validateExternalUrl } from "../../lib/url-validator";
 
 export const adminMonitors = new Hono();
 
@@ -143,6 +144,12 @@ adminMonitors.post("/", async (c) => {
       }
     }
 
+    // SSRF protection: validate URL doesn't resolve to private/internal IPs
+    const urlValidation = await validateExternalUrl(validatedData.url);
+    if (!urlValidation.valid) {
+      throw new ValidationError(`Invalid monitor URL: ${urlValidation.error}`);
+    }
+
     // Test connection before creating if requested
     if (validatedData.testConnection) {
       const testMonitor = {
@@ -246,6 +253,12 @@ adminMonitors.post("/test", async (c) => {
           "Invalid URL for NATS monitor. Expected format: nats://host:port or host:port"
         );
       }
+    }
+
+    // SSRF protection: validate URL doesn't resolve to private/internal IPs
+    const urlValidation = await validateExternalUrl(validatedData.url);
+    if (!urlValidation.valid) {
+      throw new ValidationError(`Invalid monitor URL: ${urlValidation.error}`);
     }
 
     // Create a temporary monitor object for testing
@@ -383,6 +396,14 @@ adminMonitors.put("/:id", async (c) => {
         throw new ValidationError(
           "Invalid URL for NATS monitor. Expected format: nats://host:port or host:port"
         );
+      }
+    }
+
+    // SSRF protection: validate new URL if changed
+    if (validatedData.url !== undefined && validatedData.url !== existingMonitor.url) {
+      const urlValidation = await validateExternalUrl(validatedData.url);
+      if (!urlValidation.valid) {
+        throw new ValidationError(`Invalid monitor URL: ${urlValidation.error}`);
       }
     }
 
