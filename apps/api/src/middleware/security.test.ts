@@ -2,10 +2,14 @@ import { describe, test, expect } from "bun:test";
 import { Hono } from "hono";
 import { widgetSecurityHeaders } from "./security";
 
+// Use a mock resolver to avoid DB dependency in tests
+const mockDefaultOrigins = () => widgetSecurityHeaders(async () => "*");
+const mockCustomOrigins = (origins: string) => widgetSecurityHeaders(async () => origins);
+
 describe("widgetSecurityHeaders", () => {
   test("does not include unsafe-inline in script-src", async () => {
     const app = new Hono();
-    app.use("*", widgetSecurityHeaders());
+    app.use("*", mockDefaultOrigins());
     app.get("/", (c) => c.text("ok"));
 
     const res = await app.request("/");
@@ -18,7 +22,7 @@ describe("widgetSecurityHeaders", () => {
 
   test("allows unsafe-inline for style-src (expected for widgets)", async () => {
     const app = new Hono();
-    app.use("*", widgetSecurityHeaders());
+    app.use("*", mockDefaultOrigins());
     app.get("/", (c) => c.text("ok"));
 
     const res = await app.request("/");
@@ -28,9 +32,8 @@ describe("widgetSecurityHeaders", () => {
   });
 
   test("defaults frame-ancestors to * when no org setting is configured", async () => {
-    // When org doesn't exist or widgetAllowedOrigins is null, defaults to *
     const app = new Hono();
-    app.use("*", widgetSecurityHeaders());
+    app.use("*", mockDefaultOrigins());
     app.get("/", (c) => c.text("ok"));
 
     const res = await app.request("/");
@@ -39,11 +42,21 @@ describe("widgetSecurityHeaders", () => {
     expect(csp).toContain("frame-ancestors *");
   });
 
+  test("uses custom frame-ancestors from org settings", async () => {
+    const app = new Hono();
+    app.use("*", mockCustomOrigins("https://example.com https://other.com"));
+    app.get("/", (c) => c.text("ok"));
+
+    const res = await app.request("/");
+    const csp = res.headers.get("Content-Security-Policy") ?? "";
+
+    expect(csp).toContain("frame-ancestors https://example.com https://other.com");
+  });
+
   test("removes X-Frame-Options to allow embedding", async () => {
     const app = new Hono();
-    app.use("*", widgetSecurityHeaders());
+    app.use("*", mockDefaultOrigins());
     app.get("/", (c) => {
-      // Simulate a prior middleware setting X-Frame-Options
       c.header("X-Frame-Options", "DENY");
       return c.text("ok");
     });
@@ -54,7 +67,7 @@ describe("widgetSecurityHeaders", () => {
 
   test("sets X-Content-Type-Options: nosniff", async () => {
     const app = new Hono();
-    app.use("*", widgetSecurityHeaders());
+    app.use("*", mockDefaultOrigins());
     app.get("/", (c) => c.text("ok"));
 
     const res = await app.request("/");
