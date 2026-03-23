@@ -5,7 +5,7 @@
 # Stage 1: Pruner
 # Extract only what's needed for this app using turbo prune
 # ================================
-FROM node:20-alpine AS pruner
+FROM node:24-alpine AS pruner
 RUN apk add --no-cache libc6-compat
 RUN npm install -g turbo@^2
 

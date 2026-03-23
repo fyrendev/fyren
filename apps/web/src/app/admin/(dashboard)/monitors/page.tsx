@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { api, type Monitor, type Component } from "@/lib/api-client";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { ConfirmDialog } from "@/components/admin/ui/ConfirmDialog";
 import { Button } from "@/components/admin/ui/Button";
 import { Card } from "@/components/admin/ui/Card";
 import { Badge } from "@/components/admin/ui/Badge";
@@ -44,6 +47,7 @@ const natsAuthOptions = [
 ];
 
 export default function MonitorsPage() {
+  const { confirm, dialogProps } = useConfirmDialog();
   const [monitors, setMonitors] = useState<Monitor[]>([]);
   const [components, setComponents] = useState<Component[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,6 +94,7 @@ export default function MonitorsPage() {
       setComponents(componentsRes.components);
     } catch (err) {
       console.error("Failed to load data:", err);
+      toast.error("Failed to load monitors");
     } finally {
       setLoading(false);
     }
@@ -283,18 +288,26 @@ export default function MonitorsPage() {
       loadData();
     } catch (err) {
       console.error("Failed to toggle monitor:", err);
+      toast.error("Failed to toggle monitor");
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to delete this monitor?")) return;
-
-    try {
-      await api.deleteMonitor(id);
-      loadData();
-    } catch (err) {
-      console.error("Failed to delete monitor:", err);
-    }
+  function handleDelete(id: string) {
+    confirm({
+      title: "Delete Monitor",
+      message: "Are you sure you want to delete this monitor?",
+      confirmLabel: "Delete",
+      onConfirm: async () => {
+        try {
+          await api.deleteMonitor(id);
+          toast.success("Monitor deleted");
+          loadData();
+        } catch (err) {
+          console.error("Failed to delete monitor:", err);
+          toast.error("Failed to delete monitor");
+        }
+      },
+    });
   }
 
   if (loading) {
@@ -597,6 +610,8 @@ export default function MonitorsPage() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

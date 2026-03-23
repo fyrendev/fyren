@@ -3,7 +3,10 @@
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { api, type Maintenance } from "@/lib/api-client";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { ConfirmDialog } from "@/components/admin/ui/ConfirmDialog";
 import { Card, CardHeader, CardTitle } from "@/components/admin/ui/Card";
 import { Button } from "@/components/admin/ui/Button";
 import { Badge } from "@/components/admin/ui/Badge";
@@ -23,6 +26,7 @@ interface PageProps {
 export default function MaintenanceDetailPage({ params }: PageProps) {
   const { id } = use(params);
   const router = useRouter();
+  const { confirm, dialogProps } = useConfirmDialog();
   const [maintenance, setMaintenance] = useState<Maintenance | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -44,46 +48,69 @@ export default function MaintenanceDetailPage({ params }: PageProps) {
     }
   }
 
-  async function handleStart() {
-    if (!confirm("Are you sure you want to start this maintenance now?")) return;
-
-    setActionLoading(true);
-    try {
-      await api.startMaintenance(id);
-      loadMaintenance();
-    } catch (err) {
-      console.error("Failed to start maintenance:", err);
-    } finally {
-      setActionLoading(false);
-    }
+  function handleStart() {
+    confirm({
+      title: "Start Maintenance",
+      message: "Are you sure you want to start this maintenance now?",
+      confirmLabel: "Start",
+      variant: "primary",
+      onConfirm: async () => {
+        setActionLoading(true);
+        try {
+          await api.startMaintenance(id);
+          toast.success("Maintenance started");
+          loadMaintenance();
+        } catch (err) {
+          console.error("Failed to start maintenance:", err);
+          toast.error("Failed to start maintenance");
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
   }
 
-  async function handleComplete() {
-    if (!confirm("Are you sure you want to mark this maintenance as complete?")) return;
-
-    setActionLoading(true);
-    try {
-      await api.completeMaintenance(id);
-      loadMaintenance();
-    } catch (err) {
-      console.error("Failed to complete maintenance:", err);
-    } finally {
-      setActionLoading(false);
-    }
+  function handleComplete() {
+    confirm({
+      title: "Complete Maintenance",
+      message: "Are you sure you want to mark this maintenance as complete?",
+      confirmLabel: "Complete",
+      variant: "primary",
+      onConfirm: async () => {
+        setActionLoading(true);
+        try {
+          await api.completeMaintenance(id);
+          toast.success("Maintenance completed");
+          loadMaintenance();
+        } catch (err) {
+          console.error("Failed to complete maintenance:", err);
+          toast.error("Failed to complete maintenance");
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
   }
 
-  async function handleCancel() {
-    if (!confirm("Are you sure you want to cancel this maintenance?")) return;
-
-    setActionLoading(true);
-    try {
-      await api.cancelMaintenance(id);
-      router.push("/admin/maintenance");
-    } catch (err) {
-      console.error("Failed to cancel maintenance:", err);
-    } finally {
-      setActionLoading(false);
-    }
+  function handleCancel() {
+    confirm({
+      title: "Cancel Maintenance",
+      message: "Are you sure you want to cancel this maintenance?",
+      confirmLabel: "Cancel Maintenance",
+      onConfirm: async () => {
+        setActionLoading(true);
+        try {
+          await api.cancelMaintenance(id);
+          toast.success("Maintenance cancelled");
+          router.push("/admin/maintenance");
+        } catch (err) {
+          console.error("Failed to cancel maintenance:", err);
+          toast.error("Failed to cancel maintenance");
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
   }
 
   if (loading) {
@@ -223,6 +250,8 @@ export default function MaintenanceDetailPage({ params }: PageProps) {
           </div>
         </Card>
       )}
+
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

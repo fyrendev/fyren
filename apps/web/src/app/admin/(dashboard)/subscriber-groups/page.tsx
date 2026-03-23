@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { api, type SubscriberGroup, type Component } from "@/lib/api-client";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { ConfirmDialog } from "@/components/admin/ui/ConfirmDialog";
 import { Button } from "@/components/admin/ui/Button";
 import { Card } from "@/components/admin/ui/Card";
 import { Badge } from "@/components/admin/ui/Badge";
@@ -20,6 +23,7 @@ import { Textarea } from "@/components/admin/ui/Textarea";
 import { Users, Plus, Pencil, Trash2 } from "lucide-react";
 
 export default function SubscriberGroupsPage() {
+  const { confirm, dialogProps } = useConfirmDialog();
   const [groups, setGroups] = useState<SubscriberGroup[]>([]);
   const [components, setComponents] = useState<Component[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +55,7 @@ export default function SubscriberGroupsPage() {
       setComponents(componentsData.components);
     } catch (err) {
       console.error("Failed to load data:", err);
+      toast.error("Failed to load subscriber groups");
     } finally {
       setLoading(false);
     }
@@ -101,21 +106,23 @@ export default function SubscriberGroupsPage() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (
-      !confirm(
-        "Are you sure you want to delete this group? This will not delete the subscribers in the group."
-      )
-    )
-      return;
-
-    try {
-      await api.deleteSubscriberGroup(id);
-      loadData();
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to delete group";
-      alert(message);
-    }
+  function handleDelete(id: string) {
+    confirm({
+      title: "Delete Group",
+      message:
+        "Are you sure you want to delete this group? This will not delete the subscribers in the group.",
+      confirmLabel: "Delete",
+      onConfirm: async () => {
+        try {
+          await api.deleteSubscriberGroup(id);
+          toast.success("Group deleted");
+          loadData();
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : "Failed to delete group";
+          toast.error(message);
+        }
+      },
+    });
   }
 
   function toggleComponent(componentId: string) {
@@ -282,6 +289,8 @@ export default function SubscriberGroupsPage() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

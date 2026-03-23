@@ -8,3 +8,6 @@ export { Badge } from "./Badge";
 export { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "./Table";
 export { EmptyState } from "./EmptyState";
 export { TimezoneSelect } from "./TimezoneSelect";
+export { Toaster } from "./Toaster";
+export { ConfirmDialog } from "./ConfirmDialog";
+export type { ConfirmDialogProps } from "./ConfirmDialog";
