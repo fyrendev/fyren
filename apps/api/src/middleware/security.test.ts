@@ -27,12 +27,8 @@ describe("widgetSecurityHeaders", () => {
     expect(csp).toContain("style-src 'self' 'unsafe-inline'");
   });
 
-  test("defaults frame-ancestors to * when WIDGET_ALLOWED_ORIGINS is not set", async () => {
-    // Ensure env var is not set
-    const original = process.env.WIDGET_ALLOWED_ORIGINS;
-    delete process.env.WIDGET_ALLOWED_ORIGINS;
-
-    // Re-import to get fresh middleware
+  test("defaults frame-ancestors to * when no org setting is configured", async () => {
+    // When org doesn't exist or widgetAllowedOrigins is null, defaults to *
     const app = new Hono();
     app.use("*", widgetSecurityHeaders());
     app.get("/", (c) => c.text("ok"));
@@ -41,11 +37,6 @@ describe("widgetSecurityHeaders", () => {
     const csp = res.headers.get("Content-Security-Policy") ?? "";
 
     expect(csp).toContain("frame-ancestors *");
-
-    // Restore
-    if (original !== undefined) {
-      process.env.WIDGET_ALLOWED_ORIGINS = original;
-    }
   });
 
   test("removes X-Frame-Options to allow embedding", async () => {

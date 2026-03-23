@@ -1,0 +1,1 @@
+ALTER TABLE "organizations" ADD COLUMN "widget_allowed_origins" varchar(2000);

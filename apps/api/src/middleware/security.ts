@@ -97,13 +97,25 @@ export function securityHeaders(config: SecurityHeadersConfig = {}) {
  * Widget-friendly security headers
  *
  * Allows embedding in iframes from configurable origins (default: any).
+ * Origins are read from the organization's widgetAllowedOrigins setting,
+ * which is configurable from the admin UI.
  * Use this only for widget/embed endpoints.
  */
 export function widgetSecurityHeaders() {
-  const frameAncestors = process.env.WIDGET_ALLOWED_ORIGINS || "*";
-
   return async (c: Context, next: Next) => {
     await next();
+
+    // Read allowed origins from org settings (cached), fall back to "*"
+    let frameAncestors = "*";
+    try {
+      const { getOrganization } = await import("../lib/organization");
+      const org = await getOrganization();
+      if (org.widgetAllowedOrigins) {
+        frameAncestors = org.widgetAllowedOrigins;
+      }
+    } catch {
+      // Org may not exist yet (initial setup) — default to allow all
+    }
 
     // Prevent MIME type sniffing
     c.header("X-Content-Type-Options", "nosniff");

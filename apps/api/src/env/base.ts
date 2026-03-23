@@ -14,10 +14,6 @@ export const baseEnvSchema = z.object({
   // Only trust X-Forwarded-For when request comes from these IPs
   TRUSTED_PROXIES: z.string().optional(),
 
-  // Allowed origins for widget embedding (CSP frame-ancestors, default: "*")
-  // Space-separated list of origins, e.g. "https://example.com https://other.com"
-  WIDGET_ALLOWED_ORIGINS: z.string().optional(),
-
   // Encryption key for sensitive data (64 hex chars = 32 bytes)
   ENCRYPTION_KEY: z
     .string()

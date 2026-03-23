@@ -48,6 +48,8 @@ function serializeOrganization(org: typeof organizations.$inferSelect) {
     supportUrl: org.supportUrl,
     // Settings
     timezone: org.timezone,
+    // Security
+    widgetAllowedOrigins: org.widgetAllowedOrigins,
     // Email Configuration (never expose encrypted credentials)
     emailProvider: org.emailProvider,
     emailFromAddress: org.emailFromAddress,
@@ -129,6 +131,9 @@ const updateOrganizationSchema = z.object({
 
   // Settings
   timezone: z.string().max(50).optional(),
+
+  // Security: widget embedding origins (CSP frame-ancestors)
+  widgetAllowedOrigins: z.string().max(2000).nullable().optional(),
 
   // Email Configuration
   emailProvider: z.enum(["console", "smtp", "sendgrid", "ses"]).optional(),
