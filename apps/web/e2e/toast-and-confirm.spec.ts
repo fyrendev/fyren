@@ -35,13 +35,14 @@ test.describe("Toast Notifications and Confirm Dialog", () => {
     await deleteButton.click();
 
     // Confirm dialog should appear
-    await expect(page.getByText("Delete Component")).toBeVisible({ timeout: 5000 });
-    await expect(page.getByRole("button", { name: /cancel/i })).toBeVisible();
-    await expect(page.getByRole("button", { name: /delete/i })).toBeVisible();
+    const dialog = page.getByRole("dialog", { name: "Delete Component" });
+    await expect(dialog).toBeVisible({ timeout: 5000 });
+    await expect(dialog.getByRole("button", { name: /cancel/i })).toBeVisible();
+    await expect(dialog.getByRole("button", { name: /delete/i })).toBeVisible();
 
     // Cancel should close the dialog
-    await page.getByRole("button", { name: /cancel/i }).click();
-    await expect(page.getByText("Delete Component")).not.toBeVisible();
+    await dialog.getByRole("button", { name: /cancel/i }).click();
+    await expect(dialog).not.toBeVisible();
   });
 
   test("confirm dialog executes action and shows success toast", async ({ page }) => {
@@ -55,13 +56,11 @@ test.describe("Toast Notifications and Confirm Dialog", () => {
     await deleteButton.click();
 
     // Confirm dialog should appear
-    await expect(page.getByText("Delete Component")).toBeVisible({ timeout: 5000 });
+    const dialog = page.getByRole("dialog", { name: "Delete Component" });
+    await expect(dialog).toBeVisible({ timeout: 5000 });
 
-    // Click confirm — use last() to avoid matching the dialog's own delete button
-    await page
-      .getByRole("button", { name: /delete/i })
-      .last()
-      .click();
+    // Click confirm
+    await dialog.getByRole("button", { name: /delete/i }).click();
 
     // Success toast should appear
     await expect(page.getByText("Component deleted")).toBeVisible({ timeout: 5000 });

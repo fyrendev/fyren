@@ -44,7 +44,11 @@ export function ConfirmDialog({
       <div className="flex min-h-full items-center justify-center p-4">
         <div className="fixed inset-0 bg-black/50 transition-opacity" onClick={onClose} />
 
-        <div className="relative bg-navy-900 rounded-xl shadow-xl border border-navy-800 w-full max-w-sm">
+        <div
+          role="dialog"
+          aria-label={title}
+          className="relative bg-navy-900 rounded-xl shadow-xl border border-navy-800 w-full max-w-sm"
+        >
           <div className="px-6 py-5">
             <h2 className="text-lg font-semibold text-white">{title}</h2>
             <p className="mt-2 text-sm text-navy-300">{message}</p>
