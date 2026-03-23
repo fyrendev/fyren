@@ -6,11 +6,18 @@ import type { AuthUser } from "../../lib/auth";
 import { db } from "../../lib/db";
 import { clearProviderCache, getEmailProvider } from "../../lib/email";
 import { encryptJson, isEncryptionAvailable } from "../../lib/encryption";
-import { BadRequestError, ConflictError, errorResponse, NotFoundError } from "../../lib/errors";
+import {
+  BadRequestError,
+  ConflictError,
+  ForbiddenError,
+  errorResponse,
+  NotFoundError,
+} from "../../lib/errors";
 import { sanitizeCustomCss, sanitizeTwitterHandle } from "../../lib/sanitize";
 import { createAuditLogger } from "../../lib/logging/audit";
 import { clearOrganizationCache, getOrganization } from "../../lib/organization";
 import { requireRole } from "../../middleware/session";
+import { env } from "../../env/api";
 
 const adminOrganizations = new Hono();
 
@@ -133,7 +140,7 @@ const updateOrganizationSchema = z.object({
 });
 
 // POST /organization - Create organization
-// If user is logged in, they become the owner. Otherwise, creates an org without owner (for bootstrap).
+// Requires either an authenticated session or a valid SETUP_TOKEN to prevent unauthenticated instance takeover.
 adminOrganizations.post("/", async (c) => {
   try {
     // Single-tenant mode: only one organization allowed
@@ -142,9 +149,23 @@ adminOrganizations.post("/", async (c) => {
       throw new ConflictError("Organization already exists. This is a single-tenant instance.");
     }
 
+    const user = c.get("user");
+
+    // Require either authenticated user or valid setup token
+    if (!user) {
+      const setupToken = c.req.header("X-Setup-Token");
+      if (!env.SETUP_TOKEN) {
+        throw new ForbiddenError(
+          "SETUP_TOKEN environment variable must be configured for unauthenticated setup"
+        );
+      }
+      if (!setupToken || setupToken !== env.SETUP_TOKEN) {
+        throw new ForbiddenError("Invalid setup token");
+      }
+    }
+
     const body = await c.req.json();
     const data = createOrganizationSchema.parse(body);
-    const user = c.get("user");
 
     // Create organization
     const [org] = await db
@@ -285,7 +306,13 @@ adminOrganizations.put("/", requireRole("owner", "admin"), async (c) => {
       organizationId: org.id,
       requestId: c.get("requestId"),
     });
-    auditLogger.orgUpdated(org.id, data);
+    // Redact sensitive fields from audit log to prevent plaintext credential exposure
+    const { emailConfig: _redactedEmailConfig, ...auditSafeData } = data;
+    const auditChanges = {
+      ...auditSafeData,
+      ...(data.emailConfig !== undefined ? { emailConfig: "[REDACTED]" } : {}),
+    };
+    auditLogger.orgUpdated(org.id, auditChanges);
 
     return c.json({
       organization: serializeOrganization(updatedOrg),

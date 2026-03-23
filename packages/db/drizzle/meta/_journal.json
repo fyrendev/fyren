@@ -15,6 +15,13 @@
       "when": 1773413786134,
       "tag": "0001_dusty_whirlwind",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774284586464,
+      "tag": "0002_ancient_champions",
+      "breakpoints": true
     }
   ]
 }
