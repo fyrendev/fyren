@@ -1,6 +1,7 @@
 import type { Context, Next } from "hono";
 import { redis } from "../lib/redis";
 import { logger } from "../lib/logging";
+import { env } from "../env/base";
 
 export interface RateLimitConfig {
   /** Maximum requests allowed in the window */
@@ -29,25 +30,55 @@ export const RATE_LIMITS = {
   subscribe: { limit: 5, windowSeconds: 3600 },
 } as const;
 
+/** Parse TRUSTED_PROXIES env var into a set of IPs/CIDRs */
+const trustedProxies: Set<string> = new Set(
+  (env.TRUSTED_PROXIES ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+);
+
 /**
- * Get the client IP from the request
+ * Get the client IP from the request.
+ *
+ * Only trusts X-Forwarded-For / X-Real-IP when TRUSTED_PROXIES is configured
+ * and the direct connection IP matches a trusted proxy. This prevents clients
+ * from spoofing their IP to bypass rate limiting.
  */
 function getClientIP(c: Context): string {
-  // Check common proxy headers
+  // Try to get the direct connection IP from the request
+  const connectingIp =
+    c.req.header("x-connecting-ip") ?? // Set by some load balancers
+    (c.env as Record<string, string> | undefined)?.remoteAddr ??
+    "unknown";
+
+  // Only trust proxy headers if we have configured trusted proxies
+  // and the direct connection came from one of them
+  if (trustedProxies.size > 0 && trustedProxies.has(connectingIp)) {
+    const forwarded = c.req.header("x-forwarded-for");
+    if (forwarded) {
+      const firstIP = forwarded.split(",")[0];
+      if (firstIP) return firstIP.trim();
+    }
+
+    const realIP = c.req.header("x-real-ip");
+    if (realIP) return realIP;
+  }
+
+  // If no trusted proxies configured or connection isn't from a trusted proxy,
+  // use the connecting IP directly (ignoring potentially spoofed headers)
+  if (connectingIp !== "unknown") {
+    return connectingIp;
+  }
+
+  // Last resort: use forwarded headers but log a warning
   const forwarded = c.req.header("x-forwarded-for");
   if (forwarded) {
-    // Take the first IP if there are multiple
     const firstIP = forwarded.split(",")[0];
     if (firstIP) return firstIP.trim();
   }
 
-  const realIP = c.req.header("x-real-ip");
-  if (realIP) {
-    return realIP;
-  }
-
-  // Fallback to a default (in production, this should rarely happen)
-  return "unknown";
+  return c.req.header("x-real-ip") ?? "unknown";
 }
 
 /**

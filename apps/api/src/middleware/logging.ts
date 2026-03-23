@@ -21,8 +21,10 @@ export function loggingMiddleware() {
   return async (c: Context, next: Next) => {
     const startTime = Date.now();
 
-    // Generate or use existing request ID
-    const requestId = c.req.header("X-Request-ID") ?? generateRequestId();
+    // Generate or use existing request ID (sanitized to prevent header/log injection)
+    const rawRequestId = c.req.header("X-Request-ID") ?? "";
+    const sanitized = rawRequestId.replace(/[^a-zA-Z0-9\-_.]/g, "").slice(0, 128);
+    const requestId = sanitized || generateRequestId();
     c.set("requestId", requestId);
     c.header("X-Request-ID", requestId);
 
