@@ -187,12 +187,14 @@ export default function ComponentsPage() {
                       <button
                         onClick={() => openEditModal(component)}
                         className="p-1 text-navy-400 hover:text-white transition-colors"
+                        title="Edit component"
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(component.id)}
                         className="p-1 text-navy-400 hover:text-red-400 transition-colors"
+                        title="Delete component"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
