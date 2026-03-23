@@ -38,7 +38,7 @@ export function incidentCreatedTemplate(data: IncidentEmailData) {
     }
 
     <p>
-      <a href="${data.incidentUrl}" class="button">View Incident</a>
+      <a href="${data.incidentUrl}" class="button" style="display: inline-block; padding: 12px 24px; background: #0066ff; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500;">View Incident</a>
     </p>
   `;
 
@@ -64,7 +64,7 @@ export function incidentUpdatedTemplate(data: IncidentEmailData) {
     <p>${data.message}</p>
 
     <p>
-      <a href="${data.incidentUrl}" class="button">View Incident</a>
+      <a href="${data.incidentUrl}" class="button" style="display: inline-block; padding: 12px 24px; background: #0066ff; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500;">View Incident</a>
     </p>
   `;
 
@@ -90,7 +90,7 @@ export function incidentResolvedTemplate(data: IncidentEmailData) {
     <p>${data.message}</p>
 
     <p>
-      <a href="${data.incidentUrl}" class="button">View Incident</a>
+      <a href="${data.incidentUrl}" class="button" style="display: inline-block; padding: 12px 24px; background: #0066ff; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500;">View Incident</a>
     </p>
   `;
 
