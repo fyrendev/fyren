@@ -74,7 +74,7 @@ export default function AcceptInvitePage() {
   function handleSignIn() {
     // Redirect to login with a return URL back to this invite page
     const returnUrl = encodeURIComponent(`/invites/${params.token}`);
-    router.push(`/admin/login?redirect=${returnUrl}`);
+    router.push(`/admin/signup?redirect=${returnUrl}`);
   }
 
   if (loading || sessionLoading) {
@@ -144,7 +144,7 @@ export default function AcceptInvitePage() {
                   onClick={handleSignIn}
                   className="w-full bg-white text-navy-900 font-medium py-2.5 rounded-lg hover:bg-navy-100 transition-colors"
                 >
-                  Sign in to accept
+                  Sign up to accept
                 </button>
               )}
             </>

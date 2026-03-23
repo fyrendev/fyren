@@ -1,6 +1,18 @@
 import { betterAuth } from "better-auth";
+import { createAuthMiddleware, APIError } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db, users, sessions, accounts, verifications } from "@fyrendev/db";
+import {
+  db,
+  users,
+  sessions,
+  accounts,
+  verifications,
+  organizationInvites,
+  and,
+  ilike,
+  isNull,
+  gt,
+} from "@fyrendev/db";
 import { env } from "../env/api";
 
 export const auth = betterAuth({
@@ -36,6 +48,36 @@ export const auth = betterAuth({
 
   // Secret for signing tokens
   secret: env.BETTER_AUTH_SECRET,
+
+  // Only allow signups for users with a pending invite
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== "/sign-up/email") {
+        return;
+      }
+
+      const email = ctx.body?.email?.toLowerCase();
+      if (!email) {
+        throw new APIError("BAD_REQUEST", {
+          message: "Email is required",
+        });
+      }
+
+      const invite = await db.query.organizationInvites.findFirst({
+        where: and(
+          ilike(organizationInvites.email, email),
+          isNull(organizationInvites.acceptedAt),
+          gt(organizationInvites.expiresAt, new Date())
+        ),
+      });
+
+      if (!invite) {
+        throw new APIError("FORBIDDEN", {
+          message: "Signups are restricted to invited users only",
+        });
+      }
+    }),
+  },
 
   // Trusted origins for CORS
   // Support comma-separated APP_URL for multiple origins (e.g., production + localhost)
