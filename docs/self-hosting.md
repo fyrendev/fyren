@@ -352,10 +352,11 @@ docker compose -f docker-compose.prod.yml exec traefik \
 ## Security Recommendations
 
 1. **Use strong passwords** for database and Redis (min 32 characters)
-2. **Enable firewall** to allow only ports 80 and 443
-3. **Regular backups** - schedule automated database backups
-4. **Keep updated** - regularly pull latest images and rebuild
-5. **Monitor logs** - set up log aggregation for production
+2. **Configure `TRUSTED_PROXIES`** — required for accurate rate limiting behind Traefik. Set to `172.16.0.0/12` for standard Docker setups. See [Configuration Reference](./configuration.md#trusted_proxies).
+3. **Enable firewall** to allow only ports 80 and 443
+4. **Regular backups** — schedule automated database backups
+5. **Keep updated** — regularly pull latest images and rebuild
+6. **Monitor logs** — set up log aggregation for production
 
 ## Resource Usage
 

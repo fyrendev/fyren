@@ -79,6 +79,50 @@ All Fyren configuration is done through environment variables.
 | `APP_DOMAIN` | Domain for Traefik routing | Required |
 | `ACME_EMAIL` | Email for Let's Encrypt    | Required |
 
+## Security
+
+| Variable          | Description                                               | Default | Required                   |
+| ----------------- | --------------------------------------------------------- | ------- | -------------------------- |
+| `TRUSTED_PROXIES` | Comma-separated proxy IPs/CIDRs for rate limiter          | -       | If behind a reverse proxy  |
+| `SETUP_TOKEN`     | One-time token for initial org creation (unauthenticated) | -       | New installs only          |
+| `ENCRYPTION_KEY`  | 64 hex chars for encrypting email credentials             | -       | If using email settings UI |
+
+### `TRUSTED_PROXIES`
+
+Required when running behind a reverse proxy (Traefik, nginx, etc.) for accurate per-client rate limiting. Without it, `X-Forwarded-For` headers are ignored and all requests appear to come from the proxy's IP.
+
+Supports both exact IPs and CIDR notation:
+
+```bash
+# Single proxy
+TRUSTED_PROXIES=10.0.0.1
+
+# Docker/Traefik setup (covers typical Docker network range)
+TRUSTED_PROXIES=172.16.0.0/12
+
+# Multiple entries
+TRUSTED_PROXIES=10.0.0.1,172.16.0.0/12,192.168.1.0/24
+```
+
+### `SETUP_TOKEN`
+
+Only needed for the initial organization creation if no user account exists yet. Once an organization is created, this variable is no longer used. You can remove it after setup.
+
+```bash
+# Generate a token
+openssl rand -hex 32
+
+# Pass as header during setup
+curl -X POST https://your-domain.com/api/v1/admin/organization \
+  -H "X-Setup-Token: your-token-here" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "My Org"}'
+```
+
+### Widget Allowed Origins
+
+Configurable from the admin UI under organization settings (`widgetAllowedOrigins`). Controls which domains can embed status page widgets via CSP `frame-ancestors`. Defaults to `*` (allow all) when not set.
+
 ## Rate Limiting
 
 Rate limits are configured in the API middleware:
