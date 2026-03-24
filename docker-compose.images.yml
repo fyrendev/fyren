@@ -104,6 +104,8 @@ services:
       BETTER_AUTH_URL: ${APP_URL:?APP_URL is required}
       APP_URL: ${APP_URL}
       MIGRATIONS_PATH: ./drizzle
+      # Security
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172.16.0.0/12}
       # Email configuration
       EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
       EMAIL_FROM: ${EMAIL_FROM:-noreply@fyren.dev}

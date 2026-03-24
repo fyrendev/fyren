@@ -176,6 +176,10 @@ REDIS_PASSWORD=$REDIS_PASSWORD
 # ─── Auth ───
 BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET
 
+# ─── Security ───
+# Trust Traefik's Docker network for accurate per-client rate limiting
+TRUSTED_PROXIES=172.16.0.0/12
+
 # ─── Email ───
 # Change to "ses", "sendgrid", or "smtp" and fill in credentials below
 EMAIL_PROVIDER=console

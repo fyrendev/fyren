@@ -102,6 +102,8 @@ services:
       # Migrations path (relative to /app in container)
       # API runs migrations automatically on startup
       MIGRATIONS_PATH: ./drizzle
+      # Security
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172.16.0.0/12}
       # Email configuration
       EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
       EMAIL_FROM: ${EMAIL_FROM:-noreply@fyren.dev}
