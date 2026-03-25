@@ -190,7 +190,7 @@ publicStatus.get("/", async (c) => {
         accentColor: org.accentColor,
         backgroundColor: org.backgroundColor,
         textColor: org.textColor,
-        websiteUrl: org.customDomain ? `https://${org.customDomain}` : null,
+        websiteUrl: null,
       },
       status: {
         indicator: overall.indicator,

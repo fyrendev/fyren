@@ -34,7 +34,6 @@ export default function SettingsPage() {
     accentColor: "",
     backgroundColor: "",
     textColor: "",
-    customDomain: "",
     timezone: "",
   });
 
@@ -80,7 +79,6 @@ export default function SettingsPage() {
         accentColor: data.organization.accentColor || "",
         backgroundColor: data.organization.backgroundColor || "",
         textColor: data.organization.textColor || "",
-        customDomain: data.organization.customDomain || "",
         timezone: data.organization.timezone || "UTC",
       });
       setEmailFormData((prev) => ({
@@ -307,24 +305,6 @@ export default function SettingsPage() {
             >
               Reset colors to defaults
             </button>
-          </div>
-        </Card>
-
-        {/* Custom Domain */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Custom Domain</CardTitle>
-          </CardHeader>
-          <div className="space-y-4">
-            <Input
-              label="Custom Domain"
-              value={formData.customDomain}
-              onChange={(e) => setFormData({ ...formData, customDomain: e.target.value })}
-              placeholder="status.acme.com"
-            />
-            <p className="text-xs text-navy-400">
-              Point a CNAME record to your Fyren status page subdomain.
-            </p>
           </div>
         </Card>
 
