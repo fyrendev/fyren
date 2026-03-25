@@ -40,10 +40,16 @@ export default function WebhooksPage() {
     name: string;
     url: string;
     type: WebhookType;
+    notifyOnIncident: boolean;
+    notifyOnMaintenance: boolean;
+    notifyOnComponentChange: boolean;
   }>({
     name: "",
     url: "",
     type: "generic",
+    notifyOnIncident: true,
+    notifyOnMaintenance: true,
+    notifyOnComponentChange: false,
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +77,14 @@ export default function WebhooksPage() {
 
   function openCreateModal() {
     setEditingWebhook(null);
-    setFormData({ name: "", url: "", type: "generic" });
+    setFormData({
+      name: "",
+      url: "",
+      type: "generic",
+      notifyOnIncident: true,
+      notifyOnMaintenance: true,
+      notifyOnComponentChange: false,
+    });
     setError(null);
     setModalOpen(true);
   }
@@ -82,6 +95,9 @@ export default function WebhooksPage() {
       name: webhook.name,
       url: webhook.url,
       type: webhook.type,
+      notifyOnIncident: webhook.notifyOnIncident,
+      notifyOnMaintenance: webhook.notifyOnMaintenance,
+      notifyOnComponentChange: webhook.notifyOnComponentChange,
     });
     setError(null);
     setModalOpen(true);
@@ -181,6 +197,7 @@ export default function WebhooksPage() {
               <TableHead>Name</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>URL</TableHead>
+              <TableHead>Notifications</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-32">Actions</TableHead>
             </TableHeader>
@@ -195,6 +212,25 @@ export default function WebhooksPage() {
                   </TableCell>
                   <TableCell>
                     <p className="text-navy-400 truncate max-w-xs">{webhook.url}</p>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1 flex-wrap">
+                      {webhook.notifyOnIncident && (
+                        <Badge variant="default" className="text-xs">
+                          Incidents
+                        </Badge>
+                      )}
+                      {webhook.notifyOnMaintenance && (
+                        <Badge variant="default" className="text-xs">
+                          Maintenance
+                        </Badge>
+                      )}
+                      {webhook.notifyOnComponentChange && (
+                        <Badge variant="default" className="text-xs">
+                          Status Changes
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Badge variant={webhook.enabled ? "success" : "default"}>
@@ -279,6 +315,44 @@ export default function WebhooksPage() {
             placeholder="https://hooks.slack.com/services/..."
             required
           />
+          <div>
+            <label className="block text-sm font-medium text-navy-300 mb-2">
+              Notification Events
+            </label>
+            <div className="space-y-2">
+              <label className="flex items-center gap-3 p-2 rounded hover:bg-navy-700/50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.notifyOnIncident}
+                  onChange={(e) => setFormData({ ...formData, notifyOnIncident: e.target.checked })}
+                  className="w-4 h-4 rounded border-navy-600 bg-navy-700 text-amber-500 focus:ring-amber-500"
+                />
+                <span className="text-white text-sm">Notify on incidents</span>
+              </label>
+              <label className="flex items-center gap-3 p-2 rounded hover:bg-navy-700/50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.notifyOnMaintenance}
+                  onChange={(e) =>
+                    setFormData({ ...formData, notifyOnMaintenance: e.target.checked })
+                  }
+                  className="w-4 h-4 rounded border-navy-600 bg-navy-700 text-amber-500 focus:ring-amber-500"
+                />
+                <span className="text-white text-sm">Notify on maintenance</span>
+              </label>
+              <label className="flex items-center gap-3 p-2 rounded hover:bg-navy-700/50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.notifyOnComponentChange}
+                  onChange={(e) =>
+                    setFormData({ ...formData, notifyOnComponentChange: e.target.checked })
+                  }
+                  className="w-4 h-4 rounded border-navy-600 bg-navy-700 text-amber-500 focus:ring-amber-500"
+                />
+                <span className="text-white text-sm">Notify on component status changes</span>
+              </label>
+            </div>
+          </div>
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="ghost" onClick={() => setModalOpen(false)}>
               Cancel
