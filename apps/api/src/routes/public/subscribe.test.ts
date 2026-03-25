@@ -1,17 +1,19 @@
-import { describe, test, expect, mock } from "bun:test";
+import { describe, test, expect, spyOn } from "bun:test";
 import {
   createTestApp,
   setupTestHooks,
   createTestOrganization,
   createTestSubscriber,
 } from "../../test";
+import { ConsoleProvider } from "../../lib/email/providers/console";
 
-// Mock the email provider to avoid sending real emails
-mock.module("../../lib/email", () => ({
-  getEmailProvider: () => ({
-    send: async () => ({ success: true }),
-  }),
-}));
+// Spy on ConsoleProvider.send to suppress log noise without replacing the module.
+// Using mock.module would globally replace ../../lib/email and break other test files
+// (e.g. email/index.test.ts) that depend on the real getEmailProvider.
+spyOn(ConsoleProvider.prototype, "send").mockResolvedValue({
+  success: true,
+  messageId: "test",
+});
 
 describe("Public Subscribe API", () => {
   setupTestHooks();
@@ -112,6 +114,134 @@ describe("Public Subscribe API", () => {
       });
 
       expect(res.status).toBe(404);
+    });
+
+    test("returns 429 when rate limit exceeded", async () => {
+      await createTestOrganization();
+
+      const makeRequest = (i: number) =>
+        app.request("/api/v1/status/subscribe", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Forwarded-For": "1.2.3.4",
+          },
+          body: JSON.stringify({ email: `user${i}@example.com` }),
+        });
+
+      // Send 5 requests (the limit)
+      for (let i = 0; i < 5; i++) {
+        const res = await makeRequest(i);
+        expect(res.status).not.toBe(429);
+      }
+
+      // 6th request should be rate limited
+      const res = await makeRequest(5);
+      expect(res.status).toBe(429);
+      const data = await res.json();
+      expect(data.error.code).toBe("RATE_LIMIT_EXCEEDED");
+      expect(res.headers.get("Retry-After")).toBeTruthy();
+    });
+
+    test("sets rate limit headers on responses", async () => {
+      await createTestOrganization();
+
+      const res = await app.request("/api/v1/status/subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Forwarded-For": "5.6.7.8",
+        },
+        body: JSON.stringify({ email: "headers@example.com" }),
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get("X-RateLimit-Limit")).toBe("5");
+      expect(res.headers.get("X-RateLimit-Remaining")).toBeTruthy();
+      expect(res.headers.get("X-RateLimit-Reset")).toBeTruthy();
+    });
+
+    test("limits verification emails per email address", async () => {
+      await createTestOrganization();
+
+      const makeRequest = () =>
+        app.request("/api/v1/status/subscribe", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Forwarded-For": "9.9.9.9",
+          },
+          body: JSON.stringify({ email: "spammed@example.com" }),
+        });
+
+      // First 3 requests should send emails (all return 200)
+      for (let i = 0; i < 3; i++) {
+        const res = await makeRequest();
+        expect(res.status).toBe(200);
+      }
+
+      // 4th request for same email still returns 200 (no enumeration leak)
+      // but no verification email is sent
+      const res = await makeRequest();
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.message).toBe("Verification email sent");
+    });
+
+    test("per-email limit is independent per address", async () => {
+      await createTestOrganization();
+
+      // Exhaust limit for one email
+      for (let i = 0; i < 4; i++) {
+        await app.request("/api/v1/status/subscribe", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Forwarded-For": "9.9.9.9",
+          },
+          body: JSON.stringify({ email: "first@example.com" }),
+        });
+      }
+
+      // Different email should still work
+      const res = await app.request("/api/v1/status/subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Forwarded-For": "9.9.9.9",
+        },
+        body: JSON.stringify({ email: "second@example.com" }),
+      });
+
+      expect(res.status).toBe(200);
+    });
+
+    test("rate limits are per-IP", async () => {
+      await createTestOrganization();
+
+      // Exhaust rate limit for first IP
+      for (let i = 0; i < 6; i++) {
+        await app.request("/api/v1/status/subscribe", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Forwarded-For": "10.0.0.1",
+          },
+          body: JSON.stringify({ email: `a${i}@example.com` }),
+        });
+      }
+
+      // Different IP should still work
+      const res = await app.request("/api/v1/status/subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Forwarded-For": "10.0.0.2",
+        },
+        body: JSON.stringify({ email: "different-ip@example.com" }),
+      });
+
+      expect(res.status).toBe(200);
     });
   });
 
