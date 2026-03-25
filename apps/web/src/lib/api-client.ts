@@ -119,6 +119,13 @@ export interface WebhookEndpoint {
   url: string;
   type: WebhookType;
   enabled: boolean;
+  notifyOnIncident: boolean;
+  notifyOnMaintenance: boolean;
+  notifyOnComponentChange: boolean;
+  componentIds: string[] | null;
+  lastTriggeredAt: string | null;
+  lastError: string | null;
+  consecutiveFailures: number;
   createdAt: string;
   updatedAt: string;
 }
