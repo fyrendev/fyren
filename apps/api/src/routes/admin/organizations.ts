@@ -30,9 +30,6 @@ function serializeOrganization(org: typeof organizations.$inferSelect) {
     textColor: org.textColor,
     // Branding - Custom CSS
     customCss: org.customCss,
-    // Custom domain
-    customDomain: org.customDomain,
-    customDomainVerified: org.customDomainVerified,
     // SEO / Meta
     metaTitle: org.metaTitle,
     metaDescription: org.metaDescription,
@@ -110,9 +107,6 @@ const updateOrganizationSchema = z.object({
 
   // Branding - Custom CSS
   customCss: z.string().max(50000).nullable().optional(),
-
-  // Custom domain
-  customDomain: z.string().max(255).nullable().optional(),
 
   // SEO / Meta
   metaTitle: z.string().max(100).nullable().optional(),

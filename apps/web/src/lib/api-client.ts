@@ -183,8 +183,6 @@ export interface Organization {
   backgroundColor: string | null;
   textColor: string | null;
   customCss: string | null;
-  customDomain: string | null;
-  customDomainVerified: boolean;
   metaTitle: string | null;
   metaDescription: string | null;
   twitterHandle: string | null;

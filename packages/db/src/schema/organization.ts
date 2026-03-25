@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, text, boolean } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, text } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 export const organizations = pgTable(
@@ -20,10 +20,6 @@ export const organizations = pgTable(
 
     // Branding - Custom CSS
     customCss: text("custom_css"),
-
-    // Custom domain
-    customDomain: varchar("custom_domain", { length: 255 }).unique(),
-    customDomainVerified: boolean("custom_domain_verified").default(false),
 
     // SEO / Meta
     metaTitle: varchar("meta_title", { length: 100 }),
