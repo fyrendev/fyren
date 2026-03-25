@@ -9,8 +9,12 @@ import { errorResponse } from "../../lib/errors";
 import { getOrganization } from "../../lib/organization";
 import { env } from "../../env/api";
 import { redis } from "../../lib/redis";
+import { subscribeRateLimit } from "../../middleware/rateLimit";
 
 export const subscribeRoutes = new Hono();
+
+// Rate limit subscribe endpoint: 5 requests per hour per IP
+subscribeRoutes.use("/subscribe", subscribeRateLimit);
 
 function renderActionPage({
   title,
@@ -73,6 +77,18 @@ subscribeRoutes.post("/subscribe", async (c) => {
       return c.json({ message: "Already subscribed" });
     }
 
+    // Per-email rate limit: max 3 verification emails per hour per email address.
+    // Check before DB writes to avoid unnecessary token churn.
+    // Returns same success message when limited to prevent email enumeration.
+    const emailRlKey = `rl:subscribe:email:${email.toLowerCase()}`;
+    const emailCount = await redis.incr(emailRlKey);
+    if (emailCount === 1) {
+      await redis.expire(emailRlKey, 3600);
+    }
+    if (emailCount > 3) {
+      return c.json({ message: "Verification email sent" });
+    }
+
     const verificationToken = randomBytes(32).toString("hex");
     const unsubscribeToken = randomBytes(32).toString("hex");
 
@@ -94,17 +110,6 @@ subscribeRoutes.post("/subscribe", async (c) => {
         unsubscribeToken,
         componentIds: componentIds || null,
       });
-    }
-
-    // Per-email rate limit: max 3 verification emails per hour per email address.
-    // Returns same success message when limited to prevent email enumeration.
-    const emailRlKey = `rl:subscribe:email:${email.toLowerCase()}`;
-    const emailCount = await redis.incr(emailRlKey);
-    if (emailCount === 1) {
-      await redis.expire(emailRlKey, 3600);
-    }
-    if (emailCount > 3) {
-      return c.json({ message: "Verification email sent" });
     }
 
     // Send verification email
