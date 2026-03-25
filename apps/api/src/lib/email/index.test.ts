@@ -1,12 +1,14 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { setupTestHooks, createTestOrganization } from "../../test";
 import { getEmailProvider, clearProviderCache } from "./index";
+import { clearOrganizationCache } from "../organization";
 
 describe("getEmailProvider", () => {
   setupTestHooks();
 
   beforeEach(() => {
     clearProviderCache();
+    clearOrganizationCache();
   });
 
   test("formats from address with organization name", async () => {
