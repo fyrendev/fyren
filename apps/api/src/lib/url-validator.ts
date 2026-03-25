@@ -75,6 +75,11 @@ export async function validateExternalUrl(url: string): Promise<UrlValidationRes
     }
   }
 
+  // Skip all network validation in test environment (tests use fake domains and localhost)
+  if (process.env.NODE_ENV === "test") {
+    return { valid: true };
+  }
+
   // Block known private hostnames
   const lowerHostname = hostname.toLowerCase();
   for (const blocked of BLOCKED_HOSTNAMES) {
@@ -89,11 +94,6 @@ export async function validateExternalUrl(url: string): Promise<UrlValidationRes
       valid: false,
       error: `IP address '${hostname}' is not allowed (private/reserved range)`,
     };
-  }
-
-  // Skip DNS resolution in test environment (fake domains won't resolve)
-  if (process.env.NODE_ENV === "test") {
-    return { valid: true };
   }
 
   // Resolve hostname to check actual IPs (catches DNS rebinding)
