@@ -120,7 +120,7 @@ jobs:
 
       - name: Run tests
         working-directory: apps/api
-        run: bun test
+        run: bun test --randomize
         env:
           DATABASE_URL: postgres://fyren:fyren@localhost:5432/fyren_test
           REDIS_URL: redis://localhost:6379
