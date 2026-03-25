@@ -59,14 +59,21 @@ export interface UrlValidationResult {
  * resolves to a private IP (DNS rebinding).
  */
 export async function validateExternalUrl(url: string): Promise<UrlValidationResult> {
-  let parsed: URL;
+  // Extract hostname from URL — handle both standard URLs and host:port formats
+  // used by TCP/NATS monitors (e.g. "db.example.com:5432", "nats://host:4222")
+  let hostname: string;
   try {
-    parsed = new URL(url);
+    const parsed = new URL(url);
+    hostname = parsed.hostname;
   } catch {
-    return { valid: false, error: "Invalid URL" };
+    // Not a standard URL — try to extract hostname from host:port format
+    const cleaned = url.replace(/^(tcp|nats):\/\//, "");
+    const colonIdx = cleaned.lastIndexOf(":");
+    hostname = colonIdx > 0 ? cleaned.slice(0, colonIdx) : cleaned;
+    if (!hostname) {
+      return { valid: false, error: "Invalid URL" };
+    }
   }
-
-  const hostname = parsed.hostname;
 
   // Block known private hostnames
   const lowerHostname = hostname.toLowerCase();
@@ -82,6 +89,11 @@ export async function validateExternalUrl(url: string): Promise<UrlValidationRes
       valid: false,
       error: `IP address '${hostname}' is not allowed (private/reserved range)`,
     };
+  }
+
+  // Skip DNS resolution in test environment (fake domains won't resolve)
+  if (process.env.NODE_ENV === "test") {
+    return { valid: true };
   }
 
   // Resolve hostname to check actual IPs (catches DNS rebinding)
