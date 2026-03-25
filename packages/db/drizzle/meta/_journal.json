@@ -19,15 +19,8 @@
     {
       "idx": 2,
       "version": "7",
-      "when": 1774284586464,
-      "tag": "0002_ancient_champions",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1774285763544,
-      "tag": "0003_heavy_sentry",
+      "when": 1774452132395,
+      "tag": "0002_flawless_reptil",
       "breakpoints": true
     }
   ]

@@ -1,5 +1,5 @@
 {
-  "id": "f3c07280-8c8d-46f8-85b2-558f0373c991",
+  "id": "380da181-2aca-4914-97e6-5e1668392598",
   "prevId": "2b4b019a-101a-4ece-b8cb-3de9933c4c60",
   "version": "7",
   "dialect": "postgresql",
@@ -537,6 +537,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'UTC'"
+        },
+        "widget_allowed_origins": {
+          "name": "widget_allowed_origins",
+          "type": "varchar(2000)",
+          "primaryKey": false,
+          "notNull": false
         },
         "email_provider": {
           "name": "email_provider",
