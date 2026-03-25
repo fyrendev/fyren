@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.0](https://github.com/fyrendev/fyren/compare/v0.2.0...v0.3.0) (2026-03-25)
+
+
+### Features
+
+* add notification event toggles to webhook form ([#48](https://github.com/fyrendev/fyren/issues/48)) ([54e01a0](https://github.com/fyrendev/fyren/commit/54e01a027fcf46a753f0aa7409842da5525d210e))
+* send webhook notifications on monitor-detected status changes ([#47](https://github.com/fyrendev/fyren/issues/47)) ([4f2836f](https://github.com/fyrendev/fyren/commit/4f2836f2c5d92e7de23741031840778e1d6b2e37))
+
+
+### Bug Fixes
+
+* apply rate limiting to subscribe endpoint ([#46](https://github.com/fyrendev/fyren/issues/46)) ([9ea0aa8](https://github.com/fyrendev/fyren/commit/9ea0aa8bca39fdbe7d5414e2a2f475b642681e0d))
+* clear organization cache in email provider tests ([#49](https://github.com/fyrendev/fyren/issues/49)) ([7594c18](https://github.com/fyrendev/fyren/commit/7594c18f77a75fb8576b290ac7be2f557423f076))
+* Remove custom domain setting ([#44](https://github.com/fyrendev/fyren/issues/44)) ([2141f03](https://github.com/fyrendev/fyren/commit/2141f03a8a01473319ecb1a7430b1e19f02c56e1))
+
 ## [0.2.0](https://github.com/fyrendev/fyren/compare/v0.1.5...v0.2.0) (2026-03-25)
 
 
