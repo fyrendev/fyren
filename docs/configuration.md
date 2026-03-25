@@ -79,6 +79,16 @@ All Fyren configuration is done through environment variables.
 | `APP_DOMAIN` | Domain for Traefik routing | Required |
 | `ACME_EMAIL` | Email for Let's Encrypt    | Required |
 
+## Security
+
+| Variable         | Description                                   | Default | Required                   |
+| ---------------- | --------------------------------------------- | ------- | -------------------------- |
+| `ENCRYPTION_KEY` | 64 hex chars for encrypting email credentials | -       | If using email settings UI |
+
+### Widget Allowed Origins
+
+Configurable from the admin UI under organization settings (`widgetAllowedOrigins`). Controls which domains can embed status page widgets via CSP `frame-ancestors`. Defaults to `*` (allow all) when not set.
+
 ## Rate Limiting
 
 Rate limits are configured in the API middleware:

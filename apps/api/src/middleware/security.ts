@@ -96,12 +96,30 @@ export function securityHeaders(config: SecurityHeadersConfig = {}) {
 /**
  * Widget-friendly security headers
  *
- * Allows embedding in iframes from any origin.
+ * Allows embedding in iframes from configurable origins (default: any).
  * Use this only for widget/embed endpoints.
+ *
+ * @param getFrameAncestors - Optional async function to resolve allowed origins.
+ *   Defaults to reading from the organization's widgetAllowedOrigins setting.
+ *   Falls back to "*" (allow all) on failure.
  */
-export function widgetSecurityHeaders() {
+export function widgetSecurityHeaders(getFrameAncestors?: () => Promise<string>) {
+  const resolveOrigins =
+    getFrameAncestors ??
+    (async () => {
+      try {
+        const { getOrganization } = await import("../lib/organization");
+        const org = await getOrganization();
+        return org.widgetAllowedOrigins || "*";
+      } catch {
+        return "*";
+      }
+    });
+
   return async (c: Context, next: Next) => {
     await next();
+
+    const frameAncestors = await resolveOrigins();
 
     // Prevent MIME type sniffing
     c.header("X-Content-Type-Options", "nosniff");
@@ -109,11 +127,11 @@ export function widgetSecurityHeaders() {
     // XSS Protection
     c.header("X-XSS-Protection", "1; mode=block");
 
-    // Allow embedding from any origin for widgets
-    // Note: We use a permissive CSP for widget endpoints
+    // Widget CSP: no unsafe-inline for scripts (widget JS is served as a file),
+    // but allow unsafe-inline for styles (widget styles are often inline).
     c.header(
       "Content-Security-Policy",
-      "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-ancestors *"
+      `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-ancestors ${frameAncestors}`
     );
 
     // Remove X-Frame-Options to allow embedding

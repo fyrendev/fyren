@@ -4,22 +4,25 @@ import { db } from "../../lib/db";
 import { apiKeys, eq } from "@fyrendev/db";
 import { generateApiKey } from "../../lib/api-key";
 import { NotFoundError, ForbiddenError, errorResponse } from "../../lib/errors";
+import { requireRole } from "../../middleware/session";
 
 const adminApiKeys = new Hono();
 
 const createApiKeySchema = z.object({
   name: z.string().min(1).max(255),
+  role: z.enum(["owner", "admin", "member"]).default("admin"),
   expiresAt: z.string().datetime().optional(),
 });
 
-// GET /api/v1/admin/api-keys - List all API keys
-adminApiKeys.get("/", async (c) => {
+// GET /api/v1/admin/api-keys - List all API keys (owner/admin only)
+adminApiKeys.get("/", requireRole("owner", "admin"), async (c) => {
   try {
     const keys = await db
       .select({
         id: apiKeys.id,
         name: apiKeys.name,
         keyPrefix: apiKeys.keyPrefix,
+        role: apiKeys.role,
         lastUsedAt: apiKeys.lastUsedAt,
         expiresAt: apiKeys.expiresAt,
         createdAt: apiKeys.createdAt,
@@ -31,6 +34,7 @@ adminApiKeys.get("/", async (c) => {
         id: key.id,
         name: key.name,
         keyPrefix: key.keyPrefix,
+        role: key.role,
         lastUsedAt: key.lastUsedAt?.toISOString() || null,
         expiresAt: key.expiresAt?.toISOString() || null,
         createdAt: key.createdAt.toISOString(),
@@ -41,11 +45,20 @@ adminApiKeys.get("/", async (c) => {
   }
 });
 
-// POST /api/v1/admin/api-keys - Create new API key
-adminApiKeys.post("/", async (c) => {
+// POST /api/v1/admin/api-keys - Create new API key (owner/admin only)
+adminApiKeys.post("/", requireRole("owner", "admin"), async (c) => {
   try {
     const body = await c.req.json();
     const data = createApiKeySchema.parse(body);
+
+    // Only owners can create owner-role API keys
+    if (data.role === "owner") {
+      const authMethod = c.get("authMethod");
+      const userRole = authMethod === "api_key" ? c.get("apiKeyRole") : c.get("user")?.role;
+      if (userRole !== "owner") {
+        throw new ForbiddenError("Only owners can create owner-role API keys");
+      }
+    }
 
     const apiKeyData = await generateApiKey();
 
@@ -55,6 +68,7 @@ adminApiKeys.post("/", async (c) => {
         name: data.name,
         keyHash: apiKeyData.keyHash,
         keyPrefix: apiKeyData.keyPrefix,
+        role: data.role,
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
       })
       .returning();
@@ -70,6 +84,7 @@ adminApiKeys.post("/", async (c) => {
           id: key.id,
           name: key.name,
           keyPrefix: key.keyPrefix,
+          role: key.role,
           lastUsedAt: key.lastUsedAt?.toISOString() || null,
           expiresAt: key.expiresAt?.toISOString() || null,
           createdAt: key.createdAt.toISOString(),
@@ -83,8 +98,8 @@ adminApiKeys.post("/", async (c) => {
   }
 });
 
-// DELETE /api/v1/admin/api-keys/:id - Delete API key
-adminApiKeys.delete("/:id", async (c) => {
+// DELETE /api/v1/admin/api-keys/:id - Delete API key (owner/admin only)
+adminApiKeys.delete("/:id", requireRole("owner", "admin"), async (c) => {
   try {
     const apiKeyId = c.get("apiKeyId");
     const id = c.req.param("id");

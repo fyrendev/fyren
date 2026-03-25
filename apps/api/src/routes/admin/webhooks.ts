@@ -3,11 +3,18 @@ import { db, eq, desc } from "@fyrendev/db";
 import { webhookEndpoints } from "@fyrendev/db";
 import { z } from "zod";
 import { randomBytes } from "crypto";
-import { errorResponse, NotFoundError } from "../../lib/errors";
+import { errorResponse, NotFoundError, ValidationError } from "../../lib/errors";
 import { formatWebhook } from "../../lib/webhooks";
 import { getOrganization } from "../../lib/organization";
+import { validateExternalUrl } from "../../lib/url-validator";
 
 export const adminWebhooks = new Hono();
+
+/** Strip the secret from webhook responses, replacing with a boolean indicator */
+function serializeWebhook(webhook: typeof webhookEndpoints.$inferSelect) {
+  const { secret, ...rest } = webhook;
+  return { ...rest, hasSecret: !!secret };
+}
 
 const createWebhookSchema = z.object({
   name: z.string().min(1).max(100),
@@ -28,7 +35,7 @@ adminWebhooks.get("/", async (c) => {
       orderBy: [desc(webhookEndpoints.createdAt)],
     });
 
-    return c.json({ webhooks });
+    return c.json({ webhooks: webhooks.map(serializeWebhook) });
   } catch (error) {
     return errorResponse(c, error);
   }
@@ -47,7 +54,7 @@ adminWebhooks.get("/:id", async (c) => {
       throw new NotFoundError("Webhook not found");
     }
 
-    return c.json({ webhook });
+    return c.json({ webhook: serializeWebhook(webhook) });
   } catch (error) {
     return errorResponse(c, error);
   }
@@ -58,6 +65,12 @@ adminWebhooks.post("/", async (c) => {
   try {
     const body = await c.req.json();
     const data = createWebhookSchema.parse(body);
+
+    // SSRF protection: validate URL doesn't resolve to private/internal IPs
+    const urlValidation = await validateExternalUrl(data.url);
+    if (!urlValidation.valid) {
+      throw new ValidationError(`Invalid webhook URL: ${urlValidation.error}`);
+    }
 
     // Generate secret for generic webhooks
     const secret = data.type === "generic" ? randomBytes(32).toString("hex") : null;
@@ -97,6 +110,14 @@ adminWebhooks.put("/:id", async (c) => {
       throw new NotFoundError("Webhook not found");
     }
 
+    // SSRF protection: validate new URL if changed
+    if (data.url !== undefined && data.url !== existing.url) {
+      const urlValidation = await validateExternalUrl(data.url);
+      if (!urlValidation.valid) {
+        throw new ValidationError(`Invalid webhook URL: ${urlValidation.error}`);
+      }
+    }
+
     const updateData: Partial<typeof webhookEndpoints.$inferInsert> = {
       updatedAt: new Date(),
     };
@@ -117,7 +138,7 @@ adminWebhooks.put("/:id", async (c) => {
       .where(eq(webhookEndpoints.id, webhookId))
       .returning();
 
-    return c.json({ webhook });
+    return c.json({ webhook: webhook ? serializeWebhook(webhook) : null });
   } catch (error) {
     return errorResponse(c, error);
   }
@@ -166,7 +187,7 @@ adminWebhooks.patch("/:id/toggle", async (c) => {
       .where(eq(webhookEndpoints.id, webhookId))
       .returning();
 
-    return c.json({ webhook });
+    return c.json({ webhook: webhook ? serializeWebhook(webhook) : null });
   } catch (error) {
     return errorResponse(c, error);
   }
@@ -183,6 +204,12 @@ adminWebhooks.post("/:id/test", async (c) => {
 
     if (!webhook) {
       throw new NotFoundError("Webhook not found");
+    }
+
+    // SSRF protection: validate URL before making outbound request
+    const urlValidation = await validateExternalUrl(webhook.url);
+    if (!urlValidation.valid) {
+      return c.json({ success: false, error: `URL blocked: ${urlValidation.error}` });
     }
 
     const org = await getOrganization();

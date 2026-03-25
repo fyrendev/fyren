@@ -50,8 +50,13 @@ export function requireRole(...roles: OrgRole[]) {
     try {
       const authMethod = c.get("authMethod");
 
-      // API key auth bypasses role check (it's already scoped to the instance)
       if (authMethod === "api_key") {
+        // Enforce the role stored on the API key
+        const apiKeyRole = c.get("apiKeyRole") as OrgRole | null;
+        if (!apiKeyRole || !roles.includes(apiKeyRole)) {
+          throw new ForbiddenError(`Requires one of: ${roles.join(", ")}`);
+        }
+
         await next();
         return;
       }

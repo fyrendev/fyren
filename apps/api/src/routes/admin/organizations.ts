@@ -41,6 +41,8 @@ function serializeOrganization(org: typeof organizations.$inferSelect) {
     supportUrl: org.supportUrl,
     // Settings
     timezone: org.timezone,
+    // Security
+    widgetAllowedOrigins: org.widgetAllowedOrigins,
     // Email Configuration (never expose encrypted credentials)
     emailProvider: org.emailProvider,
     emailFromAddress: org.emailFromAddress,
@@ -122,6 +124,9 @@ const updateOrganizationSchema = z.object({
 
   // Settings
   timezone: z.string().max(50).optional(),
+
+  // Security: widget embedding origins (CSP frame-ancestors)
+  widgetAllowedOrigins: z.string().max(2000).nullable().optional(),
 
   // Email Configuration
   emailProvider: z.enum(["console", "smtp", "sendgrid", "ses"]).optional(),
@@ -285,7 +290,13 @@ adminOrganizations.put("/", requireRole("owner", "admin"), async (c) => {
       organizationId: org.id,
       requestId: c.get("requestId"),
     });
-    auditLogger.orgUpdated(org.id, data);
+    // Redact sensitive fields from audit log to prevent plaintext credential exposure
+    const { emailConfig: _redactedEmailConfig, ...auditSafeData } = data;
+    const auditChanges = {
+      ...auditSafeData,
+      ...(data.emailConfig !== undefined ? { emailConfig: "[REDACTED]" } : {}),
+    };
+    auditLogger.orgUpdated(org.id, auditChanges);
 
     return c.json({
       organization: serializeOrganization(updatedOrg),

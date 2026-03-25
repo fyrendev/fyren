@@ -33,7 +33,7 @@ import { adminSystem } from "./admin/system";
 // Health routes
 import { health } from "./health";
 
-// Test routes (only enabled in dev/test)
+// Test routes (conditionally imported — only registered in dev/test)
 import { testRoutes } from "./test";
 
 export function setupRoutes(app: Hono) {
@@ -127,6 +127,9 @@ export function setupRoutes(app: Hono) {
   app.use("/api/v1/admin/system/*", authMiddleware);
   app.route("/api/v1/admin/system", adminSystem);
 
-  // Test routes (only enabled in dev/test environments)
-  app.route("/api/v1/test", testRoutes);
+  // Test routes — only register in dev/test to prevent accidental exposure in production.
+  // The handler-level isTestEnabled guard remains as defense-in-depth.
+  if (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test") {
+    app.route("/api/v1/test", testRoutes);
+  }
 }

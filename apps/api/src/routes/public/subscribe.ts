@@ -8,6 +8,7 @@ import { verificationTemplate } from "../../lib/email/templates/verification";
 import { errorResponse } from "../../lib/errors";
 import { getOrganization } from "../../lib/organization";
 import { env } from "../../env/api";
+import { redis } from "../../lib/redis";
 
 export const subscribeRoutes = new Hono();
 
@@ -93,6 +94,17 @@ subscribeRoutes.post("/subscribe", async (c) => {
         unsubscribeToken,
         componentIds: componentIds || null,
       });
+    }
+
+    // Per-email rate limit: max 3 verification emails per hour per email address.
+    // Returns same success message when limited to prevent email enumeration.
+    const emailRlKey = `rl:subscribe:email:${email.toLowerCase()}`;
+    const emailCount = await redis.incr(emailRlKey);
+    if (emailCount === 1) {
+      await redis.expire(emailRlKey, 3600);
+    }
+    if (emailCount > 3) {
+      return c.json({ message: "Verification email sent" });
     }
 
     // Send verification email

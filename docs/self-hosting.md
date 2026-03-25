@@ -353,9 +353,9 @@ docker compose -f docker-compose.prod.yml exec traefik \
 
 1. **Use strong passwords** for database and Redis (min 32 characters)
 2. **Enable firewall** to allow only ports 80 and 443
-3. **Regular backups** - schedule automated database backups
-4. **Keep updated** - regularly pull latest images and rebuild
-5. **Monitor logs** - set up log aggregation for production
+3. **Regular backups** — schedule automated database backups
+4. **Keep updated** — regularly pull latest images and rebuild
+5. **Monitor logs** — set up log aggregation for production
 
 ## Resource Usage
 
