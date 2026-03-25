@@ -51,6 +51,16 @@ export function formatTeamsWebhook(payload: WebhookPayload): FormattedWebhook {
       title = `Maintenance Completed: ${data.title}`;
       text = "All systems operational";
       break;
+    case "component.status_changed":
+      themeColor =
+        data.newStatus === "operational"
+          ? "16a34a"
+          : data.newStatus === "major_outage"
+            ? "dc2626"
+            : "ea580c";
+      title = `Component Status Change: ${data.componentName}`;
+      text = `${data.componentName} changed from ${data.previousStatus} to ${data.newStatus}`;
+      break;
     default:
       title = event;
       text = JSON.stringify(data);

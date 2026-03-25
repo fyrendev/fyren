@@ -54,6 +54,16 @@ export function formatDiscordWebhook(payload: WebhookPayload): FormattedWebhook 
       title = `Maintenance Completed: ${data.title}`;
       description = "All systems operational";
       break;
+    case "component.status_changed":
+      color =
+        data.newStatus === "operational"
+          ? 0x16a34a
+          : data.newStatus === "major_outage"
+            ? 0xdc2626
+            : 0xea580c;
+      title = `Component Status Change: ${data.componentName}`;
+      description = `${data.componentName} changed from ${data.previousStatus} to ${data.newStatus}`;
+      break;
     default:
       title = event;
       description = JSON.stringify(data);

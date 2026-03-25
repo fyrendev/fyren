@@ -151,6 +151,9 @@ async function processEmailJob(job: Job<NotificationJobData>): Promise<void> {
         unsubscribeUrl,
       });
       break;
+    case "component.status_changed":
+      // Component status changes are only sent via webhooks, not email
+      return;
     default:
       throw new Error(`Unknown event type: ${event}`);
   }
