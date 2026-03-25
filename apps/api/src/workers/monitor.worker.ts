@@ -1,12 +1,13 @@
 import { Worker, Job } from "bullmq";
 import { bullmqRedis } from "../lib/redis";
-import { db, monitors, eq } from "@fyrendev/db";
+import { db, monitors, components, eq } from "@fyrendev/db";
 import { executeCheck } from "../lib/checkers";
 import {
   evaluateComponentStatus,
   updateComponentStatus,
   storeCheckResult,
 } from "../services/monitor.service";
+import { NotificationService } from "../services/notification.service";
 import type { MonitorJobData } from "../lib/queue";
 import { logger } from "../lib/logging";
 
@@ -74,6 +75,15 @@ export const monitorWorker = new Worker<MonitorJobData>(
 
       // 5. Update component status if needed
       if (evaluation.shouldUpdateComponent) {
+        // Fetch current component status before updating
+        const [component] = await db
+          .select({ id: components.id, name: components.name, status: components.status })
+          .from(components)
+          .where(eq(components.id, monitor.componentId))
+          .limit(1);
+
+        const previousStatus = component?.status || "operational";
+
         logger.worker(
           "MonitorWorker",
           `Updating component status for monitor ${monitorId} to ${evaluation.newStatus}`,
@@ -81,10 +91,36 @@ export const monitorWorker = new Worker<MonitorJobData>(
             jobId: job.id,
             monitorId,
             componentId: monitor.componentId,
+            previousStatus,
             newStatus: evaluation.newStatus,
           }
         );
         await updateComponentStatus(monitor.componentId, evaluation.newStatus);
+
+        // Trigger notifications for the status change
+        if (component) {
+          try {
+            await NotificationService.trigger({
+              event: "component.status_changed",
+              entityType: "component",
+              entityId: component.id,
+              componentIds: [component.id],
+              data: {
+                componentName: component.name,
+                previousStatus,
+                newStatus: evaluation.newStatus,
+                monitorId,
+              },
+            });
+          } catch (err) {
+            logger.workerError(
+              "MonitorWorker",
+              `Failed to trigger notification for component status change`,
+              err as Error,
+              { monitorId, componentId: component.id }
+            );
+          }
+        }
       }
 
       return {

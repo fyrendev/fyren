@@ -67,8 +67,10 @@ export const NotificationService = {
       return; // No org configured
     }
 
-    // Queue email notifications to subscribers
-    await this.queueEmailNotifications(notification, org);
+    // Queue email notifications to subscribers (skip for component status changes — webhooks only)
+    if (!notification.event.startsWith("component.")) {
+      await this.queueEmailNotifications(notification, org);
+    }
 
     // Queue webhook notifications
     await this.queueWebhookNotifications(notification, org);
