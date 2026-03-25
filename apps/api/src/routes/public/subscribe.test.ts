@@ -1,17 +1,19 @@
-import { describe, test, expect, mock } from "bun:test";
+import { describe, test, expect, spyOn } from "bun:test";
 import {
   createTestApp,
   setupTestHooks,
   createTestOrganization,
   createTestSubscriber,
 } from "../../test";
+import { ConsoleProvider } from "../../lib/email/providers/console";
 
-// Mock the email provider to avoid sending real emails
-mock.module("../../lib/email", () => ({
-  getEmailProvider: () => ({
-    send: async () => ({ success: true }),
-  }),
-}));
+// Spy on ConsoleProvider.send to suppress log noise without replacing the module.
+// Using mock.module would globally replace ../../lib/email and break other test files
+// (e.g. email/index.test.ts) that depend on the real getEmailProvider.
+spyOn(ConsoleProvider.prototype, "send").mockResolvedValue({
+  success: true,
+  messageId: "test",
+});
 
 describe("Public Subscribe API", () => {
   setupTestHooks();
