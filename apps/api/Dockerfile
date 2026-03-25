@@ -73,8 +73,9 @@ USER fyren
 # Expose port
 EXPOSE 3001
 
-# Set default port
+# Set default port and migrations path
 ENV PORT=3001
+ENV MIGRATIONS_PATH=./drizzle
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
