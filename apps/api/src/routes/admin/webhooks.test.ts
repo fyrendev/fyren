@@ -180,6 +180,26 @@ describe("Admin Webhooks API", () => {
       expect(data.webhook.notifyOnComponentChange).toBe(true);
     });
 
+    test("defaults notifyOnComponentChange to false", async () => {
+      const { rawKey } = await createTestApiKey();
+
+      const res = await app.request("/api/v1/admin/webhooks", {
+        method: "POST",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({
+          name: "Default Prefs Webhook",
+          type: "slack",
+          url: "https://hooks.slack.com/services/xxx",
+        }),
+      });
+
+      expect(res.status).toBe(201);
+      const data = await res.json();
+      expect(data.webhook.notifyOnIncident).toBe(true);
+      expect(data.webhook.notifyOnMaintenance).toBe(true);
+      expect(data.webhook.notifyOnComponentChange).toBe(false);
+    });
+
     test("creates webhook with component filter", async () => {
       const { rawKey } = await createTestApiKey();
       const component = await createTestComponent({ name: "API Server" });
@@ -276,6 +296,26 @@ describe("Admin Webhooks API", () => {
       const data = await res.json();
       expect(data.webhook.notifyOnIncident).toBe(false);
       expect(data.webhook.notifyOnMaintenance).toBe(false);
+    });
+
+    test("enables notifyOnComponentChange", async () => {
+      const { rawKey } = await createTestApiKey();
+      const webhook = await createTestWebhook({
+        name: "Component Watch Webhook",
+        notifyOnComponentChange: false,
+      });
+
+      const res = await app.request(`/api/v1/admin/webhooks/${webhook.id}`, {
+        method: "PUT",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({
+          notifyOnComponentChange: true,
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.webhook.notifyOnComponentChange).toBe(true);
     });
 
     test("returns 404 for non-existent webhook", async () => {
