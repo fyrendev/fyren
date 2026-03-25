@@ -13,9 +13,6 @@ export const apiEnvSchema = baseEnvSchema.extend({
   // Cookie domain for cross-subdomain auth (e.g., ".example.com")
   // Required when API and web are on different subdomains
   COOKIE_DOMAIN: z.string().optional(),
-  // One-time setup token required for initial org creation (prevents instance takeover)
-  // Generate with: openssl rand -hex 32
-  SETUP_TOKEN: z.string().optional(),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;

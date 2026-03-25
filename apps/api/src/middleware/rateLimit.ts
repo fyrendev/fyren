@@ -1,7 +1,6 @@
 import type { Context, Next } from "hono";
 import { redis } from "../lib/redis";
 import { logger } from "../lib/logging";
-import { env } from "../env/base";
 
 export interface RateLimitConfig {
   /** Maximum requests allowed in the window */
@@ -30,112 +29,25 @@ export const RATE_LIMITS = {
   subscribe: { limit: 5, windowSeconds: 3600 },
 } as const;
 
-/** Parse an IPv4 CIDR into a numeric base and mask for fast matching */
-interface CidrRange {
-  base: number;
-  mask: number;
-}
-
-function parseIPv4(ip: string): number | null {
-  const parts = ip.split(".");
-  if (parts.length !== 4) return null;
-  let num = 0;
-  for (const part of parts) {
-    const octet = parseInt(part!, 10);
-    if (isNaN(octet) || octet < 0 || octet > 255) return null;
-    num = (num << 8) | octet;
-  }
-  return num >>> 0; // Ensure unsigned 32-bit
-}
-
-function parseCidr(entry: string): CidrRange | null {
-  const [ip, prefix] = entry.split("/");
-  if (!ip) return null;
-
-  const base = parseIPv4(ip);
-  if (base === null) return null;
-
-  const bits = prefix !== undefined ? parseInt(prefix, 10) : 32;
-  if (isNaN(bits) || bits < 0 || bits > 32) return null;
-
-  const mask = bits === 0 ? 0 : (~0 << (32 - bits)) >>> 0;
-  return { base: (base & mask) >>> 0, mask };
-}
-
-/** Parse TRUSTED_PROXIES env var into exact IPs and CIDR ranges */
-const trustedExactIPs: Set<string> = new Set();
-const trustedCidrRanges: CidrRange[] = [];
-
-for (const entry of (env.TRUSTED_PROXIES ?? "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean)) {
-  if (entry.includes("/")) {
-    const cidr = parseCidr(entry);
-    if (cidr) trustedCidrRanges.push(cidr);
-  } else {
-    trustedExactIPs.add(entry);
-  }
-}
-
-const hasTrustedProxies = trustedExactIPs.size > 0 || trustedCidrRanges.length > 0;
-
-function isTrustedProxy(ip: string): boolean {
-  if (trustedExactIPs.has(ip)) return true;
-
-  const numeric = parseIPv4(ip);
-  if (numeric === null) return false;
-
-  for (const range of trustedCidrRanges) {
-    if ((numeric & range.mask) >>> 0 === range.base) return true;
-  }
-
-  return false;
-}
-
 /**
- * Get the client IP from the request.
- *
- * Only trusts X-Forwarded-For / X-Real-IP when TRUSTED_PROXIES is configured
- * and the direct connection IP matches a trusted proxy. This prevents clients
- * from spoofing their IP to bypass rate limiting.
- *
- * Supports both exact IPs and CIDR notation (e.g. "172.16.0.0/12").
+ * Get the client IP from the request
  */
 function getClientIP(c: Context): string {
-  // Try to get the direct connection IP from the request
-  const connectingIp =
-    c.req.header("x-connecting-ip") ?? // Set by some load balancers
-    (c.env as Record<string, string> | undefined)?.remoteAddr ??
-    "unknown";
-
-  // Only trust proxy headers if we have configured trusted proxies
-  // and the direct connection came from one of them
-  if (hasTrustedProxies && isTrustedProxy(connectingIp)) {
-    const forwarded = c.req.header("x-forwarded-for");
-    if (forwarded) {
-      const firstIP = forwarded.split(",")[0];
-      if (firstIP) return firstIP.trim();
-    }
-
-    const realIP = c.req.header("x-real-ip");
-    if (realIP) return realIP;
-  }
-
-  // If no trusted proxies configured or connection isn't from a trusted proxy,
-  // use the connecting IP directly (ignoring potentially spoofed headers)
-  if (connectingIp !== "unknown") {
-    return connectingIp;
-  }
-
-  // Last resort: use forwarded headers but log a warning
+  // Check common proxy headers
   const forwarded = c.req.header("x-forwarded-for");
   if (forwarded) {
+    // Take the first IP if there are multiple
     const firstIP = forwarded.split(",")[0];
     if (firstIP) return firstIP.trim();
   }
 
-  return c.req.header("x-real-ip") ?? "unknown";
+  const realIP = c.req.header("x-real-ip");
+  if (realIP) {
+    return realIP;
+  }
+
+  // Fallback to a default (in production, this should rarely happen)
+  return "unknown";
 }
 
 /**

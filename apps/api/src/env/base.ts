@@ -10,10 +10,6 @@ export const baseEnvSchema = z.object({
   REDIS_URL: z.string().url(),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
 
-  // Comma-separated list of trusted proxy IPs (e.g., "10.0.0.1,172.16.0.0/12")
-  // Only trust X-Forwarded-For when request comes from these IPs
-  TRUSTED_PROXIES: z.string().optional(),
-
   // Encryption key for sensitive data (64 hex chars = 32 bytes)
   ENCRYPTION_KEY: z
     .string()
