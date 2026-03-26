@@ -1,7 +1,8 @@
 import { createMiddleware } from "hono/factory";
 import { auth, type Session } from "../lib/auth";
 import { UnauthorizedError, ForbiddenError, errorResponse } from "../lib/errors";
-import { db, eq, users, type OrgRole } from "@fyrendev/db";
+import { db, eq, users, type OrgRole, type ApiKeyScope } from "@fyrendev/db";
+import { SCOPE_ROLE_EQUIVALENCES } from "./scope";
 
 // Get session from request
 export async function getSession(headers: Headers): Promise<Session | null> {
@@ -51,10 +52,17 @@ export function requireRole(...roles: OrgRole[]) {
       const authMethod = c.get("authMethod");
 
       if (authMethod === "api_key") {
-        // Enforce the role stored on the API key
-        const apiKeyRole = c.get("apiKeyRole") as OrgRole | null;
-        if (!apiKeyRole || !roles.includes(apiKeyRole)) {
+        // Map API key scope to equivalent org roles
+        const apiKeyScope = c.get("apiKeyScope") as string | null;
+        if (!apiKeyScope) {
           throw new ForbiddenError(`Requires one of: ${roles.join(", ")}`);
+        }
+        const equivalentRoles = SCOPE_ROLE_EQUIVALENCES[apiKeyScope as ApiKeyScope] || [];
+        const hasAccess = roles.some((role) => equivalentRoles.includes(role));
+        if (!hasAccess) {
+          throw new ForbiddenError(
+            `API key scope "${apiKeyScope}" insufficient. Requires one of: ${roles.join(", ")}`
+          );
         }
 
         await next();

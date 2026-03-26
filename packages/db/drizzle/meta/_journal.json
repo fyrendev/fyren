@@ -29,6 +29,13 @@
       "when": 1774459292200,
       "tag": "0003_aspiring_nightshade",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1774521308297,
+      "tag": "0004_api_key_scopes",
+      "breakpoints": true
     }
   ]
 }

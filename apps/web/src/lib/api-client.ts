@@ -130,10 +130,13 @@ export interface WebhookEndpoint {
   updatedAt: string;
 }
 
+export type ApiKeyScope = "read" | "read-write" | "full-access";
+
 export interface ApiKey {
   id: string;
   name: string;
   keyPrefix: string;
+  scope: ApiKeyScope;
   lastUsedAt: string | null;
   expiresAt: string | null;
   createdAt: string;
@@ -464,7 +467,7 @@ export const api = {
 
   // API Keys
   getApiKeys: () => apiClient<{ apiKeys: ApiKey[] }>("/api/v1/admin/api-keys"),
-  createApiKey: (data: { name: string; expiresAt?: string }) =>
+  createApiKey: (data: { name: string; scope?: ApiKeyScope; expiresAt?: string }) =>
     apiClient<{ apiKey: ApiKey; plainKey: string }>("/api/v1/admin/api-keys", {
       method: "POST",
       body: JSON.stringify(data),
