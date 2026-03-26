@@ -25,7 +25,7 @@ declare module "hono" {
     session?: Session | null;
     user?: AuthUser | null;
     apiKeyId?: string | null;
-    apiKeyRole?: string | null;
+    apiKeyScope?: string | null;
     authMethod?: "session" | "api_key" | null;
     requestId?: string;
   }
@@ -72,7 +72,7 @@ export const authMiddleware = createMiddleware(async (c, next) => {
                 );
 
               c.set("apiKeyId", apiKeyRecord.id);
-              c.set("apiKeyRole", apiKeyRecord.role);
+              c.set("apiKeyScope", apiKeyRecord.scope);
               c.set("authMethod", "api_key");
 
               await next();
@@ -142,7 +142,7 @@ export const optionalAuthMiddleware = createMiddleware(async (c, next) => {
                 );
 
               c.set("apiKeyId", apiKeyRecord.id);
-              c.set("apiKeyRole", apiKeyRecord.role);
+              c.set("apiKeyScope", apiKeyRecord.scope);
               c.set("authMethod", "api_key");
 
               await next();

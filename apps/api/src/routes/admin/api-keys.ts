@@ -10,7 +10,7 @@ const adminApiKeys = new Hono();
 
 const createApiKeySchema = z.object({
   name: z.string().min(1).max(255),
-  role: z.enum(["owner", "admin", "member"]).default("admin"),
+  scope: z.enum(["read", "read-write", "full-access"]).default("read-write"),
   expiresAt: z.string().datetime().optional(),
 });
 
@@ -22,7 +22,7 @@ adminApiKeys.get("/", requireRole("owner", "admin"), async (c) => {
         id: apiKeys.id,
         name: apiKeys.name,
         keyPrefix: apiKeys.keyPrefix,
-        role: apiKeys.role,
+        scope: apiKeys.scope,
         lastUsedAt: apiKeys.lastUsedAt,
         expiresAt: apiKeys.expiresAt,
         createdAt: apiKeys.createdAt,
@@ -34,7 +34,7 @@ adminApiKeys.get("/", requireRole("owner", "admin"), async (c) => {
         id: key.id,
         name: key.name,
         keyPrefix: key.keyPrefix,
-        role: key.role,
+        scope: key.scope,
         lastUsedAt: key.lastUsedAt?.toISOString() || null,
         expiresAt: key.expiresAt?.toISOString() || null,
         createdAt: key.createdAt.toISOString(),
@@ -51,12 +51,17 @@ adminApiKeys.post("/", requireRole("owner", "admin"), async (c) => {
     const body = await c.req.json();
     const data = createApiKeySchema.parse(body);
 
-    // Only owners can create owner-role API keys
-    if (data.role === "owner") {
+    // Only owners or full-access API keys can create full-access keys
+    if (data.scope === "full-access") {
       const authMethod = c.get("authMethod");
-      const userRole = authMethod === "api_key" ? c.get("apiKeyRole") : c.get("user")?.role;
-      if (userRole !== "owner") {
-        throw new ForbiddenError("Only owners can create owner-role API keys");
+      const canCreate =
+        authMethod === "api_key"
+          ? c.get("apiKeyScope") === "full-access"
+          : c.get("user")?.role === "owner";
+      if (!canCreate) {
+        throw new ForbiddenError(
+          "Only owners or full-access API keys can create full-access API keys"
+        );
       }
     }
 
@@ -68,7 +73,7 @@ adminApiKeys.post("/", requireRole("owner", "admin"), async (c) => {
         name: data.name,
         keyHash: apiKeyData.keyHash,
         keyPrefix: apiKeyData.keyPrefix,
-        role: data.role,
+        scope: data.scope,
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
       })
       .returning();
@@ -84,12 +89,12 @@ adminApiKeys.post("/", requireRole("owner", "admin"), async (c) => {
           id: key.id,
           name: key.name,
           keyPrefix: key.keyPrefix,
-          role: key.role,
+          scope: key.scope,
           lastUsedAt: key.lastUsedAt?.toISOString() || null,
           expiresAt: key.expiresAt?.toISOString() || null,
           createdAt: key.createdAt.toISOString(),
         },
-        key: apiKeyData.key, // Plain key only returned on creation
+        plainKey: apiKeyData.key, // Plain key only returned on creation
       },
       201
     );

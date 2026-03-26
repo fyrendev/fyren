@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { authMiddleware, optionalAuthMiddleware } from "../middleware/auth";
+import { enforceApiKeyScope } from "../middleware/scope";
 import { auth } from "../lib/auth";
 
 // Public routes
@@ -61,70 +62,70 @@ export function setupRoutes(app: Hono) {
 
   // Admin organization route (single-tenant: one org per instance)
   // Use optional auth for POST (no auth needed), required auth for GET/PUT
-  app.use("/api/v1/admin/organization", optionalAuthMiddleware);
-  app.use("/api/v1/admin/organization/*", optionalAuthMiddleware);
+  app.use("/api/v1/admin/organization", optionalAuthMiddleware, enforceApiKeyScope);
+  app.use("/api/v1/admin/organization/*", optionalAuthMiddleware, enforceApiKeyScope);
   app.route("/api/v1/admin/organization", adminOrganizations);
 
   // Admin members routes
-  app.use("/api/v1/admin/members", authMiddleware);
-  app.use("/api/v1/admin/members/*", authMiddleware);
-  app.use("/api/v1/admin/leave", authMiddleware);
+  app.use("/api/v1/admin/members", authMiddleware, enforceApiKeyScope);
+  app.use("/api/v1/admin/members/*", authMiddleware, enforceApiKeyScope);
+  app.use("/api/v1/admin/leave", authMiddleware, enforceApiKeyScope);
   app.route("/api/v1/admin", adminMembers);
 
   // Admin invites routes
-  app.use("/api/v1/admin/invites", authMiddleware);
-  app.use("/api/v1/admin/invites/*", authMiddleware);
+  app.use("/api/v1/admin/invites", authMiddleware, enforceApiKeyScope);
+  app.use("/api/v1/admin/invites/*", authMiddleware, enforceApiKeyScope);
   app.route("/api/v1/admin", adminInvites);
 
   // Protected component routes
-  app.use("/api/v1/admin/components", authMiddleware);
-  app.use("/api/v1/admin/components/*", authMiddleware);
+  app.use("/api/v1/admin/components", authMiddleware, enforceApiKeyScope);
+  app.use("/api/v1/admin/components/*", authMiddleware, enforceApiKeyScope);
   app.route("/api/v1/admin/components", adminComponents);
 
   // Protected API key routes
-  app.use("/api/v1/admin/api-keys", authMiddleware);
-  app.use("/api/v1/admin/api-keys/*", authMiddleware);
+  app.use("/api/v1/admin/api-keys", authMiddleware, enforceApiKeyScope);
+  app.use("/api/v1/admin/api-keys/*", authMiddleware, enforceApiKeyScope);
   app.route("/api/v1/admin/api-keys", adminApiKeys);
 
   // Protected monitor routes
-  app.use("/api/v1/admin/monitors", authMiddleware);
-  app.use("/api/v1/admin/monitors/*", authMiddleware);
+  app.use("/api/v1/admin/monitors", authMiddleware, enforceApiKeyScope);
+  app.use("/api/v1/admin/monitors/*", authMiddleware, enforceApiKeyScope);
   app.route("/api/v1/admin/monitors", adminMonitors);
   app.route("/api/v1/admin/monitors", adminMonitorResults);
 
   // Protected incident routes
-  app.use("/api/v1/admin/incidents", authMiddleware);
-  app.use("/api/v1/admin/incidents/*", authMiddleware);
+  app.use("/api/v1/admin/incidents", authMiddleware, enforceApiKeyScope);
+  app.use("/api/v1/admin/incidents/*", authMiddleware, enforceApiKeyScope);
   app.route("/api/v1/admin/incidents", adminIncidents);
 
   // Protected incident template routes
-  app.use("/api/v1/admin/incident-templates", authMiddleware);
-  app.use("/api/v1/admin/incident-templates/*", authMiddleware);
+  app.use("/api/v1/admin/incident-templates", authMiddleware, enforceApiKeyScope);
+  app.use("/api/v1/admin/incident-templates/*", authMiddleware, enforceApiKeyScope);
   app.route("/api/v1/admin/incident-templates", adminIncidentTemplates);
 
   // Protected maintenance routes
-  app.use("/api/v1/admin/maintenance", authMiddleware);
-  app.use("/api/v1/admin/maintenance/*", authMiddleware);
+  app.use("/api/v1/admin/maintenance", authMiddleware, enforceApiKeyScope);
+  app.use("/api/v1/admin/maintenance/*", authMiddleware, enforceApiKeyScope);
   app.route("/api/v1/admin/maintenance", adminMaintenance);
 
   // Protected subscriber routes
-  app.use("/api/v1/admin/subscribers", authMiddleware);
-  app.use("/api/v1/admin/subscribers/*", authMiddleware);
+  app.use("/api/v1/admin/subscribers", authMiddleware, enforceApiKeyScope);
+  app.use("/api/v1/admin/subscribers/*", authMiddleware, enforceApiKeyScope);
   app.route("/api/v1/admin/subscribers", adminSubscribers);
 
   // Protected subscriber group routes
-  app.use("/api/v1/admin/subscriber-groups", authMiddleware);
-  app.use("/api/v1/admin/subscriber-groups/*", authMiddleware);
+  app.use("/api/v1/admin/subscriber-groups", authMiddleware, enforceApiKeyScope);
+  app.use("/api/v1/admin/subscriber-groups/*", authMiddleware, enforceApiKeyScope);
   app.route("/api/v1/admin/subscriber-groups", subscriberGroupsRouter);
 
   // Protected webhook routes
-  app.use("/api/v1/admin/webhooks", authMiddleware);
-  app.use("/api/v1/admin/webhooks/*", authMiddleware);
+  app.use("/api/v1/admin/webhooks", authMiddleware, enforceApiKeyScope);
+  app.use("/api/v1/admin/webhooks/*", authMiddleware, enforceApiKeyScope);
   app.route("/api/v1/admin/webhooks", adminWebhooks);
 
   // Protected system routes (owner-only access)
-  app.use("/api/v1/admin/system", authMiddleware);
-  app.use("/api/v1/admin/system/*", authMiddleware);
+  app.use("/api/v1/admin/system", authMiddleware, enforceApiKeyScope);
+  app.use("/api/v1/admin/system/*", authMiddleware, enforceApiKeyScope);
   app.route("/api/v1/admin/system", adminSystem);
 
   // Test routes — only register in dev/test to prevent accidental exposure in production.

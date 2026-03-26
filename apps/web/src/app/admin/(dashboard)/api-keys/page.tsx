@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { api, type ApiKey } from "@/lib/api-client";
+import { api, type ApiKey, type ApiKeyScope } from "@/lib/api-client";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { ConfirmDialog } from "@/components/admin/ui/ConfirmDialog";
 import { Button } from "@/components/admin/ui/Button";
@@ -19,6 +19,7 @@ import {
 import { EmptyState } from "@/components/admin/ui/EmptyState";
 import { Modal } from "@/components/admin/ui/Modal";
 import { Input } from "@/components/admin/ui/Input";
+import { Select } from "@/components/admin/ui/Select";
 import { Key, Plus, Trash2, Copy, Check } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 
@@ -29,6 +30,7 @@ export default function ApiKeysPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
+    scope: "read-write" as ApiKeyScope,
     expiresAt: "",
   });
   const [saving, setSaving] = useState(false);
@@ -53,7 +55,7 @@ export default function ApiKeysPage() {
   }
 
   function openCreateModal() {
-    setFormData({ name: "", expiresAt: "" });
+    setFormData({ name: "", scope: "read-write", expiresAt: "" });
     setError(null);
     setNewKey(null);
     setModalOpen(true);
@@ -67,6 +69,7 @@ export default function ApiKeysPage() {
     try {
       const result = await api.createApiKey({
         name: formData.name,
+        scope: formData.scope,
         expiresAt: formData.expiresAt ? new Date(formData.expiresAt).toISOString() : undefined,
       });
       setNewKey(result.plainKey);
@@ -134,6 +137,7 @@ export default function ApiKeysPage() {
             <TableHeader>
               <TableHead>Name</TableHead>
               <TableHead>Key Prefix</TableHead>
+              <TableHead>Scope</TableHead>
               <TableHead>Last Used</TableHead>
               <TableHead>Expires</TableHead>
               <TableHead className="w-20">Actions</TableHead>
@@ -148,6 +152,23 @@ export default function ApiKeysPage() {
                     <code className="px-2 py-1 bg-navy-800 rounded text-sm text-navy-300">
                       {apiKey.keyPrefix}...
                     </code>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        apiKey.scope === "full-access"
+                          ? "warning"
+                          : apiKey.scope === "read-write"
+                            ? "info"
+                            : "default"
+                      }
+                    >
+                      {apiKey.scope === "full-access"
+                        ? "Full Access"
+                        : apiKey.scope === "read-write"
+                          ? "Read & Write"
+                          : "Read Only"}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     {apiKey.lastUsedAt
@@ -230,6 +251,19 @@ export default function ApiKeysPage() {
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="CI/CD Pipeline"
               required
+            />
+            <Select
+              label="Scope"
+              value={formData.scope}
+              onChange={(e) => setFormData({ ...formData, scope: e.target.value as ApiKeyScope })}
+              options={[
+                { value: "read", label: "Read Only — Can only read data (GET requests)" },
+                { value: "read-write", label: "Read & Write — Full CRUD on operational resources" },
+                {
+                  value: "full-access",
+                  label: "Full Access — Unrestricted access including system settings",
+                },
+              ]}
             />
             <Input
               label="Expires At (optional)"

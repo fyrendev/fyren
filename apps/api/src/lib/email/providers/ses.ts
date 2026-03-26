@@ -9,9 +9,11 @@ export interface SESConfig {
 
 export class SESProvider implements EmailProvider {
   private client: SESClient;
-  private fromAddress: string;
 
-  constructor(config: SESConfig, fromAddress: string) {
+  constructor(
+    config: SESConfig,
+    readonly fromAddress: string
+  ) {
     this.client = new SESClient({
       region: config.region,
       credentials: {
@@ -19,7 +21,6 @@ export class SESProvider implements EmailProvider {
         secretAccessKey: config.secretAccessKey,
       },
     });
-    this.fromAddress = fromAddress;
   }
 
   async send(message: EmailMessage): Promise<EmailResult> {

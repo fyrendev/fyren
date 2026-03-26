@@ -52,6 +52,9 @@ export const orgRoleEnum = pgEnum("org_role", ["owner", "admin", "member"]);
 // Invite roles (can't invite as owner)
 export const inviteRoleEnum = pgEnum("invite_role", ["admin", "member"]);
 
+// API key scopes
+export const apiKeyScopeEnum = pgEnum("api_key_scope", ["read", "read-write", "full-access"]);
+
 // Type exports
 export type ComponentStatus = (typeof componentStatusEnum.enumValues)[number];
 export type MonitorType = (typeof monitorTypeEnum.enumValues)[number];
@@ -64,3 +67,4 @@ export type NotificationDeliveryType = (typeof notificationDeliveryTypeEnum.enum
 export type NotificationStatus = (typeof notificationStatusEnum.enumValues)[number];
 export type OrgRole = (typeof orgRoleEnum.enumValues)[number];
 export type InviteRole = (typeof inviteRoleEnum.enumValues)[number];
+export type ApiKeyScope = (typeof apiKeyScopeEnum.enumValues)[number];

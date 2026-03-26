@@ -1,6 +1,6 @@
 import { pgTable, uuid, varchar, timestamp, index } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { orgRoleEnum } from "./enums";
+import { apiKeyScopeEnum } from "./enums";
 
 export const apiKeys = pgTable(
   "api_keys",
@@ -9,7 +9,7 @@ export const apiKeys = pgTable(
     name: varchar("name", { length: 255 }).notNull(),
     keyHash: varchar("key_hash", { length: 64 }).notNull(),
     keyPrefix: varchar("key_prefix", { length: 12 }).notNull(),
-    role: orgRoleEnum("role").notNull().default("admin"),
+    scope: apiKeyScopeEnum("scope").notNull().default("read-write"),
     lastUsedAt: timestamp("last_used_at"),
     expiresAt: timestamp("expires_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),

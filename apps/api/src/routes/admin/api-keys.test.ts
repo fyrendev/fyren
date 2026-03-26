@@ -28,7 +28,7 @@ describe("Admin API Keys API", () => {
       expect(data.apiKeys.map((k: { name: string }) => k.name)).toContain("Secondary Key");
     });
 
-    test("returns key prefix but not full key hash", async () => {
+    test("returns key prefix and scope but not full key hash", async () => {
       const { rawKey } = await createTestApiKey({ name: "Test Key" });
 
       const res = await app.request("/api/v1/admin/api-keys", {
@@ -41,6 +41,7 @@ describe("Admin API Keys API", () => {
       expect(key.keyPrefix).toBeDefined();
       expect(key.keyPrefix.length).toBeLessThan(20); // Prefix is short
       expect(key.keyHash).toBeUndefined(); // Hash should not be exposed
+      expect(key.scope).toBeDefined();
     });
 
     test("returns 401 without authentication", async () => {
@@ -77,8 +78,8 @@ describe("Admin API Keys API", () => {
       const data = await res.json();
       expect(data.apiKey.name).toBe("New API Key");
       expect(data.apiKey.id).toBeDefined();
-      expect(data.key).toBeDefined(); // Raw key returned only on creation
-      expect(data.key.length).toBeGreaterThan(20); // Full key is long
+      expect(data.plainKey).toBeDefined(); // Raw key returned only on creation
+      expect(data.plainKey.length).toBeGreaterThan(20); // Full key is long
     });
 
     test("creates API key with expiration date", async () => {
@@ -171,6 +172,141 @@ describe("Admin API Keys API", () => {
       });
 
       expect(res.status).toBe(401);
+    });
+  });
+
+  describe("API Key Scopes", () => {
+    test("creates API key with default scope (read-write)", async () => {
+      const { rawKey } = await createTestApiKey();
+
+      const res = await app.request("/api/v1/admin/api-keys", {
+        method: "POST",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({ name: "Default Scope Key" }),
+      });
+
+      expect(res.status).toBe(201);
+      const data = await res.json();
+      expect(data.apiKey.scope).toBe("read-write");
+    });
+
+    test("creates API key with explicit scope", async () => {
+      const { rawKey } = await createTestApiKey();
+
+      const res = await app.request("/api/v1/admin/api-keys", {
+        method: "POST",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({ name: "Read Only Key", scope: "read" }),
+      });
+
+      expect(res.status).toBe(201);
+      const data = await res.json();
+      expect(data.apiKey.scope).toBe("read");
+    });
+
+    test("read scope key can GET admin endpoints", async () => {
+      const { rawKey } = await createTestApiKey({ scope: "read" });
+
+      const res = await app.request("/api/v1/admin/components", {
+        headers: authHeader(rawKey),
+      });
+
+      expect(res.status).toBe(200);
+    });
+
+    test("read scope key cannot POST to admin endpoints (enforceApiKeyScope)", async () => {
+      const { rawKey } = await createTestApiKey({ scope: "read" });
+
+      const res = await app.request("/api/v1/admin/components", {
+        method: "POST",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({ name: "Test Component" }),
+      });
+
+      expect(res.status).toBe(403);
+    });
+
+    test("read-write scope key can POST to operational endpoints", async () => {
+      const { rawKey } = await createTestApiKey({ scope: "read-write" });
+
+      const res = await app.request("/api/v1/admin/components", {
+        method: "POST",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({ name: "Test Component" }),
+      });
+
+      // Should not be 403 (may be 201 or 400 depending on validation, but not forbidden)
+      expect(res.status).not.toBe(403);
+    });
+
+    test("read-write scope key cannot access owner-only routes", async () => {
+      const { rawKey } = await createTestApiKey({ scope: "read-write" });
+
+      const res = await app.request("/api/v1/admin/system/logging", {
+        headers: authHeader(rawKey),
+      });
+
+      expect(res.status).toBe(403);
+    });
+
+    test("full-access scope key can access owner-only routes", async () => {
+      const { rawKey } = await createTestApiKey({ scope: "full-access" });
+
+      const res = await app.request("/api/v1/admin/system/logging", {
+        headers: authHeader(rawKey),
+      });
+
+      expect(res.status).toBe(200);
+    });
+
+    test("only full-access key can create full-access keys", async () => {
+      const { rawKey } = await createTestApiKey({ scope: "read-write" });
+
+      const res = await app.request("/api/v1/admin/api-keys", {
+        method: "POST",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({ name: "Escalation Attempt", scope: "full-access" }),
+      });
+
+      expect(res.status).toBe(403);
+    });
+
+    test("full-access key can create full-access keys", async () => {
+      const { rawKey } = await createTestApiKey({ scope: "full-access" });
+
+      const res = await app.request("/api/v1/admin/api-keys", {
+        method: "POST",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({ name: "Another Full Key", scope: "full-access" }),
+      });
+
+      expect(res.status).toBe(201);
+      const data = await res.json();
+      expect(data.apiKey.scope).toBe("full-access");
+    });
+
+    test("read scope key cannot access requireRole(owner, admin) routes (requireRole)", async () => {
+      const { rawKey } = await createTestApiKey({ scope: "read" });
+
+      const res = await app.request("/api/v1/admin/api-keys", {
+        headers: authHeader(rawKey),
+      });
+
+      expect(res.status).toBe(403);
+    });
+
+    test("read-write key can create read-write keys", async () => {
+      const { rawKey } = await createTestApiKey({ scope: "read-write" });
+
+      const res = await app.request("/api/v1/admin/api-keys", {
+        method: "POST",
+        headers: jsonAuthHeaders(rawKey),
+        body: JSON.stringify({ name: "Replicated Key", scope: "read-write" }),
+      });
+
+      expect(res.status).toBe(201);
+      const data = await res.json();
+      expect(data.apiKey.scope).toBe("read-write");
     });
   });
 });

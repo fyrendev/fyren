@@ -6,11 +6,12 @@ export interface SendGridConfig {
 
 export class SendGridProvider implements EmailProvider {
   private apiKey: string;
-  private fromAddress: string;
 
-  constructor(config: SendGridConfig, fromAddress: string) {
+  constructor(
+    config: SendGridConfig,
+    readonly fromAddress: string
+  ) {
     this.apiKey = config.apiKey;
-    this.fromAddress = fromAddress;
   }
 
   async send(message: EmailMessage): Promise<EmailResult> {
