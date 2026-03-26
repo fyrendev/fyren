@@ -6,7 +6,7 @@ export interface SendGridConfig {
 
 export class SendGridProvider implements EmailProvider {
   private apiKey: string;
-  private fromAddress: string;
+  readonly fromAddress: string;
 
   constructor(config: SendGridConfig, fromAddress: string) {
     this.apiKey = config.apiKey;

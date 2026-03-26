@@ -11,7 +11,7 @@ export interface SMTPConfig {
 
 export class SMTPProvider implements EmailProvider {
   private transporter: Transporter;
-  private fromAddress: string;
+  readonly fromAddress: string;
 
   constructor(config: SMTPConfig, fromAddress: string) {
     this.transporter = createTransport({

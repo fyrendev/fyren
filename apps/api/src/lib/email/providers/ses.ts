@@ -9,7 +9,7 @@ export interface SESConfig {
 
 export class SESProvider implements EmailProvider {
   private client: SESClient;
-  private fromAddress: string;
+  readonly fromAddress: string;
 
   constructor(config: SESConfig, fromAddress: string) {
     this.client = new SESClient({

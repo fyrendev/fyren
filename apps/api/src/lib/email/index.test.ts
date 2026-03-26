@@ -16,8 +16,7 @@ describe("getEmailProvider", () => {
 
     const provider = await getEmailProvider();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect((provider as any).fromAddress).toBe("Acme Corp <noreply@fyren.dev>");
+    expect(provider.fromAddress).toBe("Acme Corp <noreply@fyren.dev>");
   });
 
   test("formats from address with custom email", async () => {
@@ -28,7 +27,6 @@ describe("getEmailProvider", () => {
 
     const provider = await getEmailProvider();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect((provider as any).fromAddress).toBe("My Status <status@example.com>");
+    expect(provider.fromAddress).toBe("My Status <status@example.com>");
   });
 });
