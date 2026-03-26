@@ -11,9 +11,11 @@ export interface SMTPConfig {
 
 export class SMTPProvider implements EmailProvider {
   private transporter: Transporter;
-  readonly fromAddress: string;
 
-  constructor(config: SMTPConfig, fromAddress: string) {
+  constructor(
+    config: SMTPConfig,
+    readonly fromAddress: string
+  ) {
     this.transporter = createTransport({
       host: config.host,
       port: config.port,
@@ -26,7 +28,6 @@ export class SMTPProvider implements EmailProvider {
             }
           : undefined,
     });
-    this.fromAddress = fromAddress;
   }
 
   async send(message: EmailMessage): Promise<EmailResult> {
