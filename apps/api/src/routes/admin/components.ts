@@ -1,9 +1,10 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../../lib/db";
-import { components, componentStatusEnum, eq } from "@fyrendev/db";
+import { components, componentStatusEnum, monitors, eq } from "@fyrendev/db";
 import { NotFoundError, errorResponse } from "../../lib/errors";
 import { createAuditLogger } from "../../lib/logging/audit";
+import { unscheduleMonitor } from "../../lib/queue";
 
 const adminComponents = new Hono();
 
@@ -229,6 +230,14 @@ adminComponents.patch("/:id/status", async (c) => {
 adminComponents.delete("/:id", async (c) => {
   try {
     const id = c.req.param("id");
+
+    // Unschedule all monitors for this component before cascade delete removes them
+    const componentMonitors = await db
+      .select({ id: monitors.id })
+      .from(monitors)
+      .where(eq(monitors.componentId, id));
+
+    await Promise.all(componentMonitors.map((m) => unscheduleMonitor(m.id)));
 
     const [comp] = await db.delete(components).where(eq(components.id, id)).returning();
 

@@ -4,6 +4,7 @@ import {
   setupTestHooks,
   createTestApiKey,
   createTestComponent,
+  createTestMonitor,
   jsonAuthHeaders,
   authHeader,
 } from "../../test";
@@ -231,6 +232,25 @@ describe("Admin Components API", () => {
 
       // Verify component is deleted
       const getRes = await app.request(`/api/v1/admin/components/${component.id}`, {
+        headers: authHeader(rawKey),
+      });
+      expect(getRes.status).toBe(404);
+    });
+
+    test("cascade deletes associated monitors", async () => {
+      const { rawKey } = await createTestApiKey();
+      const component = await createTestComponent();
+      const monitor = await createTestMonitor(component.id);
+
+      const res = await app.request(`/api/v1/admin/components/${component.id}`, {
+        method: "DELETE",
+        headers: authHeader(rawKey),
+      });
+
+      expect(res.status).toBe(200);
+
+      // Verify monitor is also deleted
+      const getRes = await app.request(`/api/v1/admin/monitors/${monitor.id}`, {
         headers: authHeader(rawKey),
       });
       expect(getRes.status).toBe(404);
