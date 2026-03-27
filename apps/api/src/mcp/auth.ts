@@ -7,6 +7,13 @@ const SCOPE_HIERARCHY: Record<ApiKeyScope, number> = {
   "full-access": 2,
 };
 
+export class McpAuthError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "McpAuthError";
+  }
+}
+
 export function getAuthContext() {
   const c = getContext();
   return {
@@ -18,7 +25,7 @@ export function getAuthContext() {
 
 /**
  * Check that the current API key scope meets the minimum required scope.
- * Throws an error string if insufficient — callers should return it as an MCP error.
+ * Throws McpAuthError if insufficient — the MCP SDK catches this and returns it as a tool error.
  */
 export function requireScope(minimum: ApiKeyScope): void {
   const { apiKeyScope, authMethod } = getAuthContext();
@@ -34,12 +41,5 @@ export function requireScope(minimum: ApiKeyScope): void {
     throw new McpAuthError(
       `Insufficient scope: requires '${minimum}', but API key has '${apiKeyScope}'`
     );
-  }
-}
-
-export class McpAuthError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "McpAuthError";
   }
 }

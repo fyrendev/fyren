@@ -340,7 +340,7 @@ export function registerMaintenanceTools(server: McpServer) {
       },
     },
     async ({ id }) => {
-      requireScope("read-write");
+      requireScope("full-access");
 
       try {
         await MaintenanceService.cancel(id);
