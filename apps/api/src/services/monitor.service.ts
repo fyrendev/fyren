@@ -3,6 +3,8 @@ import {
   monitors,
   monitorResults,
   components,
+  maintenances,
+  maintenanceComponents,
   eq,
   desc,
   and,
@@ -220,7 +222,7 @@ export async function calculateUptime(
 
   const monitorIds = componentMonitors.map((m) => m.id);
 
-  // Query results for all monitors in the period
+  // Query results for all monitors in the period, excluding checks during maintenance windows
   const results = await db
     .select({
       totalChecks: sql<number>`count(*)::int`,
@@ -234,7 +236,16 @@ export async function calculateUptime(
           monitorIds.map((id) => sql`${id}::uuid`),
           sql`, `
         )}])`,
-        sql`${monitorResults.checkedAt} >= ${startDate.toISOString()}::timestamp`
+        sql`${monitorResults.checkedAt} >= ${startDate.toISOString()}::timestamp`,
+        sql`NOT EXISTS (
+          SELECT 1 FROM ${maintenances}
+          INNER JOIN ${maintenanceComponents}
+            ON ${maintenances.id} = ${maintenanceComponents.maintenanceId}
+          WHERE ${maintenanceComponents.componentId} = ${componentId}::uuid
+            AND ${maintenances.status} IN ('in_progress', 'completed')
+            AND ${monitorResults.checkedAt} >= COALESCE(${maintenances.startedAt}, ${maintenances.scheduledStartAt})
+            AND ${monitorResults.checkedAt} <= COALESCE(${maintenances.completedAt}, ${maintenances.scheduledEndAt})
+        )`
       )
     );
 

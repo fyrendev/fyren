@@ -17,6 +17,7 @@ import {
   monitorResults,
   monitors,
   or,
+  sql,
 } from "@fyrendev/db";
 import { Hono } from "hono";
 import { errorResponse, NotFoundError } from "../../lib/errors";
@@ -360,7 +361,7 @@ publicStatus.get("/uptime/:componentId/history", async (c) => {
       let status = "operational";
 
       if (monitor) {
-        // Get monitor results for this day
+        // Get monitor results for this day, excluding checks during maintenance windows
         const results = await db
           .select({
             status: monitorResults.status,
@@ -370,7 +371,16 @@ publicStatus.get("/uptime/:componentId/history", async (c) => {
             and(
               eq(monitorResults.monitorId, monitor.id),
               gte(monitorResults.checkedAt, dayStart),
-              lt(monitorResults.checkedAt, dayEnd)
+              lt(monitorResults.checkedAt, dayEnd),
+              sql`NOT EXISTS (
+                SELECT 1 FROM ${maintenances}
+                INNER JOIN ${maintenanceComponents}
+                  ON ${maintenances.id} = ${maintenanceComponents.maintenanceId}
+                WHERE ${maintenanceComponents.componentId} = ${componentId}::uuid
+                  AND ${maintenances.status} IN ('in_progress', 'completed')
+                  AND ${monitorResults.checkedAt} >= COALESCE(${maintenances.startedAt}, ${maintenances.scheduledStartAt})
+                  AND ${monitorResults.checkedAt} <= COALESCE(${maintenances.completedAt}, ${maintenances.scheduledEndAt})
+              )`
             )
           );
 
