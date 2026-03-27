@@ -227,6 +227,55 @@ describe("Public Status API", () => {
       expect(data.overall.quarter).toBeDefined();
     });
 
+    test("excludes maintenance windows from uptime calculation", async () => {
+      await createTestOrganization();
+      const component = await createTestComponent({ name: "API" });
+      const monitor = await createTestMonitor(component.id);
+
+      const now = new Date();
+
+      // Maintenance window: 2 hours ago to 1 hour ago
+      const maintStart = new Date(now.getTime() - 2 * 3600000);
+      const maintEnd = new Date(now.getTime() - 1 * 3600000);
+
+      const maint = await createTestMaintenance({
+        title: "Completed maintenance",
+        status: "completed",
+        scheduledStartAt: maintStart,
+        scheduledEndAt: maintEnd,
+        startedAt: maintStart,
+        completedAt: maintEnd,
+      });
+      await createTestMaintenanceComponent(maint.id, component.id);
+
+      // 2 "down" results during maintenance (should be excluded)
+      await createTestMonitorResult(monitor.id, {
+        status: "down",
+        checkedAt: new Date(maintStart.getTime() + 10 * 60000),
+      });
+      await createTestMonitorResult(monitor.id, {
+        status: "down",
+        checkedAt: new Date(maintStart.getTime() + 30 * 60000),
+      });
+
+      // 2 "up" results outside maintenance
+      await createTestMonitorResult(monitor.id, {
+        status: "up",
+        checkedAt: new Date(now.getTime() - 30 * 60000),
+      });
+      await createTestMonitorResult(monitor.id, {
+        status: "up",
+        checkedAt: new Date(now.getTime() - 15 * 60000),
+      });
+
+      const res = await app.request("/api/v1/status/uptime");
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      // Without exclusion: 50% (2 up, 2 down). With exclusion: 100% (2 up only)
+      expect(data.components[0].uptime.day).toBe(100);
+    });
+
     test("returns 100% uptime when no monitor results exist", async () => {
       await createTestOrganization();
       await createTestComponent({ name: "API" });
@@ -395,6 +444,95 @@ describe("Public Status API", () => {
       expect(data.history[1].uptime).toBe(50);
       // Day 2 (2 days ago): 0% uptime
       expect(data.history[2].uptime).toBe(0);
+    });
+
+    test("excludes monitor results during maintenance windows from uptime", async () => {
+      await createTestOrganization();
+      const component = await createTestComponent({ name: "API" });
+      const monitor = await createTestMonitor(component.id);
+
+      const today = new Date();
+      today.setHours(12, 0, 0, 0);
+
+      // Maintenance window: 10:00 - 11:00 today
+      const maintStart = new Date(today);
+      maintStart.setHours(10, 0, 0, 0);
+      const maintEnd = new Date(today);
+      maintEnd.setHours(11, 0, 0, 0);
+
+      const maint = await createTestMaintenance({
+        title: "Planned maintenance",
+        status: "completed",
+        scheduledStartAt: maintStart,
+        scheduledEndAt: maintEnd,
+        startedAt: maintStart,
+        completedAt: maintEnd,
+      });
+      await createTestMaintenanceComponent(maint.id, component.id);
+
+      // 2 results during maintenance (should be excluded)
+      await createTestMonitorResult(monitor.id, {
+        status: "down",
+        checkedAt: new Date(maintStart.getTime() + 10 * 60000),
+      });
+      await createTestMonitorResult(monitor.id, {
+        status: "down",
+        checkedAt: new Date(maintStart.getTime() + 30 * 60000),
+      });
+
+      // 2 results outside maintenance (should be counted)
+      await createTestMonitorResult(monitor.id, { status: "up", checkedAt: today });
+      await createTestMonitorResult(monitor.id, {
+        status: "up",
+        checkedAt: new Date(today.getTime() + 3600000),
+      });
+
+      const res = await app.request(`/api/v1/status/uptime/${component.id}/history?days=1`);
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      // Without exclusion this would be 50% (2 up, 2 down). With exclusion it should be 100% (2 up only)
+      expect(data.history[0].uptime).toBe(100);
+    });
+
+    test("does not exclude results for scheduled (not started) maintenance", async () => {
+      await createTestOrganization();
+      const component = await createTestComponent({ name: "API" });
+      const monitor = await createTestMonitor(component.id);
+
+      const today = new Date();
+      today.setHours(12, 0, 0, 0);
+
+      // Maintenance is only "scheduled", not in_progress or completed
+      const maintStart = new Date(today);
+      maintStart.setHours(10, 0, 0, 0);
+      const maintEnd = new Date(today);
+      maintEnd.setHours(11, 0, 0, 0);
+
+      const maint = await createTestMaintenance({
+        title: "Future maintenance",
+        status: "scheduled",
+        scheduledStartAt: maintStart,
+        scheduledEndAt: maintEnd,
+      });
+      await createTestMaintenanceComponent(maint.id, component.id);
+
+      // Results during the scheduled window should still count
+      await createTestMonitorResult(monitor.id, {
+        status: "down",
+        checkedAt: new Date(maintStart.getTime() + 10 * 60000),
+      });
+      await createTestMonitorResult(monitor.id, {
+        status: "up",
+        checkedAt: today,
+      });
+
+      const res = await app.request(`/api/v1/status/uptime/${component.id}/history?days=1`);
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      // Both results counted: 1 up, 1 down = 50%
+      expect(data.history[0].uptime).toBe(50);
     });
 
     test("handles results at day boundaries correctly", async () => {
