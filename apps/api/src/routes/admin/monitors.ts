@@ -18,7 +18,7 @@ const createMonitorSchema = z.object({
   intervalSeconds: z.number().int().min(30).max(3600).default(60),
   timeoutMs: z.number().int().min(1000).max(30000).default(10000),
   expectedStatusCode: z.number().int().min(100).max(599).optional(),
-  headers: z.record(z.string()).optional(),
+  headers: z.record(z.string(), z.string()).optional(),
   failureThreshold: z.number().int().min(1).max(10).default(3),
   isActive: z.boolean().default(true),
   // Auto-incident settings
@@ -35,7 +35,7 @@ const updateMonitorSchema = z.object({
   intervalSeconds: z.number().int().min(30).max(3600).optional(),
   timeoutMs: z.number().int().min(1000).max(30000).optional(),
   expectedStatusCode: z.number().int().min(100).max(599).nullable().optional(),
-  headers: z.record(z.string()).nullable().optional(),
+  headers: z.record(z.string(), z.string()).nullable().optional(),
   failureThreshold: z.number().int().min(1).max(10).optional(),
   isActive: z.boolean().optional(),
   // Auto-incident settings
@@ -225,7 +225,7 @@ const testConnectionSchema = z.object({
   url: z.string().min(1).max(2000),
   timeoutMs: z.number().int().min(1000).max(30000).default(10000),
   expectedStatusCode: z.number().int().min(100).max(599).optional(),
-  headers: z.record(z.string()).optional(),
+  headers: z.record(z.string(), z.string()).optional(),
 });
 
 // POST /api/v1/admin/monitors/test - Test connection without creating monitor

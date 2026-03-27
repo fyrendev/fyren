@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { contextStorage } from "hono/context-storage";
 import { env } from "./env/api";
 import { setupRoutes } from "./routes";
 import { redis, bullmqRedis } from "./lib/redis";
@@ -23,6 +24,10 @@ import { loggingMiddleware } from "./middleware/logging";
 initializeLogger(loadConfigFromEnv(), "env");
 
 const app = new Hono();
+
+// Context storage (AsyncLocalStorage) — must be first middleware
+// Enables MCP tool handlers to access Hono context variables
+app.use("*", contextStorage());
 
 // Request logging middleware
 app.use("*", loggingMiddleware());
