@@ -327,11 +327,94 @@ export default function IntegrationsPage() {
             </div>
           </div>
 
-          {/* Claude Code Configuration */}
+          {/* Claude Code Setup Guide */}
+          <div>
+            <label className="block text-sm font-medium text-navy-300 mb-3">
+              Setup with Claude Code
+            </label>
+            <div className="space-y-4">
+              {/* Step 1 */}
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-amber-500 text-navy-900 flex items-center justify-center text-xs font-bold">
+                  1
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-white font-medium">Create an API key</p>
+                  <p className="text-xs text-navy-400 mt-1">
+                    Go to{" "}
+                    <a href="/admin/api-keys" className="text-amber-400 hover:text-amber-300">
+                      API Keys
+                    </a>{" "}
+                    and create a key with <code className="text-amber-400">read-write</code> scope
+                    (or <code className="text-amber-400">full-access</code> if you want the agent to
+                    delete resources). Copy the key — it is only shown once.
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 2 */}
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-amber-500 text-navy-900 flex items-center justify-center text-xs font-bold">
+                  2
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-white font-medium">
+                    Add the MCP server in Claude Code
+                  </p>
+                  <p className="text-xs text-navy-400 mt-1">
+                    Open Claude Code and run the following command:
+                  </p>
+                  <div className="mt-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-navy-500">Terminal</span>
+                      <button
+                        onClick={() =>
+                          copyToClipboard(
+                            `claude mcp add fyren --transport http -- ${appUrl || "https://your-domain"}/mcp --header "Authorization: Bearer fyr_your_api_key_here"`,
+                            "mcp-cli"
+                          )
+                        }
+                        className="flex items-center gap-1 text-xs text-navy-400 hover:text-white transition-colors"
+                      >
+                        {copied === "mcp-cli" ? (
+                          <Check className="w-3 h-3 text-green-400" />
+                        ) : (
+                          <Copy className="w-3 h-3" />
+                        )}
+                      </button>
+                    </div>
+                    <div className="bg-navy-950 rounded-lg p-3 font-mono text-xs overflow-x-auto">
+                      <span className="text-navy-500">$ </span>
+                      <span className="text-emerald-400">
+                        claude mcp add fyren --transport http -- {appUrl || "https://your-domain"}
+                        /mcp --header &quot;Authorization: Bearer fyr_your_api_key_here&quot;
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-amber-500 text-navy-900 flex items-center justify-center text-xs font-bold">
+                  3
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-white font-medium">Verify it works</p>
+                  <p className="text-xs text-navy-400 mt-1">
+                    Start a new Claude Code session. The agent now has access to all Fyren tools.
+                    Try asking it to check the current status or create a test incident.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Alternative: Manual JSON config */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-navy-300">
-                Claude Code Configuration
+                Alternative: manual JSON config
               </label>
               <button
                 onClick={() =>
@@ -351,12 +434,12 @@ export default function IntegrationsPage() {
                       null,
                       2
                     ),
-                    "mcp-claude"
+                    "mcp-json"
                   )
                 }
                 className="flex items-center gap-1 text-sm text-navy-400 hover:text-white transition-colors"
               >
-                {copied === "mcp-claude" ? (
+                {copied === "mcp-json" ? (
                   <>
                     <Check className="w-4 h-4 text-green-400" />
                     <span className="text-green-400">Copied!</span>
@@ -369,6 +452,10 @@ export default function IntegrationsPage() {
                 )}
               </button>
             </div>
+            <p className="text-xs text-navy-400 mb-2">
+              Add this to <code className="text-navy-300">~/.claude/settings.json</code> if you
+              prefer to configure manually:
+            </p>
             <div className="bg-navy-950 rounded-lg p-4 font-mono text-sm overflow-x-auto whitespace-pre text-emerald-400">
               {JSON.stringify(
                 {
@@ -386,13 +473,6 @@ export default function IntegrationsPage() {
                 2
               )}
             </div>
-            <p className="text-xs text-navy-500 mt-2">
-              Add this to your MCP client configuration. Replace the API key with a real key from{" "}
-              <a href="/admin/api-keys" className="text-amber-400 hover:text-amber-300">
-                API Keys
-              </a>
-              .
-            </p>
           </div>
 
           {/* Scope Requirements */}

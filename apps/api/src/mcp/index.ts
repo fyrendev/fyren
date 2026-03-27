@@ -36,7 +36,7 @@ export function setupMcpRoutes(app: Hono) {
 
   // Handle all MCP requests (POST for JSON-RPC, GET for SSE, DELETE for session termination)
   app.all("/mcp", async (c) => {
-    // Create a fresh server + transport per request (stateless mode)
+    // Per-request server + transport to avoid concurrent transport conflicts
     const server = createMcpServer();
     const transport = new StreamableHTTPTransport({
       sessionIdGenerator: undefined,
@@ -48,7 +48,6 @@ export function setupMcpRoutes(app: Hono) {
     try {
       const response = await transport.handleRequest(c);
       if (response) return response;
-      // If no response (e.g. notifications-only POST), return 202
       return c.text("Accepted", 202);
     } finally {
       await transport.close();

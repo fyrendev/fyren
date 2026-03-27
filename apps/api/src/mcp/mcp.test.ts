@@ -514,6 +514,13 @@ describe("MCP Server", () => {
         const webhook = await createTestWebhook();
         await expectScopeError("delete_webhook", { id: webhook.id }, rawKey);
       });
+
+      test("cancel_maintenance", async () => {
+        await createTestOrganization();
+        const { rawKey } = await createTestApiKey({ scope: "read-write" });
+        const maint = await createTestMaintenance();
+        await expectScopeError("cancel_maintenance", { id: maint.id }, rawKey);
+      });
     });
 
     // ── full-access scope: can call all tools ──

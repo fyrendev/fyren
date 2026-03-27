@@ -187,17 +187,24 @@ export function registerWebhookTools(server: McpServer) {
         .where(eq(webhookEndpoints.id, id))
         .returning();
 
+      if (!webhook) {
+        return {
+          content: [{ type: "text" as const, text: "Failed to update webhook" }],
+          isError: true,
+        };
+      }
+
       return {
         content: [
           {
             type: "text" as const,
             text: JSON.stringify(
               {
-                id: webhook!.id,
-                name: webhook!.name,
-                type: webhook!.type,
-                url: webhook!.url,
-                updatedAt: webhook!.updatedAt.toISOString(),
+                id: webhook.id,
+                name: webhook.name,
+                type: webhook.type,
+                url: webhook.url,
+                updatedAt: webhook.updatedAt.toISOString(),
               },
               null,
               2
