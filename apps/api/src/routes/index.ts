@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { authMiddleware, optionalAuthMiddleware } from "../middleware/auth";
 import { enforceApiKeyScope } from "../middleware/scope";
 import { auth } from "../lib/auth";
+import { setupMcpRoutes } from "../mcp";
 
 // Public routes
 import { publicOrganizations } from "./public/organizations";
@@ -127,6 +128,9 @@ export function setupRoutes(app: Hono) {
   app.use("/api/v1/admin/system", authMiddleware, enforceApiKeyScope);
   app.use("/api/v1/admin/system/*", authMiddleware, enforceApiKeyScope);
   app.route("/api/v1/admin/system", adminSystem);
+
+  // MCP (Model Context Protocol) endpoint
+  setupMcpRoutes(app);
 
   // Test routes — only register in dev/test to prevent accidental exposure in production.
   // The handler-level isTestEnabled guard remains as defense-in-depth.

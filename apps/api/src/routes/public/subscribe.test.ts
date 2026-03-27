@@ -45,7 +45,7 @@ describe("Public Subscribe API", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: "selective@example.com",
-          componentIds: ["00000000-0000-0000-0000-000000000001"],
+          componentIds: ["10000000-0000-4000-8000-000000000001"],
         }),
       });
 

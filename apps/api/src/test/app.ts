@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { contextStorage } from "hono/context-storage";
 import { errorResponse } from "../lib/errors";
 import { setupRoutes } from "../routes";
 
@@ -9,6 +10,10 @@ import { setupRoutes } from "../routes";
  */
 export function createTestApp() {
   const app = new Hono();
+
+  // Context storage (AsyncLocalStorage) — must be first middleware
+  // Required for MCP tool handlers to access Hono context variables
+  app.use("*", contextStorage());
 
   // Skip logger in tests to reduce noise
   // app.use("*", logger());

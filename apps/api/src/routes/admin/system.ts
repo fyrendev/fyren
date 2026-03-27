@@ -45,7 +45,7 @@ const loggingConfigSchema = z.object({
   otlpEndpoint: z.string().url().max(500).nullable().optional(),
   otlpConfig: z
     .object({
-      headers: z.record(z.string().max(1000)).optional(),
+      headers: z.record(z.string(), z.string().max(1000)).optional(),
     })
     .nullable()
     .optional(),

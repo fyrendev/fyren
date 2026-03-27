@@ -295,6 +295,225 @@ export default function IntegrationsPage() {
         </div>
       </Card>
 
+      {/* MCP (Model Context Protocol) Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>MCP (Model Context Protocol)</CardTitle>
+        </CardHeader>
+        <div className="space-y-6">
+          <p className="text-sm text-navy-400">
+            Connect AI agents to Fyren using the Model Context Protocol. AI assistants can monitor
+            status, create and resolve incidents, manage components, and more — all protected by
+            your existing API keys.
+          </p>
+
+          {/* Endpoint */}
+          <div>
+            <label className="block text-sm font-medium text-navy-300 mb-2">MCP Endpoint</label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 bg-navy-950 rounded-lg p-4 font-mono text-sm overflow-x-auto">
+                <span className="text-emerald-400">{appUrl ? `${appUrl}/mcp` : "/mcp"}</span>
+              </div>
+              <button
+                onClick={() => copyToClipboard(appUrl ? `${appUrl}/mcp` : "/mcp", "mcp-endpoint")}
+                className="flex items-center gap-1 text-sm text-navy-400 hover:text-white transition-colors p-2"
+              >
+                {copied === "mcp-endpoint" ? (
+                  <Check className="w-4 h-4 text-green-400" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Claude Code Configuration */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-navy-300">
+                Claude Code Configuration
+              </label>
+              <button
+                onClick={() =>
+                  copyToClipboard(
+                    JSON.stringify(
+                      {
+                        mcpServers: {
+                          fyren: {
+                            type: "url",
+                            url: `${appUrl || "https://your-domain"}/mcp`,
+                            headers: {
+                              Authorization: "Bearer fyr_your_api_key_here",
+                            },
+                          },
+                        },
+                      },
+                      null,
+                      2
+                    ),
+                    "mcp-claude"
+                  )
+                }
+                className="flex items-center gap-1 text-sm text-navy-400 hover:text-white transition-colors"
+              >
+                {copied === "mcp-claude" ? (
+                  <>
+                    <Check className="w-4 h-4 text-green-400" />
+                    <span className="text-green-400">Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    <span>Copy</span>
+                  </>
+                )}
+              </button>
+            </div>
+            <div className="bg-navy-950 rounded-lg p-4 font-mono text-sm overflow-x-auto whitespace-pre text-emerald-400">
+              {JSON.stringify(
+                {
+                  mcpServers: {
+                    fyren: {
+                      type: "url",
+                      url: `${appUrl || "https://your-domain"}/mcp`,
+                      headers: {
+                        Authorization: "Bearer fyr_your_api_key_here",
+                      },
+                    },
+                  },
+                },
+                null,
+                2
+              )}
+            </div>
+            <p className="text-xs text-navy-500 mt-2">
+              Add this to your MCP client configuration. Replace the API key with a real key from{" "}
+              <a href="/admin/api-keys" className="text-amber-400 hover:text-amber-300">
+                API Keys
+              </a>
+              .
+            </p>
+          </div>
+
+          {/* Scope Requirements */}
+          <div>
+            <label className="block text-sm font-medium text-navy-300 mb-3">API Key Scopes</label>
+            <div className="bg-navy-700/30 rounded-lg p-4">
+              <p className="text-sm text-navy-400 mb-3">
+                The API key scope determines which MCP tools are available:
+              </p>
+              <div className="space-y-2 text-sm">
+                <div className="flex gap-3 items-start">
+                  <code className="text-amber-400 shrink-0 w-28">read</code>
+                  <span className="text-navy-400">
+                    View status, list components, incidents, monitors, maintenance, subscribers, and
+                    webhooks.
+                  </span>
+                </div>
+                <div className="flex gap-3 items-start">
+                  <code className="text-amber-400 shrink-0 w-28">read-write</code>
+                  <span className="text-navy-400">
+                    Everything in read, plus create/update incidents, components, monitors,
+                    maintenance, and webhooks. Resolve incidents, start/complete maintenance.
+                  </span>
+                </div>
+                <div className="flex gap-3 items-start">
+                  <code className="text-amber-400 shrink-0 w-28">full-access</code>
+                  <span className="text-navy-400">
+                    Everything in read-write, plus delete components, monitors, and webhooks.
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Available Tools */}
+          <div>
+            <label className="block text-sm font-medium text-navy-300 mb-3">Available Tools</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {[
+                { category: "Status", tools: ["get_status", "get_uptime"] },
+                {
+                  category: "Components",
+                  tools: [
+                    "list_components",
+                    "get_component",
+                    "create_component",
+                    "update_component",
+                    "update_component_status",
+                    "delete_component",
+                  ],
+                },
+                {
+                  category: "Incidents",
+                  tools: [
+                    "list_incidents",
+                    "get_incident",
+                    "create_incident",
+                    "update_incident",
+                    "add_incident_update",
+                    "resolve_incident",
+                  ],
+                },
+                {
+                  category: "Monitors",
+                  tools: [
+                    "list_monitors",
+                    "get_monitor",
+                    "create_monitor",
+                    "update_monitor",
+                    "delete_monitor",
+                  ],
+                },
+                {
+                  category: "Maintenance",
+                  tools: [
+                    "list_maintenance",
+                    "get_maintenance",
+                    "create_maintenance",
+                    "update_maintenance",
+                    "start_maintenance",
+                    "complete_maintenance",
+                    "cancel_maintenance",
+                  ],
+                },
+                {
+                  category: "Subscribers",
+                  tools: ["list_subscribers", "remove_subscriber"],
+                },
+                {
+                  category: "Webhooks",
+                  tools: ["list_webhooks", "create_webhook", "update_webhook", "delete_webhook"],
+                },
+              ].map((group) => (
+                <div key={group.category} className="bg-navy-800/50 rounded-lg p-3">
+                  <h4 className="text-sm font-medium text-white mb-2">{group.category}</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {group.tools.map((tool) => (
+                      <code
+                        key={tool}
+                        className="text-xs bg-navy-700 text-navy-300 px-1.5 py-0.5 rounded"
+                      >
+                        {tool}
+                      </code>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <a
+              href="/admin/api-keys"
+              className="inline-flex items-center justify-center font-medium rounded-lg transition-colors px-4 py-2 text-sm bg-amber-500 text-navy-900 hover:bg-amber-400"
+            >
+              Create API Key
+            </a>
+          </div>
+        </div>
+      </Card>
+
       {/* API Documentation Link */}
       <Card>
         <CardHeader>
