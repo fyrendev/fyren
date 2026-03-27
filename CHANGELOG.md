@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.0](https://github.com/fyrendev/fyren/compare/v0.3.0...v0.4.0) (2026-03-27)
+
+
+### Features
+
+* add MCP server for AI agent integration ([#55](https://github.com/fyrendev/fyren/issues/55)) ([1a993c1](https://github.com/fyrendev/fyren/commit/1a993c1f6c1b593fe98810c3263edc4a033d8221))
+* exclude maintenance windows from uptime calculations ([#53](https://github.com/fyrendev/fyren/issues/53)) ([dbaec44](https://github.com/fyrendev/fyren/commit/dbaec449d524c983aeac8eef64b05dbdf5cdac5e))
+* replace API key roles with dedicated scopes ([#51](https://github.com/fyrendev/fyren/issues/51)) ([cf12d04](https://github.com/fyrendev/fyren/commit/cf12d04adc4fb7ee645bf154ff9ef628390e7502))
+
+
+### Bug Fixes
+
+* address MCP code review findings ([#56](https://github.com/fyrendev/fyren/issues/56)) ([5ebf702](https://github.com/fyrendev/fyren/commit/5ebf70210ae180907a347a373a0315ddd7421deb))
+* **mcp:** nextjs path forwarding ([#57](https://github.com/fyrendev/fyren/issues/57)) ([50f91e6](https://github.com/fyrendev/fyren/commit/50f91e65bfc3960be6f55aa10249eb2801cd9336))
+* unschedule monitor jobs when deleting a component ([#54](https://github.com/fyrendev/fyren/issues/54)) ([842ec63](https://github.com/fyrendev/fyren/commit/842ec63b2d8f9aee861b38464daa3c3c9a307de5))
+
 ## [0.3.0](https://github.com/fyrendev/fyren/compare/v0.2.0...v0.3.0) (2026-03-25)
 
 
